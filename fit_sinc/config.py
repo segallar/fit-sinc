@@ -21,8 +21,15 @@ class Settings(BaseSettings):
     garmin_jwt_refresh_interval_sec: int = 1800
     garmin_jwt_refresh_before_sec: int = 3600
 
+    session_secret: str = "change-me-in-production"
+    admin_username: str = "admin"
+    admin_password: str = ""
+
+    default_user_id: str = "default"
+
     @property
     def hammerhead_tokens_path(self) -> Path:
+        """Legacy v1 path; prefer UserContext.hammerhead_tokens_path."""
         return self.data_dir / "hammerhead_tokens.json"
 
     @property

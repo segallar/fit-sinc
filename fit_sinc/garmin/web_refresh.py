@@ -6,7 +6,8 @@ import logging
 import time
 from typing import Any
 
-from fit_sinc.config import Settings, get_settings
+from fit_sinc.config import get_settings
+from fit_sinc.users.context import UserContext, as_context
 from fit_sinc.timeutil import format_ts
 from fit_sinc.garmin.web_session import (
     _has_session_cookie,
@@ -56,19 +57,28 @@ def _collect_garmin_cookies(jar: Any) -> dict[str, str]:
     return out
 
 
-def _log_refresh(trigger: str, event_type: str, message: str = "") -> None:
+def _log_refresh(
+    trigger: str,
+    event_type: str,
+    message: str = "",
+    *,
+    user_id: str | None = None,
+) -> None:
     try:
         from fit_sinc.state.store import Store
 
-        Store(get_settings().db_path).log_session_refresh(trigger, event_type, message)
+        Store(get_settings().db_path).log_session_refresh(
+            trigger, event_type, message, user_id=user_id
+        )
     except Exception:
         logger.debug("session refresh log write failed", exc_info=True)
 
 
-def session_monitor(settings: Settings | None = None) -> dict[str, Any]:
+def session_monitor(ctx: UserContext | None = None) -> dict[str, Any]:
     """Current Garmin web session state for monitoring UI."""
-    settings = settings or get_settings()
-    stored = _load_session(settings) or {}
+    user_ctx = as_context(ctx)
+    settings = user_ctx.settings
+    stored = _load_session(user_ctx) or {}
     cookies = stored.get("cookies") or {}
     jwt_web = cookies.get("JWT_WEB")
     expires_at = stored.get("expires_at") or (
@@ -92,7 +102,8 @@ def session_monitor(settings: Settings | None = None) -> dict[str, Any]:
         "refresh_method": stored.get("refresh_method"),
         "refresh_interval_sec": settings.garmin_jwt_refresh_interval_sec,
         "refresh_before_sec": settings.garmin_jwt_refresh_before_sec,
-        "session_path": str(settings.data_dir / "garmin_web" / "session.json"),
+        "session_path": str(user_ctx.garmin_web_dir / "session.json"),
+        "tenant_user_id": user_ctx.user_id,
     }
 
 
@@ -138,17 +149,18 @@ def refresh_via_http(existing: dict[str, str]) -> dict[str, str] | None:
 
 
 def refresh_web_session(
-    settings: Settings | None = None,
+    ctx: UserContext | None = None,
     *,
     force: bool = False,
     trigger: str = "auto",
 ) -> dict[str, Any]:
     """Refresh JWT_WEB if expiring soon. Requires `session` cookie from browser import."""
-    settings = settings or get_settings()
-    stored = _load_session(settings)
+    user_ctx = as_context(ctx)
+    settings = user_ctx.settings
+    stored = _load_session(user_ctx)
     if not stored:
         result = {"refreshed": False, "reason": "no session file"}
-        _log_refresh(trigger, "failed", result["reason"])
+        _log_refresh(trigger, "failed", result["reason"], user_id=user_ctx.user_id)
         return result
 
     cookies = dict(stored.get("cookies") or {})
@@ -166,19 +178,20 @@ def refresh_web_session(
             "expires_at": _jwt_expires_at(jwt_web),
         }
         if trigger != "background":
-            _log_refresh(trigger, "ok", result["reason"])
+            _log_refresh(trigger, "ok", result["reason"], user_id=user_ctx.user_id)
         else:
             exp = _jwt_expires_at(jwt_web)
             _log_refresh(
                 trigger,
                 "ok",
                 f"jwt valid until {format_ts(exp)}",
+                user_id=user_ctx.user_id,
             )
         return result
 
     if not _has_session_cookie(cookies):
         result = {"refreshed": False, "reason": "no session cookie — import from browser"}
-        _log_refresh(trigger, "failed", result["reason"])
+        _log_refresh(trigger, "failed", result["reason"], user_id=user_ctx.user_id)
         return result
 
     method: str | None = None
@@ -197,14 +210,14 @@ def refresh_web_session(
             from fit_sinc.garmin.web_session import web_login
 
             try:
-                web_login(settings.garmin_email, settings.garmin_password, settings)
+                web_login(settings.garmin_email, settings.garmin_password, user_ctx)
                 method = "login"
-                stored = _load_session(settings)
+                stored = _load_session(user_ctx)
                 cookies = dict(stored.get("cookies") or {}) if stored else {}
                 if _jwt_valid(cookies.get("JWT_WEB")):
                     exp = _jwt_expires_at(cookies.get("JWT_WEB"))
                     msg = f"via {method}, expires {format_ts(exp)}"
-                    _log_refresh(trigger, "refreshed", msg)
+                    _log_refresh(trigger, "refreshed", msg, user_id=user_ctx.user_id)
                     return {
                         "refreshed": True,
                         "method": method,
@@ -212,16 +225,16 @@ def refresh_web_session(
                     }
             except Exception as exc:
                 logger.warning("Garmin web login refresh failed: %s", exc)
-                _log_refresh(trigger, "failed", f"web login: {exc}")
+                _log_refresh(trigger, "failed", f"web login: {exc}", user_id=user_ctx.user_id)
         result = {"refreshed": False, "reason": "refresh failed — re-import browser cookies"}
-        _log_refresh(trigger, "failed", result["reason"])
+        _log_refresh(trigger, "failed", result["reason"], user_id=user_ctx.user_id)
         return result
 
-    _save_session(updated, settings, refresh_method=method, refreshed=True)
+    _save_session(updated, user_ctx, refresh_method=method, refreshed=True)
     new_jwt = updated.get("JWT_WEB")
     exp = _jwt_expires_at(new_jwt)
     logger.info("Garmin JWT refreshed via %s (expires %s)", method, exp)
-    _log_refresh(trigger, "refreshed", f"via {method}, expires {format_ts(exp)}")
+    _log_refresh(trigger, "refreshed", f"via {method}, expires {format_ts(exp)}", user_id=user_ctx.user_id)
     return {
         "refreshed": True,
         "method": method,
@@ -230,14 +243,14 @@ def refresh_web_session(
 
 
 def ensure_web_session(
-    settings: Settings | None = None,
+    ctx: UserContext | None = None,
     *,
     trigger: str = "upload",
 ) -> bool:
     """Refresh JWT if needed; return True when upload session is ready."""
-    settings = settings or get_settings()
-    refresh_web_session(settings, trigger=trigger)
-    stored = _load_session(settings)
+    user_ctx = as_context(ctx)
+    refresh_web_session(user_ctx, trigger=trigger)
+    stored = _load_session(user_ctx)
     if not stored:
         return False
     cookies = stored.get("cookies") or {}

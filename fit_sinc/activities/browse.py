@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from fit_sinc.config import Settings, get_settings
+from fit_sinc.users.context import UserContext, as_context
 from fit_sinc.garmin.activities import list_garmin_activities
 from fit_sinc.hammerhead.client import HammerheadClient
 from fit_sinc.state.store import Store, SyncIndexEntry
@@ -138,11 +138,11 @@ async def fetch_activities_page(
     page: int = 1,
     per_page: int = 50,
     filters: ActivityFilters | None = None,
-    settings: Settings | None = None,
+    ctx: UserContext | None = None,
     store: Store | None = None,
 ) -> ActivityBrowsePage:
-    settings = settings or get_settings()
-    store = store or Store(settings.db_path)
+    user_ctx = as_context(ctx)
+    store = store or Store(user_ctx.db_path)
     filters = filters or ActivityFilters()
     page = max(1, page)
     per_page = min(max(10, per_page), 100)
@@ -150,9 +150,13 @@ async def fetch_activities_page(
     if filters.is_active():
         try:
             if source == "hammerhead":
-                rows = await _scan_hammerhead(index := store.build_sync_index(), settings)
+                rows = await _scan_hammerhead(
+                    index := store.build_sync_index(user_ctx.user_id), user_ctx
+                )
             else:
-                rows = _scan_garmin(index := store.build_sync_index(), settings)
+                rows = _scan_garmin(
+                    index := store.build_sync_index(user_ctx.user_id), user_ctx
+                )
         except Exception as exc:
             return ActivityBrowsePage(
                 source, [], page, per_page, 0, 1, filters, error=str(exc)
@@ -160,20 +164,20 @@ async def fetch_activities_page(
         filtered = [row for row in rows if _matches_filters(row, filters)]
         return _paginate(source, filtered, page=page, per_page=per_page, filters=filters)
 
-    index = store.build_sync_index()
+    index = store.build_sync_index(user_ctx.user_id)
     if source == "hammerhead":
-        return await _fetch_hammerhead_native(page, per_page, index, settings, filters)
-    return _fetch_garmin_native(page, per_page, index, settings, filters)
+        return await _fetch_hammerhead_native(page, per_page, index, user_ctx, filters)
+    return _fetch_garmin_native(page, per_page, index, user_ctx, filters)
 
 
 async def _fetch_hammerhead_native(
     page: int,
     per_page: int,
     index: dict[str, SyncIndexEntry],
-    settings: Settings,
+    ctx: UserContext,
     filters: ActivityFilters,
 ) -> ActivityBrowsePage:
-    hh = HammerheadClient(settings)
+    hh = HammerheadClient(ctx)
     if hh.load_tokens() is None:
         return ActivityBrowsePage(
             "hammerhead", [], page, per_page, 0, 1, filters, error="Hammerhead not connected"
@@ -204,12 +208,12 @@ def _fetch_garmin_native(
     page: int,
     per_page: int,
     index: dict[str, SyncIndexEntry],
-    settings: Settings,
+    ctx: UserContext,
     filters: ActivityFilters,
 ) -> ActivityBrowsePage:
     start = (page - 1) * per_page
     try:
-        items = list_garmin_activities(limit=per_page, start=start, settings=settings)
+        items = list_garmin_activities(limit=per_page, start=start, ctx=ctx)
     except Exception as exc:
         return ActivityBrowsePage(
             "garmin", [], page, per_page, 0, 1, filters, error=str(exc)
@@ -237,9 +241,9 @@ def _fetch_garmin_native(
 
 async def _scan_hammerhead(
     index: dict[str, SyncIndexEntry],
-    settings: Settings,
+    ctx: UserContext,
 ) -> list[ActivityBrowseRow]:
-    hh = HammerheadClient(settings)
+    hh = HammerheadClient(ctx)
     if hh.load_tokens() is None:
         return []
 
@@ -256,14 +260,14 @@ async def _scan_hammerhead(
 
 def _scan_garmin(
     index: dict[str, SyncIndexEntry],
-    settings: Settings,
+    ctx: UserContext,
 ) -> list[ActivityBrowseRow]:
     by_garmin = {entry.garmin_id: entry for entry in index.values() if entry.garmin_id}
     rows: list[ActivityBrowseRow] = []
     start = 0
     while start < MAX_GM_SCAN_ITEMS:
         batch = list_garmin_activities(
-            limit=GM_SCAN_BATCH, start=start, settings=settings
+            limit=GM_SCAN_BATCH, start=start, ctx=ctx
         )
         if not batch:
             break

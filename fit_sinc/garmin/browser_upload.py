@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from fit_sinc.config import Settings, get_settings
+from fit_sinc.users.context import UserContext, as_context
 from fit_sinc.garmin.web_session import web_resume
 
 logger = logging.getLogger("fit_sinc.garmin.browser")
@@ -198,7 +198,7 @@ def _refresh_cookies_via_browser_sync(existing: dict[str, str]) -> dict[str, str
 def upload_fit_via_browser(
     fit_bytes: bytes,
     filename: str,
-    settings: Settings | None = None,
+    ctx: UserContext | None = None,
 ) -> dict[str, Any]:
     """Upload FIT via Garmin Connect import-data UI in headless Chromium."""
     import asyncio
@@ -207,11 +207,11 @@ def upload_fit_via_browser(
     try:
         asyncio.get_running_loop()
     except RuntimeError:
-        return _upload_fit_via_browser_sync(fit_bytes, filename, settings)
+        return _upload_fit_via_browser_sync(fit_bytes, filename, ctx)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
         future = pool.submit(
-            _upload_fit_via_browser_sync, fit_bytes, filename, settings
+            _upload_fit_via_browser_sync, fit_bytes, filename, ctx
         )
         return future.result(timeout=180)
 
@@ -219,7 +219,7 @@ def upload_fit_via_browser(
 def _upload_fit_via_browser_sync(
     fit_bytes: bytes,
     filename: str,
-    settings: Settings | None = None,
+    ctx: UserContext | None = None,
 ) -> dict[str, Any]:
     try:
         from playwright.sync_api import TimeoutError as PlaywrightTimeout
@@ -229,8 +229,8 @@ def _upload_fit_via_browser_sync(
             "Playwright not installed — run: pip install playwright && playwright install chromium"
         ) from exc
 
-    settings = settings or get_settings()
-    cookies = web_resume(settings)
+    user_ctx = as_context(ctx)
+    cookies = web_resume(user_ctx)
     if not cookies:
         raise RuntimeError(
             "Garmin web session not available — run: fit_sinc garmin import-web-cookies"

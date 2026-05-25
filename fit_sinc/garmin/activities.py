@@ -7,8 +7,8 @@ from datetime import datetime
 
 import garth
 
-from fit_sinc.config import Settings, get_settings
 from fit_sinc.garmin.session import garmin_resume
+from fit_sinc.users.context import UserContext, as_context
 
 
 @dataclass(frozen=True)
@@ -33,10 +33,10 @@ def list_garmin_activities(
     *,
     limit: int = 50,
     start: int = 0,
-    settings: Settings | None = None,
+    ctx: UserContext | None = None,
 ) -> list[GarminActivityItem]:
-    settings = settings or get_settings()
-    if not garmin_resume(settings):
+    user_ctx = as_context(ctx)
+    if not garmin_resume(user_ctx):
         raise RuntimeError("Garmin OAuth not connected — run: fit_sinc garmin login")
 
     from garth.data.activity import Activity

@@ -1,0 +1,69 @@
+{% extends "layouts/base.html" %}
+{% from "components/status_badge.html" import status_badge %}
+
+{% block title %}Dashboard preview — fit_sinc{% endblock %}
+
+{% block content %}
+<div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+  Превью дизайн-системы. Продакшен-страницы (<code>/</code>, <code>/activities</code>) по-прежнему на <code>html.py</code>.
+</div>
+
+<section class="mb-8 grid gap-4 sm:grid-cols-3">
+  <article class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <p class="text-sm text-slate-500">Hammerhead</p>
+    <p class="mt-1 text-lg font-semibold {% if hh_connected %}text-emerald-700{% else %}text-amber-700{% endif %}">
+      {{ "connected" if hh_connected else "not connected" }}
+    </p>
+  </article>
+  <article class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <p class="text-sm text-slate-500">Garmin upload</p>
+    <p class="mt-1 text-lg font-semibold {% if gm_upload_ready %}text-emerald-700{% else %}text-amber-700{% endif %}">
+      {{ gm_label }}
+    </p>
+  </article>
+  <article class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <p class="text-sm text-slate-500">Обновлено</p>
+    <p class="mt-1 font-mono text-sm tabular-nums">{{ fmt_now() }}</p>
+  </article>
+</section>
+
+<section class="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+  <div class="border-b border-slate-100 px-5 py-4">
+    <h2 class="text-lg font-semibold">Последние активности</h2>
+    <p class="text-sm text-slate-500">Демо-таблица — те же форматтеры, что в <code>html.py</code></p>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-100 text-sm">
+      <thead class="bg-slate-50 text-left text-slate-500">
+        <tr>
+          <th class="px-4 py-3 font-medium">Дата</th>
+          <th class="px-4 py-3 font-medium">Название</th>
+          <th class="px-4 py-3 font-medium">Статус</th>
+          <th class="px-4 py-3 font-medium">Дистанция</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for row in activity_rows %}
+        <tr class="hover:bg-slate-50/80">
+          <td class="px-4 py-3 whitespace-nowrap">{{ fmt_date(row.date) }}</td>
+          <td class="px-4 py-3">{{ row.name }}</td>
+          <td class="px-4 py-3">{{ status_badge(row.status, row.detail) }}</td>
+          <td class="px-4 py-3 tabular-nums">{{ fmt_km(row.distance_m) }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="px-4 py-8 text-center text-slate-500">Нет данных для превью</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="mt-8 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200"
+         hx-get="/ui-preview/fragment/status"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+  <p class="text-sm text-slate-500">HTMX: загрузка фрагмента…</p>
+</section>
+{% endblock %}

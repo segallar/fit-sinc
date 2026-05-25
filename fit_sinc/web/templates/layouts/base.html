@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}fit_sinc{% endblock %}</title>
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="min-h-full bg-slate-50 text-slate-900 antialiased">
+  <div class="mx-auto flex min-h-full max-w-6xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+    <header class="mb-6 flex items-center gap-3">
+      <img src="/static/icon.svg" alt="" width="48" height="48" class="rounded-xl shadow-sm">
+      <div>
+        <p class="text-sm font-medium text-teal-700">UI v2 preview</p>
+        <h1 class="text-2xl font-semibold tracking-tight">fit_sinc</h1>
+      </div>
+    </header>
+
+    {% if nav_items is defined and nav_items %}
+    <nav class="mb-6 flex flex-wrap gap-2" aria-label="Основная навигация">
+      {% for href, label in nav_items %}
+      {% set path = href or "/" %}
+      {% set active = (active_nav == href) or (active_nav == "/" and href == "") %}
+      <a href="{{ path }}"
+         class="rounded-full px-4 py-2 text-sm font-medium transition
+                {% if active %}bg-teal-700 text-white shadow-sm{% else %}bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100{% endif %}">
+        {{ label }}
+      </a>
+      {% endfor %}
+    </nav>
+    {% endif %}
+
+    <main class="flex-1">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="mt-10 border-t border-slate-200 pt-4 text-xs text-slate-500">
+      {% block footer %}
+      <p>Слой v2: <code class="rounded bg-slate-100 px-1">/ui-preview</code> — старые маршруты без изменений.</p>
+      {% endblock %}
+    </footer>
+  </div>
+</body>
+</html>

@@ -41,11 +41,12 @@ class TestStore(unittest.TestCase):
         from pathlib import Path
 
         from fit_sinc.state.store import Store
+        from fit_sinc.users.context import DEFAULT_USER_ID
 
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / "test.db"
             store = Store(db)
-            self.assertFalse(store.is_synced("nonexistent-id"))
+            self.assertFalse(store.is_synced(DEFAULT_USER_ID, "nonexistent-id"))
 
 
 if __name__ == "__main__":

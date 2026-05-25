@@ -1,71 +1,41 @@
+"""User cabinet under /app (session auth)."""
+
+from __future__ import annotations
+
 import asyncio
-import json
 import logging
-from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query, Request
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 
 from fit_sinc.activities.browse import ActivityFilters, fetch_activities_page
 from fit_sinc.config import get_settings
 from fit_sinc.garmin.session import garmin_status
 from fit_sinc.garmin.web_refresh import refresh_web_session, session_monitor
 from fit_sinc.hammerhead.client import HammerheadClient
-from fit_sinc.hammerhead.oauth import verify_webhook_signature
 from fit_sinc.state.store import Store
 from fit_sinc.sync.service import sync_activity
+from fit_sinc.users.context import UserContext
 from fit_sinc.web import html as H
-from fit_sinc.web.ui_v2 import router as ui_v2_router
+from fit_sinc.web.auth import login_user, logout_user, user_context_from_session
 
 logger = logging.getLogger("fit_sinc")
-
-
-async def _jwt_refresh_loop() -> None:
-    settings = get_settings()
-    interval = max(60, settings.garmin_jwt_refresh_interval_sec)
-    while True:
-        try:
-            result = await asyncio.to_thread(
-                refresh_web_session, settings, trigger="background"
-            )
-            if result.get("refreshed"):
-                logger.info(
-                    "background JWT refresh via %s",
-                    result.get("method"),
-                )
-        except Exception as exc:
-            logger.exception("background JWT refresh failed")
-            try:
-                _store().log_session_refresh("background", "error", str(exc)[:500])
-            except Exception:
-                pass
-        await asyncio.sleep(interval)
-
-
-@asynccontextmanager
-async def _lifespan(_app: FastAPI):
-    task = asyncio.create_task(_jwt_refresh_loop())
-    try:
-        yield
-    finally:
-        task.cancel()
-        with suppress(asyncio.CancelledError):
-            await task
-
-
-app = FastAPI(title="fit_sinc", version="0.3.2", lifespan=_lifespan)
-app.include_router(ui_v2_router)
-
-STATIC_DIR = Path(__file__).parent / "static"
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+router = APIRouter(prefix="/app", tags=["app"])
+P = "/app"
 
 
 def _store() -> Store:
     return Store(get_settings().db_path)
+
+
+def _ctx(request: Request) -> UserContext:
+    ctx = user_context_from_session(request)
+    if not ctx:
+        raise HTTPException(status_code=401)
+    return ctx
 
 
 def _fit_sinc_status_class(status: str) -> str:
@@ -85,10 +55,10 @@ def _render_activity_actions(row: Any, source: str) -> str:
     if source == "hammerhead" and row.hammerhead_id:
         aid_q = quote(row.hammerhead_id, safe="")
         if row.fit_available:
-            parts.append(f'<a class="btn" href="/activities/{aid_q}/fit">.fit</a>')
+            parts.append(f'<a class="btn" href="{P}/activities/{aid_q}/fit">.fit</a>')
         if row.fit_sinc_status != "synced":
             parts.append(
-                f"""<form class="inline" method="post" action="/activities/{aid_q}/retry">
+                f"""<form class="inline" method="post" action="{P}/activities/{aid_q}/retry">
               <button class="btn" type="submit">sync</button></form>"""
             )
     if source == "garmin" and row.garmin_id:
@@ -99,67 +69,55 @@ def _render_activity_actions(row: Any, source: str) -> str:
         )
         if row.hammerhead_id and row.fit_available:
             aid_q = quote(row.hammerhead_id, safe="")
-            parts.append(f'<a class="btn" href="/activities/{aid_q}/fit">.fit</a>')
+            parts.append(f'<a class="btn" href="{P}/activities/{aid_q}/fit">.fit</a>')
     return " ".join(parts)
 
 
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon() -> FileResponse:
-    return FileResponse(STATIC_DIR / "favicon.ico", media_type="image/x-icon")
+@router.get("/login", response_class=HTMLResponse, include_in_schema=False)
+async def app_login_form(error: str = "") -> str:
+    err = f'<p class="err">Invalid email or password</p>' if error else ""
+    body = f"""
+  <h2>Sign in</h2>
+  {err}
+  <form method="post" action="{P}/login" class="filters" style="max-width: 360px;">
+    <label>Email <input type="email" name="email" required autocomplete="username"></label>
+    <label>Password <input type="password" name="password" required autocomplete="current-password"></label>
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+"""
+    return f"""<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">
+<title>Login — fit_sinc</title><style>{H.BASE_CSS}</style></head><body>
+<header class="hero"><img src="/static/icon.svg" width="48" height="48" alt=""><h1>fit_sinc</h1></header>
+{body}</body></html>"""
 
 
-@app.get("/health")
-async def health() -> dict[str, str]:
-    return {"status": "ok", "service": "fit_sinc"}
+@router.post("/login", include_in_schema=False)
+async def app_login_submit(
+    request: Request,
+    email: str = Form(""),
+    password: str = Form(""),
+) -> RedirectResponse:
+    user = _store().verify_user_password(email, password)
+    if not user:
+        return RedirectResponse(f"{P}/login?error=1", status_code=303)
+    login_user(request, user.id)
+    return RedirectResponse(f"{P}/", status_code=303)
 
 
-@app.post("/webhooks/hammerhead")
-async def hammerhead_webhook(request: Request, background_tasks: BackgroundTasks) -> JSONResponse:
-    body = await request.body()
-    signature = request.headers.get("X-Hmac-Signature", "")
-    settings = get_settings()
-
-    if settings.hammerhead_webhook_secret:
-        if not verify_webhook_signature(body, settings.hammerhead_webhook_secret, signature):
-            logger.warning("webhook rejected: invalid HMAC signature")
-            return JSONResponse({"status": "forbidden"}, status_code=403)
-    elif signature:
-        logger.warning("webhook HMAC present but HAMMERHEAD_WEBHOOK_SECRET not configured")
-
-    try:
-        payload = json.loads(body)
-    except json.JSONDecodeError:
-        logger.warning("webhook invalid JSON")
-        return JSONResponse({"status": "bad_request"}, status_code=400)
-
-    activity_id = payload.get("activityId")
-    user_id = payload.get("userId")
-    logger.info("webhook activityId=%s userId=%s", activity_id, user_id)
-
-    if activity_id:
-        store = _store()
-        store.log_event("webhook_received", f"userId={user_id}", activity_id)
-        background_tasks.add_task(_run_sync, activity_id)
-    else:
-        logger.warning("webhook missing activityId: %s", body[:200])
-
-    return JSONResponse({"status": "accepted"})
+@router.get("/logout", include_in_schema=False)
+async def app_logout(request: Request) -> RedirectResponse:
+    logout_user(request)
+    return RedirectResponse(f"{P}/login", status_code=303)
 
 
-async def _run_sync(activity_id: str) -> None:
-    try:
-        result = await sync_activity(activity_id)
-        logger.info("webhook sync %s -> %s", activity_id, result.status)
-    except Exception:
-        logger.exception("webhook sync failed for %s", activity_id)
-
-
-@app.get("/", response_class=HTMLResponse)
-async def dashboard() -> str:
+@router.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def dashboard(request: Request) -> str:
+    ctx = _ctx(request)
+    user = _store().get_user(ctx.user_id)
     now = H.fmt_now()
-    hh = HammerheadClient().status()
-    gm = garmin_status()
-    activities = _store().list_activities(limit=30)
+    hh = HammerheadClient(ctx).status()
+    gm = garmin_status(ctx)
+    activities = _store().list_activities(ctx.user_id, limit=30)
 
     hh_class = "ok" if hh.get("connected") else "warn"
     if gm.get("upload_ready"):
@@ -178,10 +136,10 @@ async def dashboard() -> str:
         status_cls = f"status-{a.sync_status}"
         fit_link = ""
         if a.fit_path and Path(a.fit_path).is_file():
-            fit_link = f'<a class="btn" href="/activities/{aid_q}/fit">.fit</a>'
+            fit_link = f'<a class="btn" href="{P}/activities/{aid_q}/fit">.fit</a>'
         retry = ""
         if a.sync_status in ("error", "pending"):
-            retry = f"""<form class="inline" method="post" action="/activities/{aid_q}/retry">
+            retry = f"""<form class="inline" method="post" action="{P}/activities/{aid_q}/retry">
               <button class="btn" type="submit">retry</button></form>"""
         err_tip = f' title="{H.esc(a.error_message)}"' if a.error_message else ""
         rows.append(
@@ -194,11 +152,13 @@ async def dashboard() -> str:
             f"</tr>"
         )
     if not rows:
-        rows.append('<tr><td colspan="5"><em>No activities yet — waiting for webhook or run backfill.</em></td></tr>')
+        rows.append(
+            '<tr><td colspan="5"><em>No activities yet — waiting for webhook or run backfill.</em></td></tr>'
+        )
 
+    who = user.display_name if user else ctx.user_id
     body = f"""
-  <p class="ok">Phase 2 — sync active</p>
-  <p>Hammerhead → Garmin Connect</p>
+  <p>Hammerhead → Garmin Connect · <strong>{H.esc(who)}</strong></p>
 
   <h2>Connections</h2>
   <table>
@@ -211,13 +171,14 @@ async def dashboard() -> str:
     <tr><th>Date</th><th>Name</th><th>Status</th><th>Distance</th><th>Actions</th></tr>
     {"".join(rows)}
   </table>
-  <p><small>Updated {H.esc(now)}</small></p>
+  <p><small>Updated {H.esc(now)} · TZ {H.esc(user.timezone if user else "—")}</small></p>
 """
-    return H.page("Dashboard", body, active="/")
+    return H.page("Dashboard", body, active="/", prefix=P)
 
 
-@app.get("/activities", response_class=HTMLResponse)
+@router.get("/activities", response_class=HTMLResponse, include_in_schema=False)
 async def activities_browser(
+    request: Request,
     source: str = Query("hammerhead", pattern="^(hammerhead|garmin)$"),
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=10, le=100),
@@ -227,6 +188,7 @@ async def activities_browser(
     date_from: str = Query(""),
     date_to: str = Query(""),
 ) -> str:
+    ctx = _ctx(request)
     filters = ActivityFilters(
         q=q.strip(),
         status=status.strip(),
@@ -249,6 +211,7 @@ async def activities_browser(
         page=page,
         per_page=per_page,
         filters=filters,
+        ctx=ctx,
     )
 
     hh_active = "active" if source == "hammerhead" else ""
@@ -286,9 +249,7 @@ async def activities_browser(
         )
 
     if result.error:
-        rows = [
-            f'<tr><td colspan="8" class="err">{H.esc(result.error)}</td></tr>',
-        ]
+        rows = [f'<tr><td colspan="8" class="err">{H.esc(result.error)}</td></tr>']
     elif not rows:
         rows.append('<tr><td colspan="8"><em>No activities match filters.</em></td></tr>')
 
@@ -299,7 +260,7 @@ async def activities_browser(
     if source == "garmin" and not filters.is_active() and result.page == result.total_pages:
         total_label = f"{from_idx}–{to_idx} loaded"
 
-    pager = H.render_pager("/activities", query_params, page=result.page, total_pages=result.total_pages)
+    pager = H.render_pager(f"{P}/activities", query_params, page=result.page, total_pages=result.total_pages)
     reset_q = H.query_string({"source": source, "per_page": per_page})
 
     body = f"""
@@ -307,11 +268,11 @@ async def activities_browser(
   <p>Hammerhead / Garmin with fit_sinc sync status.</p>
 
   <div class="tabs">
-    <a href="/activities?{H.query_string({"source": "hammerhead", "per_page": per_page})}" class="{hh_active}">Hammerhead</a>
-    <a href="/activities?{H.query_string({"source": "garmin", "per_page": per_page})}" class="{gm_active}">Garmin</a>
+    <a href="{P}/activities?{H.query_string({"source": "hammerhead", "per_page": per_page})}" class="{hh_active}">Hammerhead</a>
+    <a href="{P}/activities?{H.query_string({"source": "garmin", "per_page": per_page})}" class="{gm_active}">Garmin</a>
   </div>
 
-  <form class="filters" method="get" action="/activities">
+  <form class="filters" method="get" action="{P}/activities">
     <input type="hidden" name="source" value="{H.esc(source)}">
     <label>Name <input type="search" name="q" value="{H.esc(filters.q)}" placeholder="Morning Ride"></label>
     <label>fit_sinc
@@ -335,7 +296,7 @@ async def activities_browser(
     </label>
     <div class="filters-actions">
       <button class="btn" type="submit">Filter</button>
-      <a class="btn" href="/activities?{reset_q}">Reset</a>
+      <a class="btn" href="{P}/activities?{reset_q}">Reset</a>
     </div>
   </form>
 
@@ -350,37 +311,32 @@ async def activities_browser(
     {"".join(rows)}
   </table>
   </div>
-  <div class="pager">
-    {pager}
-  </div>
+  <div class="pager">{pager}</div>
   <p><small>Updated {H.esc(H.fmt_now())}</small></p>
 """
-    return H.page("Activities", body, active="/activities", wide=True)
+    return H.page("Activities", body, active="/activities", wide=True, prefix=P)
 
 
-@app.get("/log", response_class=HTMLResponse)
-async def sync_log(page: int = Query(1, ge=1)) -> str:
+@router.get("/log", response_class=HTMLResponse, include_in_schema=False)
+async def sync_log(request: Request, page: int = Query(1, ge=1)) -> str:
+    ctx = _ctx(request)
     per_page = 50
     store = _store()
-    total = store.count_events()
+    total = store.count_events(user_id=ctx.user_id)
     offset = (page - 1) * per_page
-    events = store.list_events(limit=per_page, offset=offset)
+    events = store.list_events(limit=per_page, offset=offset, user_id=ctx.user_id)
     has_next = offset + len(events) < total
 
-    prev_link = ""
-    next_link = ""
-    if page > 1:
-        prev_link = f'<a class="btn" href="/log?page={page - 1}">← Prev</a>'
-    if has_next:
-        next_link = f'<a class="btn" href="/log?page={page + 1}">Next →</a>'
+    prev_link = f'<a class="btn" href="{P}/log?page={page - 1}">← Prev</a>' if page > 1 else ""
+    next_link = f'<a class="btn" href="{P}/log?page={page + 1}">Next →</a>' if has_next else ""
 
     rows = []
     for e in events:
         rows.append(
             f"<tr>"
-            f"<td class=\"mono\">{H.fmt_date(e.created_at)}</td>"
+            f'<td class="mono">{H.fmt_date(e.created_at)}</td>'
             f"<td>{H.esc(e.event_type)}</td>"
-            f"<td class=\"mono\">{H.esc(e.activity_id)}</td>"
+            f'<td class="mono">{H.esc(e.activity_id)}</td>'
             f"<td>{H.esc(e.message)}</td>"
             f"</tr>"
         )
@@ -389,7 +345,6 @@ async def sync_log(page: int = Query(1, ge=1)) -> str:
 
     from_idx = offset + 1 if total else 0
     to_idx = offset + len(events)
-
     body = f"""
   <h2>Sync log</h2>
   <p><small>{from_idx}–{to_idx} of {total}</small></p>
@@ -397,13 +352,9 @@ async def sync_log(page: int = Query(1, ge=1)) -> str:
     <tr><th>Time</th><th>Event</th><th>Activity</th><th>Message</th></tr>
     {"".join(rows)}
   </table>
-  <div class="pager">
-    {prev_link}
-    <span>Page {page}</span>
-    {next_link}
-  </div>
+  <div class="pager">{prev_link}<span>Page {page}</span>{next_link}</div>
 """
-    return H.page("Sync log", body, active="/log")
+    return H.page("Sync log", body, active="/log", prefix=P)
 
 
 def _session_event_class(event_type: str) -> str:
@@ -414,11 +365,11 @@ def _session_event_class(event_type: str) -> str:
     return ""
 
 
-@app.get("/session", response_class=HTMLResponse)
-async def session_monitor_page() -> str:
-    settings = get_settings()
-    mon = session_monitor(settings)
-    events = _store().list_session_refresh_events(limit=150)
+@router.get("/session", response_class=HTMLResponse, include_in_schema=False)
+async def session_monitor_page(request: Request) -> str:
+    ctx = _ctx(request)
+    mon = session_monitor(ctx)
+    events = _store().list_session_refresh_events(limit=150, user_id=ctx.user_id)
 
     ready_cls = "status-ok" if mon["upload_ready"] else "status-failed"
     ready_label = "ready" if mon["upload_ready"] else "not ready"
@@ -438,17 +389,13 @@ async def session_monitor_page() -> str:
             f"</tr>"
         )
     if not log_rows:
-        log_rows.append(
-            '<tr><td colspan="4"><em>No refresh events yet.</em></td></tr>'
-        )
+        log_rows.append('<tr><td colspan="4"><em>No refresh events yet.</em></td></tr>')
 
     interval_min = mon["refresh_interval_sec"] // 60
     before_h = mon["refresh_before_sec"] // 3600
-
     body = f"""
   <h2>Garmin web session</h2>
   <p>Automatic JWT_WEB refresh for FIT upload (Playwright).</p>
-
   <div class="panel">
   <h3>Status</h3>
   <table>
@@ -461,11 +408,10 @@ async def session_monitor_page() -> str:
     <tr><th>Background check</th><td>every {interval_min} min</td></tr>
     <tr><th>Refresh before expiry</th><td>{before_h} h</td></tr>
   </table>
-  <form method="post" action="/session/refresh" style="margin-top: 1rem;">
+  <form method="post" action="{P}/session/refresh" style="margin-top: 1rem;">
     <button class="btn" type="submit">Refresh now</button>
   </form>
   </div>
-
   <h3>Refresh log</h3>
   <table>
     <tr><th>Time</th><th>Trigger</th><th>Event</th><th>Message</th></tr>
@@ -473,27 +419,27 @@ async def session_monitor_page() -> str:
   </table>
   <p><small>Updated {H.esc(H.fmt_now())}</small></p>
 """
-    return H.page("Garmin session", body, active="/session")
+    return H.page("Garmin session", body, active="/session", prefix=P)
 
 
-@app.post("/session/refresh")
-async def session_refresh_now() -> RedirectResponse:
-    settings = get_settings()
-    await asyncio.to_thread(refresh_web_session, settings, force=True, trigger="web")
-    return RedirectResponse(url="/session", status_code=303)
+@router.post("/session/refresh", include_in_schema=False)
+async def session_refresh_now(request: Request) -> RedirectResponse:
+    ctx = _ctx(request)
+    await asyncio.to_thread(refresh_web_session, ctx, force=True, trigger="web")
+    return RedirectResponse(url=f"{P}/session", status_code=303)
 
 
-@app.get("/activities/{activity_id}/fit")
-async def download_fit(activity_id: str) -> FileResponse:
-    row = _store().get_activity(activity_id)
+@router.get("/activities/{activity_id}/fit", include_in_schema=False)
+async def download_fit(request: Request, activity_id: str) -> FileResponse:
+    ctx = _ctx(request)
+    row = _store().get_activity(ctx.user_id, activity_id)
     if row and row.fit_path and Path(row.fit_path).is_file():
         return FileResponse(
             row.fit_path,
             media_type="application/vnd.ant.fit",
             filename=Path(row.fit_path).name,
         )
-    settings = get_settings()
-    candidate = settings.fits_dir / f"{activity_id.replace('/', '_')}.fit"
+    candidate = ctx.fits_dir / f"{activity_id.replace('/', '_')}.fit"
     if candidate.is_file():
         return FileResponse(
             candidate,
@@ -503,14 +449,19 @@ async def download_fit(activity_id: str) -> FileResponse:
     raise HTTPException(status_code=404, detail="FIT file not found")
 
 
-@app.post("/activities/{activity_id}/retry")
-async def retry_activity(activity_id: str, background_tasks: BackgroundTasks) -> RedirectResponse:
-    background_tasks.add_task(_run_sync_force, activity_id)
-    return RedirectResponse(url="/activities?source=hammerhead", status_code=303)
+@router.post("/activities/{activity_id}/retry", include_in_schema=False)
+async def retry_activity(
+    request: Request,
+    activity_id: str,
+    background_tasks: BackgroundTasks,
+) -> RedirectResponse:
+    ctx = _ctx(request)
+    background_tasks.add_task(_run_sync_force, activity_id, ctx.user_id)
+    return RedirectResponse(url=f"{P}/activities?source=hammerhead", status_code=303)
 
 
-async def _run_sync_force(activity_id: str) -> None:
+async def _run_sync_force(activity_id: str, user_id: str) -> None:
     try:
-        await sync_activity(activity_id, force=True)
+        await sync_activity(activity_id, force=True, user_id=user_id)
     except Exception:
-        logger.exception("retry sync failed for %s", activity_id)
+        logger.exception("retry sync failed for %s user=%s", activity_id, user_id)

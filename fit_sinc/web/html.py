@@ -1,4 +1,6 @@
 import html
+import json
+from typing import Any
 from urllib.parse import urlencode
 
 from fit_sinc.timeutil import format_datetime_parts, format_iso, format_ts, format_ttl, now_msk
@@ -168,7 +170,14 @@ def fmt_ttl(seconds: float | None) -> str:
     return format_ttl(seconds)
 
 
-def page(title: str, body: str, *, active: str = "", wide: bool = False) -> str:
+def page(
+    title: str,
+    body: str,
+    *,
+    active: str = "",
+    wide: bool = False,
+    prefix: str = "/app",
+) -> str:
     nav = [
         ("", "Dashboard"),
         ("/activities", "Activities"),
@@ -176,10 +185,12 @@ def page(title: str, body: str, *, active: str = "", wide: bool = False) -> str:
         ("/session", "Garmin session"),
     ]
     links = []
+    logout = f'<a href="{prefix}/logout">Logout</a>'
     for href, label in nav:
         cls = ' style="font-weight:600"' if (href == active or (active == "/" and href == "")) else ""
-        path = href or "/"
+        path = f"{prefix}{href}" if href else f"{prefix}/"
         links.append(f'<a href="{path}"{cls}>{esc(label)}</a>')
+    links.append(logout)
     body_class = "wide" if wide else ""
     body_attr = f' class="{body_class}"' if body_class else ""
     return f"""<!DOCTYPE html>

@@ -1,10 +1,16 @@
 import json
+import re
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
+
+from fit_sinc.users.models import UserRow
+from fit_sinc.users.passwords import hash_password
+
+_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{1,62}$")
 
 
 def _utcnow() -> str:
@@ -13,6 +19,7 @@ def _utcnow() -> str:
 
 @dataclass(frozen=True)
 class ActivityRow:
+    user_id: str
     activity_id: str
     name: str | None
     activity_date: str | None
@@ -27,6 +34,7 @@ class ActivityRow:
 @dataclass(frozen=True)
 class SyncEventRow:
     id: int
+    user_id: str | None
     activity_id: str | None
     event_type: str
     message: str | None
@@ -47,6 +55,7 @@ class SyncIndexEntry:
 @dataclass(frozen=True)
 class SessionRefreshEventRow:
     id: int
+    user_id: str | None
     trigger: str
     event_type: str
     message: str | None
@@ -69,12 +78,31 @@ class Store:
         finally:
             conn.close()
 
+    def _table_has_column(self, conn: sqlite3.Connection, table: str, column: str) -> bool:
+        rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+        return any(r["name"] == column for r in rows)
+
     def _init_schema(self) -> None:
         with self._conn() as conn:
             conn.executescript(
                 """
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT PRIMARY KEY,
+                    slug TEXT NOT NULL UNIQUE,
+                    display_name TEXT NOT NULL,
+                    email TEXT NOT NULL UNIQUE,
+                    telegram TEXT,
+                    timezone TEXT NOT NULL DEFAULT 'Europe/Moscow',
+                    hammerhead_user_id TEXT UNIQUE,
+                    password_hash TEXT NOT NULL,
+                    disabled INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
                 CREATE TABLE IF NOT EXISTS activities (
-                    activity_id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    activity_id TEXT NOT NULL,
                     name TEXT,
                     activity_date TEXT,
                     distance REAL,
@@ -85,11 +113,16 @@ class Store:
                     synced_at TEXT,
                     error_message TEXT,
                     created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (user_id, activity_id)
                 );
+
+                CREATE INDEX IF NOT EXISTS idx_activities_user_date
+                    ON activities(user_id, activity_date DESC);
 
                 CREATE TABLE IF NOT EXISTS sync_events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT,
                     activity_id TEXT,
                     event_type TEXT NOT NULL,
                     message TEXT,
@@ -101,6 +134,7 @@ class Store:
 
                 CREATE TABLE IF NOT EXISTS session_refresh_events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT,
                     trigger TEXT NOT NULL,
                     event_type TEXT NOT NULL,
                     message TEXT,
@@ -111,17 +145,252 @@ class Store:
                     ON session_refresh_events(created_at DESC);
                 """
             )
+            self._migrate_legacy_schema(conn)
 
-    def is_synced(self, activity_id: str) -> bool:
+    def _migrate_legacy_schema(self, conn: sqlite3.Connection) -> None:
+        if not self._table_has_column(conn, "activities", "user_id"):
+            conn.execute(
+                """
+                CREATE TABLE activities_v2 (
+                    user_id TEXT NOT NULL DEFAULT 'default',
+                    activity_id TEXT NOT NULL,
+                    name TEXT,
+                    activity_date TEXT,
+                    distance REAL,
+                    duration REAL,
+                    sync_status TEXT NOT NULL DEFAULT 'pending',
+                    fit_path TEXT,
+                    garmin_result TEXT,
+                    synced_at TEXT,
+                    error_message TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (user_id, activity_id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                INSERT INTO activities_v2 (
+                    user_id, activity_id, name, activity_date, distance, duration,
+                    sync_status, fit_path, garmin_result, synced_at, error_message,
+                    created_at, updated_at
+                )
+                SELECT
+                    'default', activity_id, name, activity_date, distance, duration,
+                    sync_status, fit_path, garmin_result, synced_at, error_message,
+                    created_at, updated_at
+                FROM activities
+                """
+            )
+            conn.execute("DROP TABLE activities")
+            conn.execute("ALTER TABLE activities_v2 RENAME TO activities")
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_activities_user_date
+                    ON activities(user_id, activity_date DESC)
+                """
+            )
+
+        if not self._table_has_column(conn, "sync_events", "user_id"):
+            conn.execute("ALTER TABLE sync_events ADD COLUMN user_id TEXT")
+            conn.execute(
+                """
+                UPDATE sync_events SET user_id = (
+                    SELECT user_id FROM activities
+                    WHERE activities.activity_id = sync_events.activity_id
+                    LIMIT 1
+                )
+                WHERE user_id IS NULL
+                """
+            )
+            conn.execute("UPDATE sync_events SET user_id = 'default' WHERE user_id IS NULL")
+
+        if not self._table_has_column(conn, "session_refresh_events", "user_id"):
+            conn.execute("ALTER TABLE session_refresh_events ADD COLUMN user_id TEXT")
+            conn.execute(
+                "UPDATE session_refresh_events SET user_id = 'default' WHERE user_id IS NULL"
+            )
+
+    @staticmethod
+    def _row_to_user(r: sqlite3.Row) -> UserRow:
+        return UserRow(
+            id=r["id"],
+            slug=r["slug"],
+            display_name=r["display_name"],
+            email=r["email"],
+            telegram=r["telegram"],
+            timezone=r["timezone"],
+            hammerhead_user_id=r["hammerhead_user_id"],
+            disabled=bool(r["disabled"]),
+            created_at=r["created_at"],
+            updated_at=r["updated_at"],
+        )
+
+    def ensure_default_user(
+        self,
+        *,
+        email: str = "owner@local",
+        display_name: str = "Default",
+        password: str = "changeme",
+        hammerhead_user_id: str | None = None,
+    ) -> UserRow:
+        existing = self.get_user("default")
+        if existing:
+            if hammerhead_user_id and not existing.hammerhead_user_id:
+                self.update_user(
+                    "default",
+                    hammerhead_user_id=hammerhead_user_id,
+                )
+                return self.get_user("default") or existing
+            return existing
+        return self.create_user(
+            slug="default",
+            display_name=display_name,
+            email=email,
+            password=password,
+            timezone="Europe/Moscow",
+            hammerhead_user_id=hammerhead_user_id,
+            user_id="default",
+        )
+
+    def create_user(
+        self,
+        *,
+        slug: str,
+        display_name: str,
+        email: str,
+        password: str,
+        timezone: str = "Europe/Moscow",
+        telegram: str | None = None,
+        hammerhead_user_id: str | None = None,
+        user_id: str | None = None,
+    ) -> UserRow:
+        slug = slug.strip().lower()
+        if not _SLUG_RE.match(slug):
+            raise ValueError("slug: 2–63 chars, a-z, 0-9, _, -")
+        uid = (user_id or slug).strip()
+        now = _utcnow()
+        with self._conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO users (
+                    id, slug, display_name, email, telegram, timezone,
+                    hammerhead_user_id, password_hash, disabled, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+                """,
+                (
+                    uid,
+                    slug,
+                    display_name.strip(),
+                    email.strip().lower(),
+                    telegram.strip() if telegram else None,
+                    timezone.strip() or "Europe/Moscow",
+                    hammerhead_user_id,
+                    hash_password(password),
+                    now,
+                    now,
+                ),
+            )
+        row = self.get_user(uid)
+        if not row:
+            raise RuntimeError("user create failed")
+        return row
+
+    def update_user(
+        self,
+        user_id: str,
+        *,
+        display_name: str | None = None,
+        email: str | None = None,
+        telegram: str | None = None,
+        timezone: str | None = None,
+        hammerhead_user_id: str | None = None,
+        password: str | None = None,
+        disabled: bool | None = None,
+    ) -> None:
+        fields: list[str] = ["updated_at = ?"]
+        values: list[Any] = [_utcnow()]
+        for col, val in (
+            ("display_name", display_name),
+            ("email", email.strip().lower() if email else None),
+            ("telegram", telegram),
+            ("timezone", timezone),
+            ("hammerhead_user_id", hammerhead_user_id),
+            ("disabled", 1 if disabled else 0 if disabled is False else None),
+        ):
+            if val is not None:
+                fields.append(f"{col} = ?")
+                values.append(val)
+        if password:
+            fields.append("password_hash = ?")
+            values.append(hash_password(password))
+        values.append(user_id)
+        with self._conn() as conn:
+            conn.execute(
+                f"UPDATE users SET {', '.join(fields)} WHERE id = ?",
+                values,
+            )
+
+    def get_user(self, user_id: str) -> UserRow | None:
+        with self._conn() as conn:
+            r = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        return self._row_to_user(r) if r else None
+
+    def get_user_by_email(self, email: str) -> UserRow | None:
+        with self._conn() as conn:
+            r = conn.execute(
+                "SELECT * FROM users WHERE email = ?",
+                (email.strip().lower(),),
+            ).fetchone()
+        return self._row_to_user(r) if r else None
+
+    def get_user_by_hammerhead_id(self, hammerhead_user_id: str) -> UserRow | None:
+        with self._conn() as conn:
+            r = conn.execute(
+                "SELECT * FROM users WHERE hammerhead_user_id = ?",
+                (str(hammerhead_user_id),),
+            ).fetchone()
+        return self._row_to_user(r) if r else None
+
+    def list_users(self) -> list[UserRow]:
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM users ORDER BY display_name COLLATE NOCASE"
+            ).fetchall()
+        return [self._row_to_user(r) for r in rows]
+
+    def verify_user_password(self, email: str, password: str) -> UserRow | None:
+        with self._conn() as conn:
+            r = conn.execute(
+                "SELECT * FROM users WHERE email = ?",
+                (email.strip().lower(),),
+            ).fetchone()
+        if not r:
+            return None
+        from fit_sinc.users.passwords import verify_password
+
+        if not verify_password(password, r["password_hash"]):
+            return None
+        user = self._row_to_user(r)
+        if user.disabled:
+            return None
+        return user
+
+    def is_synced(self, user_id: str, activity_id: str) -> bool:
         with self._conn() as conn:
             row = conn.execute(
-                "SELECT sync_status FROM activities WHERE activity_id = ?",
-                (activity_id,),
+                """
+                SELECT sync_status FROM activities
+                WHERE user_id = ? AND activity_id = ?
+                """,
+                (user_id, activity_id),
             ).fetchone()
         return row is not None and row["sync_status"] == "synced"
 
     def upsert_activity(
         self,
+        user_id: str,
         activity_id: str,
         *,
         name: str | None = None,
@@ -142,8 +411,11 @@ class Store:
         )
         with self._conn() as conn:
             existing = conn.execute(
-                "SELECT activity_id FROM activities WHERE activity_id = ?",
-                (activity_id,),
+                """
+                SELECT activity_id FROM activities
+                WHERE user_id = ? AND activity_id = ?
+                """,
+                (user_id, activity_id),
             ).fetchone()
             if existing:
                 fields: list[str] = ["updated_at = ?"]
@@ -162,21 +434,23 @@ class Store:
                     if val is not None:
                         fields.append(f"{col} = ?")
                         values.append(val)
-                values.append(activity_id)
+                values.extend([user_id, activity_id])
                 conn.execute(
-                    f"UPDATE activities SET {', '.join(fields)} WHERE activity_id = ?",
+                    f"UPDATE activities SET {', '.join(fields)} "
+                    "WHERE user_id = ? AND activity_id = ?",
                     values,
                 )
             else:
                 conn.execute(
                     """
                     INSERT INTO activities (
-                        activity_id, name, activity_date, distance, duration,
+                        user_id, activity_id, name, activity_date, distance, duration,
                         sync_status, fit_path, garmin_result, synced_at, error_message,
                         created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
+                        user_id,
                         activity_id,
                         name,
                         activity_date,
@@ -194,6 +468,7 @@ class Store:
 
     def mark_synced(
         self,
+        user_id: str,
         activity_id: str,
         fit_path: str,
         garmin_result: dict[str, Any],
@@ -204,6 +479,7 @@ class Store:
         duration: float | None = None,
     ) -> None:
         self.upsert_activity(
+            user_id,
             activity_id,
             name=name,
             activity_date=activity_date,
@@ -216,8 +492,9 @@ class Store:
             error_message=None,
         )
 
-    def mark_error(self, activity_id: str, message: str) -> None:
+    def mark_error(self, user_id: str, activity_id: str, message: str) -> None:
         self.upsert_activity(
+            user_id,
             activity_id,
             sync_status="error",
             error_message=message[:2000],
@@ -228,56 +505,67 @@ class Store:
         event_type: str,
         message: str = "",
         activity_id: str | None = None,
+        *,
+        user_id: str | None = None,
     ) -> None:
         with self._conn() as conn:
             conn.execute(
                 """
-                INSERT INTO sync_events (activity_id, event_type, message, created_at)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO sync_events (user_id, activity_id, event_type, message, created_at)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                (activity_id, event_type, message[:2000] or None, _utcnow()),
+                (user_id, activity_id, event_type, message[:2000] or None, _utcnow()),
             )
 
-    def list_activities(self, limit: int = 50) -> list[ActivityRow]:
+    def count_activities_by_status(self, user_id: str) -> dict[str, int]:
         with self._conn() as conn:
             rows = conn.execute(
                 """
-                SELECT activity_id, name, activity_date, distance, duration,
+                SELECT sync_status, COUNT(*) AS n FROM activities
+                WHERE user_id = ?
+                GROUP BY sync_status
+                """,
+                (user_id,),
+            ).fetchall()
+        return {str(r["sync_status"]): int(r["n"]) for r in rows}
+
+    def list_activities(
+        self,
+        user_id: str,
+        limit: int = 50,
+        *,
+        sync_status: str | None = None,
+    ) -> list[ActivityRow]:
+        with self._conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT user_id, activity_id, name, activity_date, distance, duration,
                        sync_status, fit_path, synced_at, error_message
                 FROM activities
+                WHERE user_id = ? AND (? IS NULL OR sync_status = ?)
                 ORDER BY COALESCE(activity_date, created_at) DESC
                 LIMIT ?
                 """,
-                (limit,),
+                (user_id, sync_status, sync_status, limit),
             ).fetchall()
-        return [
-            ActivityRow(
-                activity_id=r["activity_id"],
-                name=r["name"],
-                activity_date=r["activity_date"],
-                distance=r["distance"],
-                duration=r["duration"],
-                sync_status=r["sync_status"],
-                fit_path=r["fit_path"],
-                synced_at=r["synced_at"],
-                error_message=r["error_message"],
-            )
-            for r in rows
-        ]
+        return [self._activity_from_row(r) for r in rows]
 
-    def get_activity(self, activity_id: str) -> ActivityRow | None:
+    def get_activity(self, user_id: str, activity_id: str) -> ActivityRow | None:
         with self._conn() as conn:
             r = conn.execute(
                 """
-                SELECT activity_id, name, activity_date, distance, duration,
+                SELECT user_id, activity_id, name, activity_date, distance, duration,
                        sync_status, fit_path, synced_at, error_message
-                FROM activities WHERE activity_id = ?
+                FROM activities WHERE user_id = ? AND activity_id = ?
                 """,
-                (activity_id,),
+                (user_id, activity_id),
             ).fetchone()
-        if not r:
-            return None
+        return self._activity_from_row(r) if r else None
+
+    @staticmethod
+    def _activity_from_row(r: sqlite3.Row) -> ActivityRow:
         return ActivityRow(
+            user_id=r["user_id"],
             activity_id=r["activity_id"],
             name=r["name"],
             activity_date=r["activity_date"],
@@ -293,20 +581,24 @@ class Store:
         self,
         limit: int = 100,
         offset: int = 0,
+        *,
+        user_id: str | None = None,
     ) -> list[SyncEventRow]:
         with self._conn() as conn:
             rows = conn.execute(
                 """
-                SELECT id, activity_id, event_type, message, created_at
+                SELECT id, user_id, activity_id, event_type, message, created_at
                 FROM sync_events
+                WHERE (? IS NULL OR user_id = ?)
                 ORDER BY id DESC
                 LIMIT ? OFFSET ?
                 """,
-                (limit, offset),
+                (user_id, user_id, limit, offset),
             ).fetchall()
         return [
             SyncEventRow(
                 id=r["id"],
+                user_id=r["user_id"],
                 activity_id=r["activity_id"],
                 event_type=r["event_type"],
                 message=r["message"],
@@ -315,9 +607,15 @@ class Store:
             for r in rows
         ]
 
-    def count_events(self) -> int:
+    def count_events(self, user_id: str | None = None) -> int:
         with self._conn() as conn:
-            row = conn.execute("SELECT COUNT(*) AS n FROM sync_events").fetchone()
+            row = conn.execute(
+                """
+                SELECT COUNT(*) AS n FROM sync_events
+                WHERE (? IS NULL OR user_id = ?)
+                """,
+                (user_id, user_id),
+            ).fetchone()
         return int(row["n"]) if row else 0
 
     @staticmethod
@@ -360,14 +658,15 @@ class Store:
             return str(status) if status else None
         return None
 
-    def build_sync_index(self) -> dict[str, SyncIndexEntry]:
+    def build_sync_index(self, user_id: str) -> dict[str, SyncIndexEntry]:
         with self._conn() as conn:
             rows = conn.execute(
                 """
                 SELECT activity_id, sync_status, garmin_result, fit_path,
                        synced_at, error_message
-                FROM activities
-                """
+                FROM activities WHERE user_id = ?
+                """,
+                (user_id,),
             ).fetchall()
         index: dict[str, SyncIndexEntry] = {}
         for r in rows:
@@ -388,33 +687,39 @@ class Store:
         trigger: str,
         event_type: str,
         message: str = "",
+        *,
+        user_id: str | None = None,
     ) -> None:
         with self._conn() as conn:
             conn.execute(
                 """
-                INSERT INTO session_refresh_events (trigger, event_type, message, created_at)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO session_refresh_events (user_id, trigger, event_type, message, created_at)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                (trigger, event_type, message[:2000] or None, _utcnow()),
+                (user_id, trigger, event_type, message[:2000] or None, _utcnow()),
             )
 
     def list_session_refresh_events(
         self,
         limit: int = 100,
+        *,
+        user_id: str | None = None,
     ) -> list[SessionRefreshEventRow]:
         with self._conn() as conn:
             rows = conn.execute(
                 """
-                SELECT id, trigger, event_type, message, created_at
+                SELECT id, user_id, trigger, event_type, message, created_at
                 FROM session_refresh_events
+                WHERE (? IS NULL OR user_id = ?)
                 ORDER BY id DESC
                 LIMIT ?
                 """,
-                (limit,),
+                (user_id, user_id, limit),
             ).fetchall()
         return [
             SessionRefreshEventRow(
                 id=r["id"],
+                user_id=r["user_id"],
                 trigger=r["trigger"],
                 event_type=r["event_type"],
                 message=r["message"],

@@ -19,6 +19,7 @@ from typing import Any
 import httpx
 
 from fit_sinc.config import Settings, get_settings
+from fit_sinc.users.context import UserContext, as_context
 
 logger = logging.getLogger("fit_sinc.garmin.web")
 
@@ -29,13 +30,15 @@ UPLOAD_URL = "https://connect.garmin.com/modern/proxy/upload-service/upload/.fit
 PROFILE_URL = "https://connect.garmin.com/modern/currentuser-service/user/info"
 
 
-def _web_dir(settings: Settings | None = None) -> Path:
-    settings = settings or get_settings()
+def _web_dir(ctx: UserContext | Settings | None = None) -> Path:
+    if isinstance(ctx, UserContext):
+        return ctx.garmin_web_dir
+    settings = ctx or get_settings()
     return settings.data_dir / "garmin_web"
 
 
-def _session_path(settings: Settings | None = None) -> Path:
-    return _web_dir(settings) / SESSION_FILE
+def _session_path(ctx: UserContext | Settings | None = None) -> Path:
+    return _web_dir(ctx) / SESSION_FILE
 
 
 def _jwt_expires_at(jwt_web: str) -> float | None:
@@ -51,16 +54,16 @@ def _jwt_expires_at(jwt_web: str) -> float | None:
 
 def _save_session(
     cookies: dict[str, str],
-    settings: Settings | None = None,
+    ctx: UserContext | None = None,
     *,
     refresh_method: str | None = None,
     refreshed: bool = False,
 ) -> None:
-    settings = settings or get_settings()
-    web_dir = _web_dir(settings)
+    user_ctx = as_context(ctx)
+    web_dir = _web_dir(user_ctx)
     web_dir.mkdir(parents=True, exist_ok=True)
     jwt_web = cookies.get("JWT_WEB", "")
-    prev = _load_session(settings) or {}
+    prev = _load_session(user_ctx) or {}
     data = {
         "cookies": cookies,
         "jwt_web": jwt_web,
@@ -69,11 +72,11 @@ def _save_session(
         "refreshed_at": time.time() if refreshed else prev.get("refreshed_at"),
         "refresh_method": refresh_method or prev.get("refresh_method"),
     }
-    _session_path(settings).write_text(json.dumps(data, indent=2))
+    _session_path(user_ctx).write_text(json.dumps(data, indent=2))
 
 
-def _load_session(settings: Settings | None = None) -> dict[str, Any] | None:
-    path = _session_path(settings)
+def _load_session(ctx: UserContext | None = None) -> dict[str, Any] | None:
+    path = _session_path(ctx)
     if not path.is_file():
         return None
     try:
@@ -154,15 +157,12 @@ def _validate_session(cookies: dict[str, str]) -> bool:
     return _live_check_session(cookies)
 
 
-def import_web_cookies(
-    cookies: dict[str, str],
-    settings: Settings | None = None,
-) -> None:
+def import_web_cookies(cookies: dict[str, str], ctx: UserContext | None = None) -> None:
     """Save browser cookies for web upload."""
     cleaned = {k: v for k, v in cookies.items() if v}
     if not _jwt_valid(cleaned.get("JWT_WEB")):
         raise RuntimeError("JWT_WEB missing, invalid, or expired")
-    _save_session(cleaned, settings)
+    _save_session(cleaned, ctx)
 
 
 def _widget_login(email: str, password: str) -> dict[str, str]:
@@ -241,25 +241,21 @@ def _widget_login(email: str, password: str) -> dict[str, str]:
     return cookies
 
 
-def web_login(
-    email: str,
-    password: str,
-    settings: Settings | None = None,
-) -> None:
+def web_login(email: str, password: str, ctx: UserContext | None = None) -> None:
     """Browser-like SSO login; stores JWT_WEB cookies for web upload."""
     cookies = _widget_login(email, password)
-    _save_session(cookies, settings)
+    _save_session(cookies, ctx)
     logger.info("Garmin web session saved (%d cookies)", len(cookies))
 
 
 def web_resume(
-    settings: Settings | None = None,
+    ctx: UserContext | None = None,
     *,
     auto_refresh: bool = True,
 ) -> dict[str, str] | None:
     """Load stored web session cookies if still valid."""
-    settings = settings or get_settings()
-    stored = _load_session(settings)
+    user_ctx = as_context(ctx)
+    stored = _load_session(user_ctx)
     if not stored:
         return None
     cookies = stored.get("cookies") or {}
@@ -268,8 +264,8 @@ def web_resume(
     if auto_refresh and _has_session_cookie(cookies):
         from fit_sinc.garmin.web_refresh import refresh_web_session
 
-        refresh_web_session(settings, trigger="auto")
-        stored = _load_session(settings)
+        refresh_web_session(user_ctx, trigger="auto")
+        stored = _load_session(user_ctx)
         if stored:
             cookies = stored.get("cookies") or {}
             if _validate_session(cookies):
@@ -277,10 +273,10 @@ def web_resume(
     return None
 
 
-def web_status(settings: Settings | None = None) -> dict[str, Any]:
-    settings = settings or get_settings()
-    path = _session_path(settings)
-    stored = _load_session(settings)
+def web_status(ctx: UserContext | None = None) -> dict[str, Any]:
+    user_ctx = as_context(ctx)
+    path = _session_path(user_ctx)
+    stored = _load_session(user_ctx)
     if not stored:
         return {"connected": False, "reason": "no session", "path": str(path)}
 
@@ -336,14 +332,15 @@ def _parse_upload_response(resp: httpx.Response) -> dict[str, Any]:
 def upload_fit_via_web(
     fit_bytes: bytes,
     filename: str,
-    settings: Settings | None = None,
+    ctx: UserContext | None = None,
 ) -> dict[str, Any]:
     """Upload FIT through connect.garmin.com modern proxy (JWT_WEB session)."""
-    settings = settings or get_settings()
-    cookies = web_resume(settings)
+    user_ctx = as_context(ctx)
+    cookies = web_resume(user_ctx)
     if not cookies:
         raise RuntimeError(
-            "Garmin web session not available — run: fit_sinc garmin web-login"
+            f"Garmin web session not available for {user_ctx.user_id} — "
+            f"run: fit_sinc --user {user_ctx.user_id} garmin web-login"
         )
 
     jwt_web = cookies.get("JWT_WEB")

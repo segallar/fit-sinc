@@ -5,13 +5,15 @@ import httpx
 from fit_sinc.config import Settings, get_settings
 from fit_sinc.hammerhead.oauth import HammerheadOAuth, TokenSet
 from fit_sinc.storage import load_json, save_json
+from fit_sinc.users.context import UserContext, resolve_user_context
 
 API_BASE = "https://api.hammerhead.io/v1/api"
 
 
 class HammerheadClient:
-    def __init__(self, settings: Settings | None = None) -> None:
-        self.settings = settings or get_settings()
+    def __init__(self, ctx: UserContext | None = None, *, user_id: str | None = None) -> None:
+        self.ctx = ctx or resolve_user_context(user_id)
+        self.settings = self.ctx.settings
         self.oauth = HammerheadOAuth(
             client_id=self.settings.hammerhead_client_id,
             client_secret=self.settings.hammerhead_client_secret,
@@ -20,18 +22,21 @@ class HammerheadClient:
         )
 
     def load_tokens(self) -> TokenSet | None:
-        data = load_json(self.settings.hammerhead_tokens_path)
+        data = load_json(self.ctx.hammerhead_tokens_path)
         if not data:
             return None
         return TokenSet.from_dict(data)
 
     def save_tokens(self, tokens: TokenSet) -> None:
-        save_json(self.settings.hammerhead_tokens_path, tokens.to_dict())
+        save_json(self.ctx.hammerhead_tokens_path, tokens.to_dict())
 
     async def ensure_tokens(self) -> TokenSet:
         tokens = self.load_tokens()
         if tokens is None:
-            raise RuntimeError("Hammerhead tokens not found — run: fit_sinc hammerhead auth")
+            raise RuntimeError(
+                f"Hammerhead tokens not found for user {self.ctx.user_id} — "
+                f"run: fit_sinc --user {self.ctx.user_id} hammerhead auth"
+            )
         if tokens.is_expired():
             tokens = await self.oauth.refresh(tokens.refresh_token)
             self.save_tokens(tokens)
@@ -80,12 +85,19 @@ class HammerheadClient:
     def status(self) -> dict[str, Any]:
         tokens = self.load_tokens()
         if tokens is None:
-            return {"connected": False, "reason": "no tokens"}
+            return {
+                "connected": False,
+                "reason": "no tokens",
+                "user_id": self.ctx.user_id,
+                "path": str(self.ctx.hammerhead_tokens_path),
+            }
         return {
             "connected": not tokens.is_expired(),
             "user_id": tokens.user_id,
+            "tenant_user_id": self.ctx.user_id,
             "expires_at": tokens.expires_at,
             "expired": tokens.is_expired(),
             "client_id_set": bool(self.settings.hammerhead_client_id),
             "webhook_secret_set": bool(self.settings.hammerhead_webhook_secret),
+            "path": str(self.ctx.hammerhead_tokens_path),
         }
