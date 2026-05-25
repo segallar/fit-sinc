@@ -28,6 +28,16 @@ class TestImports(unittest.TestCase):
 
         self.assertEqual(app.title, "fit_sinc")
 
+    def test_root_redirects_not_500(self) -> None:
+        from fastapi.testclient import TestClient
+
+        from fit_sinc.web.app import app
+
+        client = TestClient(app, raise_server_exceptions=True)
+        r = client.get("/", follow_redirects=False)
+        self.assertEqual(r.status_code, 303)
+        self.assertEqual(r.headers.get("location"), "/app/login")
+
     def test_token_set_roundtrip(self) -> None:
         ts = TokenSet("a", "r", 3600, "u1", 1000.0)
         restored = TokenSet.from_dict(ts.to_dict())
@@ -46,7 +56,10 @@ class TestStore(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / "test.db"
             store = Store(db)
+            store.ensure_default_user(password="test")
             self.assertFalse(store.is_synced(DEFAULT_USER_ID, "nonexistent-id"))
+            user = store.get_user(DEFAULT_USER_ID)
+            self.assertIsNotNone(user)
 
 
 if __name__ == "__main__":

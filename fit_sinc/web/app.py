@@ -13,7 +13,7 @@ from fit_sinc.garmin.web_refresh import refresh_web_session
 from fit_sinc.hammerhead.oauth import verify_webhook_signature
 from fit_sinc.state.store import Store
 from fit_sinc.sync.service import resolve_user_for_webhook, sync_activity
-from fit_sinc.users.context import UserContext, resolve_user_context
+from fit_sinc.users.context import UserContext
 from fit_sinc.users.migrate import infer_hammerhead_user_id, migrate_legacy_files
 from fit_sinc.web.admin_routes import router as admin_router
 from fit_sinc.web.app_routes import router as app_router
@@ -80,8 +80,10 @@ async def _lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="fit_sinc", version="0.4.0", lifespan=_lifespan)
-install_sessions(app)
+# Auth middleware должен быть зарегистрирован раньше SessionMiddleware,
+# иначе request.session недоступен (500 на /, /app, /admin).
 install_auth_middleware(app)
+install_sessions(app)
 app.include_router(app_router)
 app.include_router(admin_router)
 app.include_router(ui_v2_router)
