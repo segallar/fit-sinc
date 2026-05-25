@@ -1,0 +1,57 @@
+# fit_sinc — test on push/PR, deploy to sirocco on push to main
+#
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   SSH_PRIVATE_KEY — full private key (ed25519) for root@sirocco
+# Optional repository variables:
+#   FIT_SINC_SSH_HOST, FIT_SINC_SSH_USER, FIT_SINC_DEPLOY_PATH
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: pip install -e .
+
+      - name: Compile
+        run: python -m compileall -q fit_sinc
+
+      - name: Smoke tests
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install rsync and SSH client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq rsync openssh-client
+
+      - name: Deploy to sirocco
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          FIT_SINC_SSH_HOST: ${{ vars.FIT_SINC_SSH_HOST }}
+          FIT_SINC_SSH_USER: ${{ vars.FIT_SINC_SSH_USER }}
+          FIT_SINC_DEPLOY_PATH: ${{ vars.FIT_SINC_DEPLOY_PATH }}
+        run: |
+          chmod +x scripts/ci/deploy.sh
+          ./scripts/ci/deploy.sh
