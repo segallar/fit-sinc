@@ -302,7 +302,7 @@ flowchart TB
 - Баннер: Hammerhead + Garmin `upload_ready` + TTL JWT
 - Карточки: synced / error / pending (дашборд)
 - Вкладка/быстрый фильтр «только ошибки», понятный лог (`duplicate` vs error)
-- Re-sync / force с подтверждением (частично уже есть `retry` на `/activities`)
+- Re-sync / force с подтверждением — ✅ в `/app` (дашборд + activities, bulk errors)
 
 Админ-раздел (`/app/admin`) — без календаря райдеров (таблица пользователей + лог); общий shell с кабинетом (после 5b).
 
@@ -417,6 +417,8 @@ Source (download ActivityPayload + external_id)
 - [x] CI pipeline: GitHub Actions, `scripts/ci/deploy.sh`, smoke tests
 - [x] Secret `SSH_PRIVATE_KEY` в GitHub
 - [x] README GitHub + разделение docs (ARCHITECTURE / PLAN)
+- [x] Push в `main` → https://github.com/segallar/fit-sinc
+- [x] UI: re-sync в кабинете (Re-sync, force + confirm, retry all errors, redirect `next`)
 
 ### Roadmap v2 (план)
 
@@ -435,8 +437,3 @@ Source (download ActivityPayload + external_id)
 - [x] Ops: расширить smoke (webhook endpoint, tenant routing, /app login, sync skip)
 - [ ] Фаза 7: абстракция Source/Sink, manual FIT
 - [ ] Фаза 8: spike routes / Garmin courses
-
-### Открыто (мелочи v1)
-
-- [x] Push в `main` → https://github.com/segallar/fit-sinc
-- [x] UI: re-sync в кабинете (Re-sync, force + confirm, retry all errors, redirect `next`)
