@@ -30,15 +30,7 @@ export RSYNC_RSH="$RSYNC_SSH"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
-rsync -avz --delete \
-  --exclude '.venv' \
-  --exclude '__pycache__' \
-  --exclude '.git' \
-  --exclude 'data' \
-  --exclude '.env' \
-  --exclude '.DS_Store' \
-  --exclude 'dist' \
-  --exclude '*.egg-info' \
+rsync -avz --delete --exclude-from=.rsyncignore \
   ./ "${USER}@${HOST}:${DEPLOY_PATH}/"
 
 ssh "${SSH_OPTS[@]}" "${USER}@${HOST}" bash -s <<EOF

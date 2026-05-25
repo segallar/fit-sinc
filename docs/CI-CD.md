@@ -60,14 +60,11 @@ Certbot для `fit.romansegalla.online` — отдельно, если cert е�
 ```bash
 cd /Users/roman/fit_sinc
 
-rsync -avz \
-  --exclude '.venv' \
-  --exclude '__pycache__' \
-  --exclude '.git' \
-  --exclude 'data' \
-  --exclude '.env' \
+rsync -avz --delete --exclude-from=.rsyncignore \
   -e "ssh -i ~/.ssh/id_ed25519" \
   ./ root@sirocco.romansegalla.online:/opt/fit_sinc/
+
+# или: ./scripts/ci/deploy.sh (те же исключения)
 
 ssh -i ~/.ssh/id_ed25519 root@sirocco.romansegalla.online <<'EOF'
 set -euo pipefail
@@ -80,7 +77,15 @@ curl -sf http://127.0.0.1:8080/health
 EOF
 ```
 
-**Не синхронизируем через rsync:** `.env`, `data/` — секреты и runtime-состояние.
+**Не синхронизируем через rsync** (список в [`.rsyncignore`](../.rsyncignore)):
+
+| Путь | Причина |
+|------|---------|
+| `.env`, `data/` | Секреты и runtime на сервере |
+| `.venv`, `.git` | Локальное / создаётся на VPS |
+| `frontend/node_modules/` | Только для `npm run build:css` на Mac/CI; на сервер уходит готовый `fit_sinc/web/static/app.css` |
+
+С `--delete` лишние каталоги на сервере (например старый `frontend/node_modules`) удаляются при следующем deploy.
 
 ### 2. Секреты и сессии (при смене или первом деплое)
 
