@@ -99,7 +99,8 @@ Garmin Connect часто отклоняет прямой `garth.upload()`; uplo
 | `/log` | Webhook, download FIT, upload Garmin, ошибки |
 | `/session` | Статус Garmin web-сессии |
 | `/activities/{id}/fit` | Скачать `.fit` |
-| `POST /activities/{id}/retry` | Повторить sync |
+| `POST /app/activities/{id}/retry` | Re-sync одной активности (force, confirm если уже synced) |
+| `POST /app/activities/retry-errors` | Re-sync всех `error` в SQLite (до 50) |
 
 FIT на диске: `data/fits/{activity_id}.fit`.
 

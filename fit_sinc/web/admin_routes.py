@@ -1,4 +1,4 @@
-"""Operator admin UI: user CRUD."""
+"""Admin UI under /app/admin (requires users.is_admin)."""
 
 from __future__ import annotations
 
@@ -8,60 +8,25 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fit_sinc.config import get_settings
 from fit_sinc.state.store import Store
 from fit_sinc.web import html as H
-from fit_sinc.web.auth import login_admin, logout_admin, verify_admin_credentials
+from fit_sinc.web.auth import APP_ADMIN_PREFIX
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(prefix=APP_ADMIN_PREFIX, tags=["admin"])
+A = APP_ADMIN_PREFIX
 
 
 def _store() -> Store:
     return Store(get_settings().db_path)
 
 
-def _admin_page(title: str, body: str) -> str:
-    nav = '<a href="/admin/">Users</a> · <a href="/admin/logout">Logout</a>'
-    return f"""<!DOCTYPE html>
-<html lang="ru"><head><meta charset="utf-8"><title>{H.esc(title)} — fit_sinc admin</title>
-<style>{H.BASE_CSS}</style></head><body>
-<header class="hero"><h1>fit_sinc admin</h1></header>
-<nav>{nav}</nav>
-{body}
-</body></html>"""
-
-
-@router.get("/login", response_class=HTMLResponse, include_in_schema=False)
-async def admin_login_form(error: str = "") -> str:
-    if error:
-        err = f'<p class="err">{H.esc(error)}</p>'
-    else:
-        err = ""
-    body = f"""
-  <h2>Admin login</h2>
-  {err}
-  <form method="post" action="/admin/login" class="filters" style="max-width: 360px;">
-    <label>Username <input name="username" required autocomplete="username"></label>
-    <label>Password <input type="password" name="password" required autocomplete="current-password"></label>
-    <button class="btn" type="submit">Sign in</button>
-  </form>
-"""
-    return _admin_page("Login", body)
-
-
-@router.post("/login", include_in_schema=False)
-async def admin_login_submit(
-    request: Request,
-    username: str = Form(""),
-    password: str = Form(""),
-) -> RedirectResponse:
-    if verify_admin_credentials(username, password):
-        login_admin(request)
-        return RedirectResponse("/admin/", status_code=303)
-    return RedirectResponse("/admin/login?error=1", status_code=303)
-
-
-@router.get("/logout", include_in_schema=False)
-async def admin_logout(request: Request) -> RedirectResponse:
-    logout_admin(request)
-    return RedirectResponse("/admin/login", status_code=303)
+def _admin_page(title: str, body: str, *, active: str = "") -> str:
+    return H.page(
+        title,
+        body,
+        active=active,
+        prefix="/app",
+        show_admin=True,
+        admin_active=active or "/admin",
+    )
 
 
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
@@ -72,6 +37,7 @@ async def admin_users_list() -> str:
         hh = u.hammerhead_user_id or "—"
         tg = u.telegram or "—"
         dis = "yes" if u.disabled else ""
+        adm = "yes" if u.is_admin else ""
         rows.append(
             f"<tr>"
             f"<td><code>{H.esc(u.id)}</code></td>"
@@ -81,25 +47,27 @@ async def admin_users_list() -> str:
             f"<td>{H.esc(tg)}</td>"
             f"<td>{H.esc(u.timezone)}</td>"
             f"<td class=\"mono\">{H.esc(hh)}</td>"
+            f"<td>{adm}</td>"
             f"<td>{dis}</td>"
-            f'<td><a class="btn" href="/admin/users/{H.esc(u.id)}/edit">edit</a></td>'
+            f'<td><a class="btn" href="{A}/users/{H.esc(u.id)}/edit">edit</a></td>'
             f"</tr>"
         )
     body = f"""
   <h2>Users</h2>
-  <p><a class="btn" href="/admin/users/new">New user</a></p>
+  <p><a class="btn" href="{A}/users/new">New user</a></p>
   <table>
-    <tr><th>id</th><th>slug</th><th>Name</th><th>Email</th><th>Telegram</th><th>TZ</th><th>HH user</th><th>off</th><th></th></tr>
-    {"".join(rows) or "<tr><td colspan=9><em>No users</em></td></tr>"}
+    <tr><th>id</th><th>slug</th><th>Name</th><th>Email</th><th>Telegram</th>
+        <th>TZ</th><th>HH user</th><th>admin</th><th>off</th><th></th></tr>
+    {"".join(rows) or "<tr><td colspan=10><em>No users</em></td></tr>"}
   </table>
 """
-    return _admin_page("Users", body)
+    return _admin_page("Admin — Users", body, active="/admin")
 
 
 @router.get("/users/new", response_class=HTMLResponse, include_in_schema=False)
 async def admin_user_new() -> str:
-    body = _user_form(action="/admin/users/new", title="New user")
-    return _admin_page("New user", body)
+    body = _user_form(action=f"{A}/users/new", title="New user")
+    return _admin_page("New user", body, active="/admin")
 
 
 @router.post("/users/new", include_in_schema=False)
@@ -125,7 +93,7 @@ async def admin_user_create(
         )
     except Exception as exc:
         body = _user_form(
-            action="/admin/users/new",
+            action=f"{A}/users/new",
             title="New user",
             error=str(exc),
             slug=slug,
@@ -136,16 +104,16 @@ async def admin_user_create(
             hammerhead_user_id=hammerhead_user_id,
         )
         return HTMLResponse(_admin_page("Error", body), status_code=400)
-    return RedirectResponse("/admin/", status_code=303)
+    return RedirectResponse(f"{A}/", status_code=303)
 
 
 @router.get("/users/{user_id}/edit", response_class=HTMLResponse, include_in_schema=False)
 async def admin_user_edit(user_id: str) -> str:
     user = _store().get_user(user_id)
     if not user:
-        return _admin_page("Not found", "<p class=\"err\">User not found</p>")
+        return _admin_page("Not found", '<p class="err">User not found</p>')
     body = _user_form(
-        action=f"/admin/users/{user_id}/edit",
+        action=f"{A}/users/{user_id}/edit",
         title=f"Edit {user.display_name}",
         user_id=user_id,
         slug=user.slug,
@@ -155,9 +123,10 @@ async def admin_user_edit(user_id: str) -> str:
         telegram=user.telegram or "",
         hammerhead_user_id=user.hammerhead_user_id or "",
         disabled=user.disabled,
+        is_admin=user.is_admin,
         edit=True,
     )
-    return _admin_page("Edit user", body)
+    return _admin_page("Edit user", body, active="/admin")
 
 
 @router.post("/users/{user_id}/edit", include_in_schema=False)
@@ -170,6 +139,7 @@ async def admin_user_update(
     hammerhead_user_id: str = Form(""),
     password: str = Form(""),
     disabled: str = Form(""),
+    is_admin: str = Form(""),
 ) -> RedirectResponse:
     store = _store()
     store.update_user(
@@ -181,8 +151,9 @@ async def admin_user_update(
         hammerhead_user_id=hammerhead_user_id or None,
         password=password or None,
         disabled=disabled == "on",
+        is_admin=is_admin == "on",
     )
-    return RedirectResponse("/admin/", status_code=303)
+    return RedirectResponse(f"{A}/", status_code=303)
 
 
 def _user_form(
@@ -198,6 +169,7 @@ def _user_form(
     telegram: str = "",
     hammerhead_user_id: str = "",
     disabled: bool = False,
+    is_admin: bool = False,
     edit: bool = False,
 ) -> str:
     err = f'<p class="err">{H.esc(error)}</p>' if error else ""
@@ -207,7 +179,13 @@ def _user_form(
         else f"<p>Slug: <code>{H.esc(slug)}</code> (id: <code>{H.esc(user_id)}</code>)</p>"
     )
     pwd_hint = "leave empty to keep" if edit else "required"
-    dis = ' checked' if disabled else ""
+    dis = " checked" if disabled else ""
+    adm = " checked" if is_admin else ""
+    admin_field = (
+        f"<label><input type=checkbox name=is_admin{adm}> Administrator</label>"
+        if edit
+        else ""
+    )
     return f"""
   <h2>{H.esc(title)}</h2>
   {err}
@@ -220,7 +198,8 @@ def _user_form(
     <label>Telegram <input name="telegram" value="{H.esc(telegram)}" placeholder="@user"></label>
     <label>Hammerhead user id <input name="hammerhead_user_id" value="{H.esc(hammerhead_user_id)}"></label>
     {"<label><input type=checkbox name=disabled" + dis + "> Disabled</label>" if edit else ""}
+    {admin_field}
     <button class="btn" type="submit">Save</button>
-    <a class="btn" href="/admin/">Cancel</a>
+    <a class="btn" href="{A}/">Cancel</a>
   </form>
 """

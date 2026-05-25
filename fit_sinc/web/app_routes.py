@@ -38,6 +38,52 @@ def _ctx(request: Request) -> UserContext:
     return ctx
 
 
+def _safe_return_url(next_url: str, default: str) -> str:
+    n = (next_url or "").strip()
+    if n.startswith(P + "/") or n in (P, f"{P}/"):
+        return n
+    return default
+
+
+def _activities_return_url(
+    source: str,
+    *,
+    page: int = 1,
+    per_page: int = 50,
+    filters: ActivityFilters | None = None,
+    extra: dict[str, str] | None = None,
+) -> str:
+    params: dict[str, object] = {
+        "source": source,
+        "page": page,
+        "per_page": per_page,
+    }
+    if filters:
+        if filters.q:
+            params["q"] = filters.q
+        if filters.status:
+            params["status"] = filters.status
+        if filters.activity_type:
+            params["activity_type"] = filters.activity_type
+        if filters.date_from:
+            params["date_from"] = filters.date_from
+        if filters.date_to:
+            params["date_to"] = filters.date_to
+    if extra:
+        params.update(extra)
+    q = H.query_string(params)
+    return f"{P}/activities?{q}" if q else f"{P}/activities?source={source}"
+
+
+def _flash_html(extra: dict[str, str] | None) -> str:
+    if not extra:
+        return ""
+    if extra.get("queued"):
+        n = extra["queued"]
+        return f'<p class="ok">Queued {H.esc(n)} re-sync job(s) in the background.</p>'
+    return ""
+
+
 def _fit_sinc_status_class(status: str) -> str:
     if status == "synced":
         return "status-synced"
@@ -50,26 +96,30 @@ def _fit_sinc_status_class(status: str) -> str:
     return ""
 
 
-def _render_activity_actions(row: Any, source: str) -> str:
+def _render_activity_actions(row: Any, source: str, *, return_url: str) -> str:
     parts: list[str] = []
+    hh_id = row.hammerhead_id
     if source == "hammerhead" and row.hammerhead_id:
-        aid_q = quote(row.hammerhead_id, safe="")
+        hh_id = row.hammerhead_id
+    if hh_id:
+        aid_q = quote(hh_id, safe="")
         if row.fit_available:
             parts.append(f'<a class="btn" href="{P}/activities/{aid_q}/fit">.fit</a>')
-        if row.fit_sinc_status != "synced":
-            parts.append(
-                f"""<form class="inline" method="post" action="{P}/activities/{aid_q}/retry">
-              <button class="btn" type="submit">sync</button></form>"""
+        force = row.fit_sinc_status == "synced"
+        parts.append(
+            H.resync_form(
+                P,
+                hh_id,
+                return_url=return_url,
+                force_confirm=force,
             )
+        )
     if source == "garmin" and row.garmin_id:
         gid = row.garmin_id
         parts.append(
             f'<a class="btn" href="https://connect.garmin.com/modern/activity/{gid}" '
             f'target="_blank" rel="noopener">Garmin</a>'
         )
-        if row.hammerhead_id and row.fit_available:
-            aid_q = quote(row.hammerhead_id, safe="")
-            parts.append(f'<a class="btn" href="{P}/activities/{aid_q}/fit">.fit</a>')
     return " ".join(parts)
 
 
@@ -117,7 +167,11 @@ async def dashboard(request: Request) -> str:
     now = H.fmt_now()
     hh = HammerheadClient(ctx).status()
     gm = garmin_status(ctx)
-    activities = _store().list_activities(ctx.user_id, limit=30)
+    store = _store()
+    activities = store.list_activities(ctx.user_id, limit=30)
+    status_counts = store.count_activities_by_status(ctx.user_id)
+    error_n = status_counts.get("error", 0)
+    dash_return = f"{P}/"
 
     hh_class = "ok" if hh.get("connected") else "warn"
     if gm.get("upload_ready"):
@@ -137,10 +191,12 @@ async def dashboard(request: Request) -> str:
         fit_link = ""
         if a.fit_path and Path(a.fit_path).is_file():
             fit_link = f'<a class="btn" href="{P}/activities/{aid_q}/fit">.fit</a>'
-        retry = ""
-        if a.sync_status in ("error", "pending"):
-            retry = f"""<form class="inline" method="post" action="{P}/activities/{aid_q}/retry">
-              <button class="btn" type="submit">retry</button></form>"""
+        retry = H.resync_form(
+            P,
+            a.activity_id,
+            return_url=dash_return,
+            force_confirm=a.sync_status == "synced",
+        )
         err_tip = f' title="{H.esc(a.error_message)}"' if a.error_message else ""
         rows.append(
             f"<tr>"
@@ -157,8 +213,36 @@ async def dashboard(request: Request) -> str:
         )
 
     who = user.display_name if user else ctx.user_id
+    sync_bits = []
+    for label, key in (
+        ("synced", "synced"),
+        ("error", "error"),
+        ("pending", "pending"),
+        ("not synced", "not synced"),
+    ):
+        n = status_counts.get(key, 0)
+        if n:
+            sync_bits.append(f"{label}: {n}")
+    sync_summary = ", ".join(sync_bits) if sync_bits else "no activities in DB yet"
+    retry_errors = ""
+    if error_n:
+        retry_errors = f"""
+  <form class="inline" method="post" action="{P}/activities/retry-errors" style="margin: 0.5rem 0;">
+    <input type="hidden" name="next" value="{H.esc(dash_return)}">
+    <button class="btn" type="submit" onclick="return confirm('Re-sync all {error_n} failed activities?');">
+      Re-sync all errors ({error_n})
+    </button>
+  </form>"""
+    errors_link = (
+        f' <a href="{P}/activities?{H.query_string({"source": "hammerhead", "status": "error"})}">'
+        f"view errors</a>"
+        if error_n
+        else ""
+    )
     body = f"""
   <p>Hammerhead → Garmin Connect · <strong>{H.esc(who)}</strong></p>
+  <p><small>Sync status (SQLite): {H.esc(sync_summary)}.{errors_link}</small></p>
+  {retry_errors}
 
   <h2>Connections</h2>
   <table>
@@ -173,13 +257,20 @@ async def dashboard(request: Request) -> str:
   </table>
   <p><small>Updated {H.esc(now)} · TZ {H.esc(user.timezone if user else "—")}</small></p>
 """
-    return H.page("Dashboard", body, active="/", prefix=P)
+    return H.page(
+        "Dashboard",
+        body,
+        active="/",
+        prefix=P,
+        show_admin=bool(user and user.is_admin),
+    )
 
 
 @router.get("/activities", response_class=HTMLResponse, include_in_schema=False)
 async def activities_browser(
     request: Request,
     source: str = Query("hammerhead", pattern="^(hammerhead|garmin)$"),
+    queued: str = Query(""),
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=10, le=100),
     q: str = Query(""),
@@ -213,6 +304,11 @@ async def activities_browser(
         filters=filters,
         ctx=ctx,
     )
+    query_params["page"] = result.page
+    list_return = _activities_return_url(
+        source, page=result.page, per_page=per_page, filters=filters
+    )
+    flash = _flash_html({"queued": queued} if queued else None)
 
     hh_active = "active" if source == "hammerhead" else ""
     gm_active = "active" if source == "garmin" else ""
@@ -244,7 +340,7 @@ async def activities_browser(
             f"<td>{duration}</td>"
             f'<td class="{status_cls}"{err_tip}>{H.esc(row.fit_sinc_status)}{detail}</td>'
             f"<td>{cross}</td>"
-            f"<td>{_render_activity_actions(row, source)}</td>"
+            f"<td>{_render_activity_actions(row, source, return_url=list_return)}</td>"
             f"</tr>"
         )
 
@@ -263,9 +359,18 @@ async def activities_browser(
     pager = H.render_pager(f"{P}/activities", query_params, page=result.page, total_pages=result.total_pages)
     reset_q = H.query_string({"source": source, "per_page": per_page})
 
+    errors_quick = ""
+    if source == "hammerhead" and filters.status != "error":
+        errors_quick = (
+            f' <a class="btn" href="{P}/activities?'
+            f'{H.query_string({"source": "hammerhead", "status": "error", "per_page": per_page})}">'
+            f"Show errors only</a>"
+        )
+
     body = f"""
   <h2>Activities</h2>
-  <p>Hammerhead / Garmin with fit_sinc sync status.</p>
+  <p>Hammerhead / Garmin with fit_sinc sync status.{errors_quick}</p>
+  {flash}
 
   <div class="tabs">
     <a href="{P}/activities?{H.query_string({"source": "hammerhead", "per_page": per_page})}" class="{hh_active}">Hammerhead</a>
@@ -454,10 +559,48 @@ async def retry_activity(
     request: Request,
     activity_id: str,
     background_tasks: BackgroundTasks,
+    next: str = Form(""),
 ) -> RedirectResponse:
     ctx = _ctx(request)
+    default = _activities_return_url("hammerhead")
     background_tasks.add_task(_run_sync_force, activity_id, ctx.user_id)
-    return RedirectResponse(url=f"{P}/activities?source=hammerhead", status_code=303)
+    _store().log_event(
+        "resync_queued",
+        "manual single",
+        activity_id,
+        user_id=ctx.user_id,
+    )
+    return RedirectResponse(url=_safe_return_url(next, default), status_code=303)
+
+
+@router.post("/activities/retry-errors", include_in_schema=False)
+async def retry_all_errors(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    next: str = Form(""),
+) -> RedirectResponse:
+    ctx = _ctx(request)
+    store = _store()
+    failed = store.list_activities(ctx.user_id, limit=50, sync_status="error")
+    for row in failed:
+        background_tasks.add_task(_run_sync_force, row.activity_id, ctx.user_id)
+    if failed:
+        store.log_event(
+            "resync_queued",
+            f"manual bulk count={len(failed)}",
+            None,
+            user_id=ctx.user_id,
+        )
+    default = _activities_return_url(
+        "hammerhead",
+        filters=ActivityFilters(status="error"),
+        extra={"queued": str(len(failed))},
+    )
+    target = _safe_return_url(next, default)
+    if failed and "queued=" not in target:
+        sep = "&" if "?" in target else "?"
+        target = f"{target}{sep}queued={len(failed)}"
+    return RedirectResponse(url=target, status_code=303)
 
 
 async def _run_sync_force(activity_id: str, user_id: str) -> None:

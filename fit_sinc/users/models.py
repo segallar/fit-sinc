@@ -11,5 +11,6 @@ class UserRow:
     timezone: str
     hammerhead_user_id: str | None
     disabled: bool
+    is_admin: bool
     created_at: str
     updated_at: str

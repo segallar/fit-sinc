@@ -14,6 +14,7 @@ from fit_sinc.hammerhead.oauth import verify_webhook_signature
 from fit_sinc.state.store import Store
 from fit_sinc.sync.service import resolve_user_for_webhook, sync_activity
 from fit_sinc.users.context import UserContext
+from fit_sinc.users.bootstrap import apply_bootstrap_admin
 from fit_sinc.users.migrate import infer_hammerhead_user_id, migrate_legacy_files
 from fit_sinc.web.admin_routes import router as admin_router
 from fit_sinc.web.app_routes import router as app_router
@@ -29,6 +30,7 @@ def _bootstrap() -> None:
     hh_uid = infer_hammerhead_user_id(settings)
     store.ensure_default_user(hammerhead_user_id=hh_uid)
     migrate_legacy_files(settings, settings.default_user_id)
+    apply_bootstrap_admin(store, settings)
     logger.info("bootstrap: default user ready (hh_user_id=%s)", hh_uid)
 
 

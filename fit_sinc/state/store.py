@@ -105,11 +105,13 @@ class Store:
                     hammerhead_user_id TEXT UNIQUE,
                     password_hash TEXT NOT NULL,
                     disabled INTEGER NOT NULL DEFAULT 0,
+                    is_admin INTEGER NOT NULL DEFAULT 0,
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 )
                 """
             )
+            self._ensure_users_admin_column(conn)
             self._ensure_activities_table(conn)
             self._ensure_sync_events_table(conn)
             self._ensure_session_refresh_table(conn)
@@ -130,6 +132,26 @@ class Store:
                 CREATE INDEX IF NOT EXISTS idx_session_refresh_created
                     ON session_refresh_events(created_at DESC)
                 """
+            )
+
+    def _ensure_users_admin_column(self, conn: sqlite3.Connection) -> None:
+        if not self._table_has_column(conn, "users", "is_admin"):
+            conn.execute(
+                "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"
+            )
+
+    def count_admins(self) -> int:
+        with self._conn() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM users WHERE is_admin = 1 AND disabled = 0"
+            ).fetchone()
+        return int(row["n"]) if row else 0
+
+    def set_admin(self, user_id: str, *, is_admin: bool = True) -> None:
+        with self._conn() as conn:
+            conn.execute(
+                "UPDATE users SET is_admin = ?, updated_at = ? WHERE id = ?",
+                (1 if is_admin else 0, _utcnow(), user_id),
             )
 
     def _ensure_activities_table(self, conn: sqlite3.Connection) -> None:
@@ -264,6 +286,7 @@ class Store:
             timezone=r["timezone"],
             hammerhead_user_id=r["hammerhead_user_id"],
             disabled=bool(r["disabled"]),
+            is_admin=bool(r["is_admin"]),
             created_at=r["created_at"],
             updated_at=r["updated_at"],
         )
@@ -293,6 +316,7 @@ class Store:
             timezone="Europe/Moscow",
             hammerhead_user_id=hammerhead_user_id,
             user_id="default",
+            is_admin=True,
         )
 
     def create_user(
@@ -306,6 +330,7 @@ class Store:
         telegram: str | None = None,
         hammerhead_user_id: str | None = None,
         user_id: str | None = None,
+        is_admin: bool = False,
     ) -> UserRow:
         slug = slug.strip().lower()
         if not _SLUG_RE.match(slug):
@@ -317,8 +342,9 @@ class Store:
                 """
                 INSERT INTO users (
                     id, slug, display_name, email, telegram, timezone,
-                    hammerhead_user_id, password_hash, disabled, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+                    hammerhead_user_id, password_hash, disabled, is_admin,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
                 """,
                 (
                     uid,
@@ -329,6 +355,7 @@ class Store:
                     timezone.strip() or "Europe/Moscow",
                     hammerhead_user_id,
                     hash_password(password),
+                    1 if is_admin else 0,
                     now,
                     now,
                 ),
@@ -349,6 +376,7 @@ class Store:
         hammerhead_user_id: str | None = None,
         password: str | None = None,
         disabled: bool | None = None,
+        is_admin: bool | None = None,
     ) -> None:
         fields: list[str] = ["updated_at = ?"]
         values: list[Any] = [_utcnow()]
@@ -359,6 +387,7 @@ class Store:
             ("timezone", timezone),
             ("hammerhead_user_id", hammerhead_user_id),
             ("disabled", 1 if disabled else 0 if disabled is False else None),
+            ("is_admin", 1 if is_admin else 0 if is_admin is False else None),
         ):
             if val is not None:
                 fields.append(f"{col} = ?")

@@ -26,8 +26,7 @@ def isolated_env(tmp_root: Path, **extra: str) -> Iterator[Path]:
         "HAMMERHEAD_WEBHOOK_SECRET": "test-webhook-secret",
         "SESSION_SECRET": "test-session-secret-for-unittest",
         "DEFAULT_USER_ID": "default",
-        "ADMIN_USERNAME": "admin",
-        "ADMIN_PASSWORD": "admin-test-pass",
+        "REGISTRATION_OPEN": "false",
         **extra,
     }
     saved: dict[str, str | None] = {}

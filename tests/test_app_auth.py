@@ -73,32 +73,85 @@ class TestAppLogin(unittest.TestCase):
                 self.assertEqual(r.headers.get("location"), "/app/login")
 
 
-class TestAdminLogin(unittest.TestCase):
-    def test_admin_login_and_users_list(self) -> None:
+class TestAdminAccess(unittest.TestCase):
+    def test_admin_user_reaches_app_admin_users(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
                     "fit_sinc.config", fromlist=["get_settings"]
                 ).get_settings()
-                Store(settings.db_path).ensure_default_user(password="x")
+                Store(settings.db_path).ensure_default_user(
+                    email="admin@test.local",
+                    password="admin-pass",
+                )
 
                 from fit_sinc.web.app import app
 
                 client = TestClient(app)
                 r = client.post(
-                    "/admin/login",
-                    data={
-                        "username": settings.admin_username,
-                        "password": "admin-test-pass",
-                    },
+                    "/app/login",
+                    data={"email": "admin@test.local", "password": "admin-pass"},
                     follow_redirects=False,
                 )
                 self.assertEqual(r.status_code, 303)
-                self.assertEqual(r.headers.get("location"), "/admin/")
 
-                users = client.get("/admin/")
+                users = client.get("/app/admin/")
                 self.assertEqual(users.status_code, 200)
                 self.assertIn("default", users.text)
+
+    def test_non_admin_forbidden_on_app_admin(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(Path(tmp)):
+                settings = __import__(
+                    "fit_sinc.config", fromlist=["get_settings"]
+                ).get_settings()
+                store = Store(settings.db_path)
+                store.ensure_default_user(
+                    email="owner@test.local",
+                    password="good-pass",
+                )
+                store.create_user(
+                    slug="user1",
+                    display_name="User",
+                    email="u@test.local",
+                    password="secret",
+                    user_id="user1",
+                    is_admin=False,
+                )
+
+                from fit_sinc.web.app import app
+
+                client = TestClient(app)
+                client.post(
+                    "/app/login",
+                    data={"email": "u@test.local", "password": "secret"},
+                    follow_redirects=False,
+                )
+                r = client.get("/app/admin/")
+                self.assertEqual(r.status_code, 403)
+
+    def test_legacy_admin_redirects_to_app_admin(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(Path(tmp)):
+                settings = __import__(
+                    "fit_sinc.config", fromlist=["get_settings"]
+                ).get_settings()
+                Store(settings.db_path).ensure_default_user(
+                    email="owner@test.local",
+                    password="admin-pass",
+                )
+
+                from fit_sinc.web.app import app
+
+                client = TestClient(app)
+                client.post(
+                    "/app/login",
+                    data={"email": "owner@test.local", "password": "admin-pass"},
+                    follow_redirects=False,
+                )
+                r = client.get("/admin/", follow_redirects=False)
+                self.assertEqual(r.status_code, 301)
+                self.assertEqual(r.headers.get("location"), "/app/admin/")
 
 
 if __name__ == "__main__":

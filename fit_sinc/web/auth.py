@@ -1,16 +1,18 @@
-"""Session auth for /app (users) and /admin (operator)."""
+"""Session auth: one login for /app; admin via users.is_admin."""
 
 from __future__ import annotations
 
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from fit_sinc.config import get_settings
+from fit_sinc.state.store import Store
 from fit_sinc.users.context import UserContext, resolve_user_context
+from fit_sinc.users.models import UserRow
 
 SESSION_USER_KEY = "user_id"
-SESSION_ADMIN_KEY = "admin"
+APP_ADMIN_PREFIX = "/app/admin"
 
 
 def install_sessions(app: FastAPI) -> None:
@@ -32,8 +34,16 @@ def user_context_from_session(request: Request) -> UserContext | None:
     return resolve_user_context(str(uid))
 
 
-def is_admin_session(request: Request) -> bool:
-    return bool(request.session.get(SESSION_ADMIN_KEY))
+def user_row_from_session(request: Request) -> UserRow | None:
+    ctx = user_context_from_session(request)
+    if not ctx:
+        return None
+    return Store(ctx.db_path).get_user(ctx.user_id)
+
+
+def user_is_admin(request: Request) -> bool:
+    user = user_row_from_session(request)
+    return user is not None and user.is_admin and not user.disabled
 
 
 def login_user(request: Request, user_id: str) -> None:
@@ -44,21 +54,14 @@ def logout_user(request: Request) -> None:
     request.session.pop(SESSION_USER_KEY, None)
 
 
-def login_admin(request: Request) -> None:
-    request.session[SESSION_ADMIN_KEY] = True
-
-
-def logout_admin(request: Request) -> None:
-    request.session.pop(SESSION_ADMIN_KEY, None)
-
-
-def verify_admin_credentials(username: str, password: str) -> bool:
-    settings = get_settings()
-    if not settings.admin_password:
-        return False
-    return (
-        username.strip() == settings.admin_username
-        and password == settings.admin_password
+def _admin_forbidden_page() -> HTMLResponse:
+    return HTMLResponse(
+        """<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">
+<title>Forbidden</title></head><body>
+<h1>403</h1><p>Admin access required.</p>
+<p><a href="/app/">Back to dashboard</a></p>
+</body></html>""",
+        status_code=403,
     )
 
 
@@ -74,10 +77,19 @@ def install_auth_middleware(app: FastAPI) -> None:
             return await call_next(request)
 
         if path.startswith("/admin"):
-            if path in ("/admin/login",) or path.startswith("/admin/login?"):
-                return await call_next(request)
-            if not is_admin_session(request):
-                return RedirectResponse("/admin/login", status_code=303)
+            if path.startswith("/admin/login"):
+                return RedirectResponse("/app/login", status_code=301)
+            suffix = path[len("/admin") :] or "/"
+            target = APP_ADMIN_PREFIX + suffix
+            if request.url.query:
+                target = f"{target}?{request.url.query}"
+            return RedirectResponse(target, status_code=301)
+
+        if path.startswith(APP_ADMIN_PREFIX):
+            if not user_context_from_session(request):
+                return RedirectResponse("/app/login", status_code=303)
+            if not user_is_admin(request):
+                return _admin_forbidden_page()
             return await call_next(request)
 
         if path.startswith("/app"):
@@ -102,7 +114,6 @@ def install_auth_middleware(app: FastAPI) -> None:
         if path == legacy[1] or path.startswith(legacy[1] + "?"):
             return RedirectResponse("/app" + path, status_code=307)
         if path == legacy[2] or path.startswith(legacy[2]):
-            target = "/app" + path
-            return RedirectResponse(target, status_code=307)
+            return RedirectResponse("/app" + path, status_code=307)
 
         return await call_next(request)

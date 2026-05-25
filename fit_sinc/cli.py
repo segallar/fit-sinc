@@ -19,8 +19,10 @@ from fit_sinc.hammerhead.oauth import HammerheadOAuth
 from fit_sinc.state.store import Store
 from fit_sinc.sync.service import backfill_since, sync_activity
 from fit_sinc.timeutil import format_ts
+from fit_sinc.users.bootstrap import apply_bootstrap_admin
 from fit_sinc.users.context import UserContext, resolve_user_context
 from fit_sinc.users.migrate import infer_hammerhead_user_id, migrate_legacy_files
+from fit_sinc.users.models import UserRow
 
 app = typer.Typer(help="fit_sinc — Hammerhead → Garmin Connect")
 hammerhead_app = typer.Typer(help="Hammerhead OAuth and API")
@@ -70,7 +72,16 @@ def _bootstrap_store() -> Store:
     hh_uid = infer_hammerhead_user_id(settings)
     store.ensure_default_user(hammerhead_user_id=hh_uid)
     migrate_legacy_files(settings, settings.default_user_id)
+    apply_bootstrap_admin(store, settings)
     return store
+
+
+def _find_user(store: Store, identifier: str) -> UserRow | None:
+    ident = identifier.strip()
+    row = store.get_user(ident) or store.get_user_by_email(ident)
+    if row:
+        return row
+    return next((u for u in store.list_users() if u.slug == ident.lower()), None)
 
 
 @app.command()
@@ -88,8 +99,43 @@ def user_list() -> None:
     store = _bootstrap_store()
     for u in store.list_users():
         hh = u.hammerhead_user_id or "—"
-        off = " [disabled]" if u.disabled else ""
-        typer.echo(f"{u.id}\t{u.slug}\t{u.email}\tHH={hh}{off}")
+        flags = ""
+        if u.is_admin:
+            flags += " [admin]"
+        if u.disabled:
+            flags += " [disabled]"
+        typer.echo(f"{u.id}\t{u.slug}\t{u.email}\tHH={hh}{flags}")
+
+
+@user_app.command("promote-admin")
+def user_promote_admin(
+    identifier: str = typer.Argument(..., help="User id, slug, or email"),
+) -> None:
+    """Grant admin role (users.is_admin)."""
+    store = _bootstrap_store()
+    row = _find_user(store, identifier)
+    if not row:
+        typer.echo(f"User not found: {identifier}", err=True)
+        raise typer.Exit(1)
+    store.set_admin(row.id, is_admin=True)
+    typer.echo(f"Admin granted: {row.slug} ({row.email})")
+
+
+@user_app.command("demote-admin")
+def user_demote_admin(
+    identifier: str = typer.Argument(..., help="User id, slug, or email"),
+) -> None:
+    """Revoke admin role (cannot demote the last active admin)."""
+    store = _bootstrap_store()
+    row = _find_user(store, identifier)
+    if not row:
+        typer.echo(f"User not found: {identifier}", err=True)
+        raise typer.Exit(1)
+    if row.is_admin and store.count_admins() <= 1:
+        typer.echo("Cannot demote the last active admin", err=True)
+        raise typer.Exit(1)
+    store.set_admin(row.id, is_admin=False)
+    typer.echo(f"Admin revoked: {row.slug} ({row.email})")
 
 
 @user_app.command("create")

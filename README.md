@@ -177,6 +177,7 @@ fit_sinc serve                  # http://127.0.0.1:8080 — webhook + UI
 |----------|------------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архитектура v1, компоненты, реализованные фазы |
 | [docs/PLAN.md](docs/PLAN.md) | Roadmap v2, будущие фазы |
+| [docs/5b-DECISIONS.md](docs/5b-DECISIONS.md) | Фаза 5b.0: регистрация, bootstrap admin |
 | [docs/CI-CD.md](docs/CI-CD.md) | Сервер, nginx, certbot, deploy |
 | [docs/API_HAMMERHEAD.md](docs/API_HAMMERHEAD.md) | OAuth, webhook, REST |
 | [docs/API_GARMIN.md](docs/API_GARMIN.md) | Web JWT, upload, garth-ng |

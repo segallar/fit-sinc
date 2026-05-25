@@ -19,7 +19,8 @@
 | 2 Sync core + webhook sync + UI | ✅ |
 | 3 Garmin upload (web JWT, browser, fallback) | ✅ код / ⚠️ ops на сервере |
 | 4 CI (GitHub Actions test + deploy main) | ✅ |
-| 5 Мультипользовательность (tenants, `/admin`, `/app`) | ✅ |
+| 5 Мультипользовательность (tenants, `/admin`, `/app`) | ✅ MVP |
+| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | 📋 5b.0 ✅ |
 | 6 UI v2 (календарь, поиск, баннер, failed) | 📋 план |
 | 6.1 Алерты (Telegram / email) | 📋 план |
 | — Ops: README + тесты CI | ✅ README / 📋 расширить тесты |
@@ -30,19 +31,18 @@
 
 ## Roadmap v2
 
-Порядок работ: **сначала фундамент (tenants + админка)**, потом UI и новые источники, routes — в конце (исследование Garmin).
+Порядок работ: **5 (MVP) ✅ → 5b (единый кабинет + регистрация) → 6 (UI v2) → 7/8**. Routes — в конце (исследование Garmin).
 
 ```mermaid
 flowchart TB
-    subgraph now [Сейчас v1]
-        WH[webhook HMAC]
-        UI1[UI + один Basic Auth]
-        D1[data/ без user_id]
+    subgraph done [Сделано]
+        P5[Фаза 5 MVP: tenants, /app, /admin]
     end
-    subgraph p5 [Фаза 5]
-        T[tenants + user_id в БД]
-        ADM["/admin — отдельная привилегия"]
-        APP["/app — кабинет пользователя"]
+    subgraph p5b [Фаза 5b]
+        UNI[единый layout + is_admin в БД]
+        REG[саморегистрация]
+        SET[настройки: профиль + HH/Garmin]
+        NGX[без nginx Basic Auth]
     end
     subgraph p6 [Фаза 6]
         UI2[календарь + поиск, баннер, ошибки]
@@ -53,46 +53,51 @@ flowchart TB
     subgraph p8 [Фаза 8]
         RTE[routes HH ↔ Garmin courses]
     end
-    now --> p5 --> p6 --> p7 --> p8
+    done --> p5b --> p6 --> p7 --> p8
 ```
 
-### Фаза 5: Мультипользовательность + разделение админ / пользователь
+### Фаза 5: Мультипользовательность (MVP) — ✅
 
-**Проблема v1:** один пароль nginx на весь UI; webhook шлёт `userId`, но сервис его не маршрутизирует; все токены в `data/` без изоляции.
+**Сделано (2026-05):** `user_id` в БД и sync; `data/users/{id}/`; webhook → tenant; `/app/login` + кабинет; `/admin` CRUD users; сессии cookie; CLI `--user`.
 
-**Цель:** несколько пользователей сервиса, каждый со своими Hammerhead/Garmin и своими данными; **админка под отдельной привилегией**, не смешивать с кабинетом райдера.
+**Ограничения MVP (закрывает Фаза 5b):**
 
-#### Две зоны доступа
+- nginx **Basic Auth** на весь UI (двойной вход)
+- Админка — отдельный URL `/admin` и пароль из `.env` (`ADMIN_PASSWORD`), не роль в БД
+- Пользователей создаёт только админ; нет `/register`
+- Профиль и HH/Garmin в кабинете не редактируются (или только через админку)
 
-| Зона | URL (черновик) | Кто | Auth |
-|------|----------------|-----|------|
+Ниже — **целевая** модель Phase 5 (частично уже в коде); детальный план доработки — **Фаза 5b**.
+
+#### Две зоны доступа (целевая, после 5b)
+
+| Зона | URL | Кто | Auth |
+|------|-----|-----|------|
 | **Публичное API** | `/webhooks/*`, `/health` | Hammerhead, мониторинг | HMAC / без auth |
-| **Кабинет пользователя** | `/app/*` или `/u/{slug}/*` | Владелец аккаунта | Сессия приложения (логин/пароль или magic link) |
-| **Админка** | `/admin/*` | Оператор сервиса (ты) | **Отдельный** nginx Basic Auth *или* отдельный admin-login в приложении |
+| **Публичный UI** | `/login`, `/register` | Гость | — |
+| **Кабинет** | `/app/*` | Владелец аккаунта | Сессия (email + password) |
+| **Админ внутри кабинета** | `/app/admin/*` | `users.is_admin = 1` | та же сессия + проверка роли |
 
-Не использовать один `htpasswd` на всё: сейчас любой с паролем видит все данные.
+> **Устарело:** отдельный `/admin/login` и nginx `auth_basic` на `/` — убираем в 5b.
 
-#### nginx (целевая схема)
+#### nginx (целевая схема, после 5b)
 
 ```
 /webhooks/     → без auth
 /health        → без auth
-/admin/        → auth_basic admin (отдельный .htpasswd_fit_sinc_admin)
-/app/          → proxy в FastAPI (auth внутри приложения по user)
+/              → proxy в FastAPI (только сессия приложения)
 ```
 
-Либо оставить Basic Auth только на `/admin/`, а пользователей пускать через cookie после POST `/app/login`.
-
-#### Роли
+#### Роли (целевая, после 5b)
 
 | Роль | Права |
 |------|--------|
-| **admin** | В админке: завести/редактировать пользователей (email, Telegram, timezone, пароль), привязка `hammerhead_user_id`, disable, просмотр логов и статусов по всем; **не** видит пароли Garmin/Hammerhead в открытом виде |
-| **user** | Вход в `/app` своим email + паролем; только свой кабинет, HH/Garmin OAuth, sync; смена пароля у себя (опционально v2.1) |
+| **admin** | Пункты меню **Admin** в том же `/app`: users CRUD, disable, promote admin, логи по всем; **не** видит пароли Garmin/Hammerhead |
+| **user** | Свой кабинет, **Настройки** (профиль, пароль, HH/Garmin connect/disconnect), sync |
 
-#### Профиль пользователя (ведётся в админке)
+#### Профиль пользователя
 
-Админ создаёт и обслуживает учётки; у каждого райдера — **свой** доступ в кабинет, не общий nginx-пароль.
+**После 5b:** пользователь редактирует сам в `/app/settings`; админ — disable, promote, сброс чужого пароля, поддержка `hammerhead_user_id`.
 
 | Поле | Назначение |
 |------|------------|
@@ -101,9 +106,10 @@ flowchart TB
 | `email` | Логин в кабинет (unique), уведомления (опционально) |
 | `telegram` | `@username` или `chat_id` — алерты об ошибках sync (Phase 6+), контакт для админа |
 | `timezone` | IANA, напр. `Europe/Moscow`, `Europe/Berlin` — **все даты в кабинете** пользователя |
-| `password` | Задаёт/сбрасывает **админ** при создании; в БД только `password_hash` (bcrypt/argon2) |
-| `hammerhead_user_id` | Связь с webhook `userId` Hammerhead |
-| `disabled` | Запрет входа и sync |
+| `password` | Регистрация / смена в кабинете; админ может сбросить; в БД только `password_hash` |
+| `is_admin` | **5b:** флаг в БД; пункты меню Admin только при `is_admin=1` |
+| `hammerhead_user_id` | Связь с webhook `userId`; заполняется после OAuth Hammerhead в настройках |
+| `disabled` | Запрет входа и sync (только админ) |
 
 **Логин в кабинет:** `email` + пароль (сессия cookie, HttpOnly). Telegram — не замена пароля на старте, а канал связи и push-уведомлений.
 
@@ -121,6 +127,7 @@ users(
   timezone TEXT NOT NULL DEFAULT 'Europe/Moscow',
   hammerhead_user_id TEXT UNIQUE,
   password_hash TEXT NOT NULL,
+  is_admin INTEGER DEFAULT 0,   -- 5b
   created_at, updated_at,
   disabled INTEGER DEFAULT 0
 )
@@ -152,28 +159,100 @@ fit_sinc --user roman garmin login
 fit_sinc --user roman sync --since 2025-01-01
 ```
 
-#### Админка `/admin` (MVP)
-
-Отдельный layout, отдельный вход (nginx `htpasswd_admin` или `admin` + пароль в приложении).
+#### Админка (MVP: `/admin` — ✅; цель 5b: `/app/admin`)
 
 | Страница | Действия |
 |----------|----------|
 | **Users** | Таблица: имя, email, Telegram, TZ, HH id, HH/Garmin status, последний sync, disabled |
-| **User → New** | Форма: slug, display_name, email, telegram, timezone (select IANA), password ×2, hammerhead_user_id |
-| **User → Edit** | То же + «Сбросить пароль», disable/enable, ссылка «открыть лог пользователя» |
-| **User → Log** | sync_events / session_refresh только этого `user_id` |
-| **System** | версия, disk, health, сводка `upload_ready` по пользователям |
+| **User → New** | Форма (при закрытой регистрации); иначе только promote/disable |
+| **User → Edit** | disable/enable, promote admin, сброс пароля, правка HH id (поддержка) |
+| **User → Log** | sync_events / session_refresh по `user_id` |
+| **System** | версия, health, сводка `upload_ready` по пользователям |
 
-Кабинет `/app` **не** даёт список других пользователей и не меняет email/TZ (только админ, чтобы не ломать привязку webhook).
+В **5b** те же страницы под `/app/admin/*`, пункты меню **Admin** видны только `is_admin`.
 
-#### Кабинет пользователя `/app` (MVP)
+#### Кабинет `/app` (MVP — ✅; цель 5b — настройки)
 
-- `GET/POST /app/login` — email + password
-- После входа: текущий дашборд (activities, log, session) **в его timezone**
-- Подключения: «Подключить Hammerhead» / «Подключить Garmin» (OAuth в контексте `user_id`)
-- Профиль (read-only v2.0): email, Telegram, timezone — «обратитесь к администратору»
+- `GET/POST /app/login` — email + password ✅
+- Дашборд, activities, log, session ✅
+- **5b:** `GET/POST /register` — саморегистрация (`REGISTRATION_OPEN` в `.env`)
+- **5b:** `/app/settings` — профиль (email, telegram, timezone), смена пароля, Hammerhead/Garmin (connect / disconnect / status)
 
-Позже (v2.1): смена пароля в кабинете; привязка Telegram bot для алертов (`/start` → сохранить `chat_id`).
+Позже (6.1): Telegram bot для алертов (`/start` → `chat_id`).
+
+---
+
+### Фаза 5b: Единый кабинет, регистрация, настройки, без Basic Auth
+
+**Цель:** одно приложение и одна сессия; админ — часть UI по привилегии; пользователи сами регистрируются и управляют профилем и подключениями HH/Garmin; nginx без Basic Auth.
+
+```mermaid
+flowchart TB
+    subgraph public [Публично]
+        WH["/webhooks/*"]
+        HL["/health"]
+        REG["/register"]
+        LOG["/login"]
+    end
+    subgraph session [Сессия cookie]
+        APP["/app/* кабинет"]
+        SET["/app/settings"]
+        ADM["/app/admin/* только is_admin"]
+    end
+    WH --> Sync
+    LOG --> APP
+    REG --> APP
+    APP --> SET
+    APP --> ADM
+```
+
+| Требование | Решение |
+|------------|---------|
+| Админка «часть системы» | Один layout `/app`; в nav блок **Admin** (Users, System) только если `user.is_admin` |
+| Саморегистрация | `GET/POST /register` (+ `REGISTRATION_OPEN=true` в `.env`) |
+| HH/Garmin на пользователя | Уже `data/users/{id}/`; UI **Настройки → Подключения** + OAuth в контексте сессии |
+| Профиль | **Настройки → Профиль** — email, telegram, timezone, display_name; смена пароля |
+| Без Basic Auth | Убрать `auth_basic` в `deploy/nginx/fit.conf`; cookie `https_only` на prod |
+
+#### Подфазы и оценка
+
+| Подфаза | Содержание | Оценка |
+|---------|------------|--------|
+| **5b.0** | Решения: открытая регистрация / invite-only; bootstrap первого admin (`BOOTSTRAP_ADMIN_EMAIL` или CLI `user promote-admin`) | ✅ [5b-DECISIONS.md](5b-DECISIONS.md) |
+| **5b.1** | `users.is_admin`; один логин; убрать `SESSION_ADMIN_KEY` + `/admin/login`; guard `/app/admin/*`; миграция `default` → admin | 1 вечер |
+| **5b.2** | Единый Jinja layout; nav Dashboard / Activities / Log / Session / **Settings**; Admin-* для `is_admin`; перенос `admin_routes` → `/app/admin` (алиас `/admin` → 301) | 1–2 вечера |
+| **5b.3** | `/register`: slug/email/password/timezone, rate limit, auto-login → `/app/settings` | 1 вечер |
+| **5b.4** | `/app/settings`: профиль + пароль; HH OAuth callback с привязкой к сессии; Garmin connect/status; admin edit — disable, promote, сброс | 2 вечера |
+| **5b.5** | nginx: снять Basic Auth; `SESSION_SECRET` + `https_only`; обновить [CI-CD.md](CI-CD.md), README | ½ дня |
+| **5b.6** | Тесты: register, settings, `/app/admin` 403/200; зачистка `ADMIN_PASSWORD` из docs | 1 вечер |
+
+**Порядок:** `5b.1` → `5b.5` (можно сразу после ролей) → `5b.2` → `5b.3` → `5b.4` → `5b.6`.
+
+**MVP «можно пользоваться»:** 5b.1 + 5b.5 + 5b.3 + 5b.4 (только подключения) + 5b.2 (меню).
+
+#### `/app/settings` (детально)
+
+| Секция | Поля / действия |
+|--------|------------------|
+| **Профиль** | `display_name`, `email`, `telegram`, `timezone` |
+| **Безопасность** | смена пароля (старый + новый) |
+| **Hammerhead** | статус; «Подключить» / «Отключить»; OAuth → `hammerhead_user_id` + `data/users/{id}/hammerhead_tokens.json` |
+| **Garmin** | `upload_ready`, JWT TTL; «Подключить» (garmin login / import cookies / refresh); пароль в UI не показывать |
+
+**Техника OAuth Hammerhead:** callback с `state` (подписанный `user_id`); redirect URI production; не писать в глобальный `data/`.
+
+#### Риски 5b
+
+| Риск | Mitigation |
+|------|------------|
+| Спам-регистрации | `REGISTRATION_OPEN=false` по умолчанию на prod; rate limit; позже captcha |
+| Снятие Basic Auth до готового login | 5b.5 только после 5b.1 |
+| Смена email | UNIQUE + понятная ошибка |
+| HH OAuth без привязки к сессии | signed `state` в callback |
+
+**Не переписывать:** `user_id` в store/sync, `data/users/{id}/`, webhook routing, per-user JWT refresh.
+
+См. также каркас UI v2: [UI.md](UI.md).
 
 ---
 
@@ -225,7 +304,7 @@ fit_sinc --user roman sync --since 2025-01-01
 - Вкладка/быстрый фильтр «только ошибки», понятный лог (`duplicate` vs error)
 - Re-sync / force с подтверждением (частично уже есть `retry` на `/activities`)
 
-Админка — отдельный layout (`/admin`), без календаря райдеров (только таблица пользователей + лог).
+Админ-раздел (`/app/admin`) — без календаря райдеров (таблица пользователей + лог); общий shell с кабинетом (после 5b).
 
 **Оценка календарь + поиск:** ~1 вечер (SQLite aggregate + шаблон); +0.5 вечера с HTMX и полировкой.
 
@@ -246,9 +325,9 @@ fit_sinc --user roman sync --since 2025-01-01
 | **Алерты Telegram** при `sync_status=error` или N ошибок подряд | **6.1** | 📋 | поле `telegram` из Фазы 5 |
 | Email-алерты | 6.1+ | 📋 | опционально |
 
-**Порядок:** Фаза **5** → Фаза **6** (баннер, failed, **календарь**, поиск) → **6.1** (бот) → расширить тесты в щели.
+**Порядок:** Фаза **5** ✅ → **5b** → Фаза **6** (баннер, failed, **календарь**, поиск) → **6.1** (бот).
 
-**Быстрый путь без Фазы 5 (опционально):** календарь на текущем `/activities` за 1–2 вечера — потом перенести под `/app` при tenants.
+UI v2 (Tailwind) можно вести параллельно с **5b.2** (общий `layouts/app.html`).
 
 ---
 
@@ -296,8 +375,9 @@ Source (download ActivityPayload + external_id)
 
 | Фаза | Зависит от | Оценка |
 |------|------------|--------|
-| 5 tenants + admin | — | 3–5 дней |
-| 6 UI v2 (календарь, поиск, баннер, failed) | 5 | 2–3 дня |
+| 5 tenants + admin (MVP) | — | ✅ |
+| **5b** единый кабинет, регистрация, settings, nginx | 5 | 6–8 вечеров |
+| 6 UI v2 (календарь, поиск, баннер, failed) | 5b | 2–3 дня |
 | 6.1 алерты Telegram | 5, 6 | 0.5–1 день |
 | 7 multi-source | 5 | 2–4 дня на источник |
 | 8 routes | 5, spike Garmin | 1–2 недели с исследованием |
@@ -343,6 +423,13 @@ Source (download ActivityPayload + external_id)
 - [x] Фаза 5: tenants, `user_id` в БД, webhook → user, `data/users/{id}/`
 - [x] Фаза 5: `/admin` — CRUD users (email, telegram, timezone, password, HH id)
 - [x] Фаза 5: `/app` — login email+password, сессия, UI в TZ пользователя
+- [x] **Фаза 5b.0:** `is_admin`, bootstrap, `REGISTRATION_OPEN`, CLI `promote-admin` — [5b-DECISIONS.md](5b-DECISIONS.md)
+- [x] **Фаза 5b.1:** один логин, `/app/admin/*`, убрать `/admin/login` + `ADMIN_PASSWORD`
+- [ ] **Фаза 5b.2:** единый layout + меню (Admin только для admin)
+- [ ] **Фаза 5b.3:** `/register` + `REGISTRATION_OPEN`
+- [ ] **Фаза 5b.4:** `/app/settings` — профиль, пароль, Hammerhead/Garmin
+- [ ] **Фаза 5b.5:** nginx без Basic Auth; `https_only` cookie
+- [ ] **Фаза 5b.6:** тесты register/settings/admin guard
 - [ ] Фаза 6: календарь + поиск на `/app/activities`, баннер, failed, лог
 - [ ] Фаза 6.1: Telegram-алерты при ошибках sync
 - [x] Ops: расширить smoke (webhook endpoint, tenant routing, /app login, sync skip)
@@ -352,4 +439,4 @@ Source (download ActivityPayload + external_id)
 ### Открыто (мелочи v1)
 
 - [x] Push в `main` → https://github.com/segallar/fit-sinc
-- [ ] UI: re-sync в кабинете (частично есть `retry` на `/activities`)
+- [x] UI: re-sync в кабинете (Re-sync, force + confirm, retry all errors, redirect `next`)

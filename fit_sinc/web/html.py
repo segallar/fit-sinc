@@ -170,6 +170,32 @@ def fmt_ttl(seconds: float | None) -> str:
     return format_ttl(seconds)
 
 
+def resync_form(
+    prefix: str,
+    activity_id: str,
+    *,
+    return_url: str,
+    force_confirm: bool = False,
+    label: str = "Re-sync",
+) -> str:
+    """POST form to queue force sync; optional JS confirm for already-synced rows."""
+    from urllib.parse import quote
+
+    aid_q = quote(activity_id, safe="")
+    action = f"{prefix}/activities/{aid_q}/retry"
+    confirm_attr = ""
+    if force_confirm:
+        confirm_attr = (
+            ' onsubmit="return confirm('
+            "'Already synced. Upload this activity to Garmin again?');\""
+        )
+    return (
+        f'<form class="inline" method="post" action="{esc(action)}"{confirm_attr}>'
+        f'<input type="hidden" name="next" value="{esc(return_url)}">'
+        f'<button class="btn" type="submit">{esc(label)}</button></form>'
+    )
+
+
 def page(
     title: str,
     body: str,
@@ -177,6 +203,8 @@ def page(
     active: str = "",
     wide: bool = False,
     prefix: str = "/app",
+    show_admin: bool = False,
+    admin_active: str = "",
 ) -> str:
     nav = [
         ("", "Dashboard"),
@@ -190,6 +218,9 @@ def page(
         cls = ' style="font-weight:600"' if (href == active or (active == "/" and href == "")) else ""
         path = f"{prefix}{href}" if href else f"{prefix}/"
         links.append(f'<a href="{path}"{cls}>{esc(label)}</a>')
+    if show_admin:
+        adm_cls = ' style="font-weight:600"' if admin_active.startswith("/admin") else ""
+        links.append(f'<a href="{prefix}/admin/"{adm_cls}>Admin</a>')
     links.append(logout)
     body_class = "wide" if wide else ""
     body_attr = f' class="{body_class}"' if body_class else ""
