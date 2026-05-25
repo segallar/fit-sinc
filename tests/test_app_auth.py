@@ -39,6 +39,10 @@ class TestAppLogin(unittest.TestCase):
                 dash = client.get("/app/", follow_redirects=False)
                 self.assertEqual(dash.status_code, 200)
                 self.assertIn("Connections", dash.text)
+                self.assertIn("user-bar", dash.text)
+                self.assertIn("owner@test.local", dash.text)
+                self.assertIn("/app/logout", dash.text)
+                self.assertNotIn('nav><a href="/app/logout">Logout</a>', dash.text)
 
     def test_login_wrong_password_redirects_with_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -98,6 +102,13 @@ class TestAdminAccess(unittest.TestCase):
                 users = client.get("/app/admin/")
                 self.assertEqual(users.status_code, 200)
                 self.assertIn("default", users.text)
+                self.assertIn("user-bar", users.text)
+                self.assertIn("admin@test.local", users.text)
+
+                new_user = client.get("/app/admin/users/new")
+                self.assertEqual(new_user.status_code, 200)
+                self.assertIn("form-card", new_user.text)
+                self.assertIn("user-form", new_user.text)
 
     def test_non_admin_forbidden_on_app_admin(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
