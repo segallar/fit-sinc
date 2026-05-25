@@ -12,8 +12,8 @@ router = APIRouter(tags=["site"])
 APP_PREFIX = "/app"
 
 
-@router.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def site_home(request: Request, error: str = "") -> str | RedirectResponse:
+@router.get("/", response_class=HTMLResponse, response_model=None, include_in_schema=False)
+async def site_home(request: Request, error: str = ""):
     if user_context_from_session(request):
         return RedirectResponse(f"{APP_PREFIX}/", status_code=303)
     return render_template(
