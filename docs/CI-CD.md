@@ -206,8 +206,8 @@ Environment **production** (опционально): защита ветки / a
 
 ### Первый запуск
 
-1. Push репозитория на GitHub.
-2. Добавить secret `SSH_PRIVATE_KEY`.
+1. Репозиторий: https://github.com/segallar/fit-sinc
+2. Secret `SSH_PRIVATE_KEY` в Settings → Secrets and variables → Actions.
 3. Push в `main` — в Actions появятся `test` и `deploy`.
 
 ## GitLab CI (альтернатива)
