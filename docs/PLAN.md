@@ -239,7 +239,7 @@ fit_sinc --user roman sync --since 2025-01-01
 |--------|------|--------|-------------|
 | Smoke-тесты в CI (`compileall`, unittest) | 4 | ✅ | — |
 | README на GitHub | ops | ✅ | — |
-| Тесты: webhook HMAC endpoint, `sync_activity` с моками HH/Garmin | 6 / ops | 📋 | можно параллельно 5 |
+| Тесты: webhook HMAC endpoint, `sync_activity` с моками HH/Garmin | ops | ✅ | webhook, tenant, /app login, sync skip |
 | **Баннер статуса** на дашборде | 6 | 📋 | лучше после 5 (`/app`) |
 | **Очередь failed** — фильтр `status=error`, retry | 6 | 📋 | retry уже в коде |
 | Понятный sync log (`duplicate` ≠ error) | 6 | 📋 | — |
@@ -345,7 +345,7 @@ Source (download ActivityPayload + external_id)
 - [x] Фаза 5: `/app` — login email+password, сессия, UI в TZ пользователя
 - [ ] Фаза 6: календарь + поиск на `/app/activities`, баннер, failed, лог
 - [ ] Фаза 6.1: Telegram-алерты при ошибках sync
-- [ ] Ops: расширить smoke (webhook endpoint, sync mocks)
+- [x] Ops: расширить smoke (webhook endpoint, tenant routing, /app login, sync skip)
 - [ ] Фаза 7: абстракция Source/Sink, manual FIT
 - [ ] Фаза 8: spike routes / Garmin courses
 
