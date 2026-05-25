@@ -1,0 +1,23 @@
+{% extends "layouts/base.html" %}
+{% block container_class %}{% if wide %}max-w-7xl{% else %}max-w-6xl{% endif %}{% endblock %}
+
+{% block header_extra %}
+<nav class="mb-6 flex flex-wrap gap-2" aria-label="Cabinet">
+  {% for href, label in nav_items %}
+  {% set is_active = (href.rstrip('/') == active_nav.rstrip('/')) %}
+  <a href="{{ href }}"
+     class="rounded-full px-4 py-1.5 text-sm font-medium ring-1 ring-inset transition
+            {% if is_active %}bg-teal-700 text-white ring-teal-700{% else %}bg-white text-slate-700 ring-slate-200 hover:bg-slate-50{% endif %}">
+    {{ label }}
+  </a>
+  {% endfor %}
+</nav>
+{% if current_user %}
+{% include "components/user_bar.html" %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% include "components/flash.html" %}
+{% block page_content %}{% endblock %}
+{% endblock %}

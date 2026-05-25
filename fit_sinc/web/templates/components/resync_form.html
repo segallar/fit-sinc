@@ -1,0 +1,8 @@
+<form class="resync-form inline" method="post" action="{{ prefix }}/activities/{{ activity_id | urlencode }}/retry"
+      {% if force_confirm %}onsubmit="return confirm('Already synced. Upload this activity to Garmin again?');"{% endif %}>
+  <input type="hidden" name="next" value="{{ return_url }}">
+  <button type="submit"
+          class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
+    {{ label }}
+  </button>
+</form>

@@ -1,0 +1,45 @@
+{% extends "layouts/cabinet.html" %}
+
+{% block title %}Sync log — fit_sinc{% endblock %}
+
+{% block page_content %}
+<h2 class="mb-3 text-lg font-semibold">Sync log</h2>
+<p class="mb-4 text-sm text-slate-500">{{ range_label }}</p>
+
+<div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+  <table class="min-w-full divide-y divide-slate-100 text-sm">
+    <thead class="bg-slate-50 text-left text-slate-500">
+      <tr>
+        <th class="px-4 py-3 font-medium">Time</th>
+        <th class="px-4 py-3 font-medium">Event</th>
+        <th class="px-4 py-3 font-medium">Activity</th>
+        <th class="px-4 py-3 font-medium">Message</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for e in events %}
+      <tr class="hover:bg-slate-50/80">
+        <td class="px-4 py-3 font-mono text-xs whitespace-nowrap">{{ fmt_date(e.created_at) }}</td>
+        <td class="px-4 py-3">{{ e.event_type }}</td>
+        <td class="px-4 py-3 font-mono text-xs">{{ e.activity_id or '—' }}</td>
+        <td class="px-4 py-3">{{ e.message }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="px-4 py-8 text-center text-slate-500">No events yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<nav class="pager mt-4 flex gap-2">
+  {% if prev_page %}
+  <a href="{{ prefix }}/log?page={{ prev_page }}"
+     class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">← Prev</a>
+  {% endif %}
+  <span class="px-2 py-1.5 text-sm text-slate-600">Page {{ page }}</span>
+  {% if next_page %}
+  <a href="{{ prefix }}/log?page={{ next_page }}"
+     class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Next →</a>
+  {% endif %}
+</nav>
+{% endblock %}

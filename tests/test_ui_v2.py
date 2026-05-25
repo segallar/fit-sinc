@@ -1,12 +1,12 @@
-"""UI v2 scaffold — без сети."""
+"""Jinja templates and UI helpers (no network)."""
 
 import unittest
 
 from fastapi.testclient import TestClient
 
 
-class TestUiV2(unittest.TestCase):
-    def test_render_template(self) -> None:
+class TestTemplates(unittest.TestCase):
+    def test_render_status_fragment(self) -> None:
         from fit_sinc.web.templating import render_template
 
         html = render_template(
@@ -17,18 +17,27 @@ class TestUiV2(unittest.TestCase):
         self.assertIn("Garmin JWT TTL", html)
         self.assertIn("2h", html)
 
-    def test_ui_preview_routes(self) -> None:
+    def test_login_page_uses_app_css(self) -> None:
         from fit_sinc.web.app import app
 
         client = TestClient(app)
-        r = client.get("/ui-preview")
+        r = client.get("/app/login")
         self.assertEqual(r.status_code, 200)
-        self.assertIn("UI v2 preview", r.text)
         self.assertIn("/static/app.css", r.text)
+        self.assertIn("Sign in", r.text)
 
-        frag = client.get("/ui-preview/fragment/status")
-        self.assertEqual(frag.status_code, 200)
-        self.assertIn("Garmin JWT TTL", frag.text)
+    def test_timezone_select_template(self) -> None:
+        from fit_sinc.web.templating import render_template
+
+        html = render_template(
+            "components/timezone_select.html",
+            select_name="timezone",
+            selected="Europe/Moscow",
+        )
+        self.assertIn("<select", html)
+        self.assertIn("Europe/Moscow", html)
+        self.assertIn("Europe/Berlin", html)
+        self.assertIn("optgroup", html)
 
 
 if __name__ == "__main__":

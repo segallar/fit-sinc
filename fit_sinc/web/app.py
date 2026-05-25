@@ -19,8 +19,6 @@ from fit_sinc.users.migrate import infer_hammerhead_user_id, migrate_legacy_file
 from fit_sinc.web.admin_routes import router as admin_router
 from fit_sinc.web.app_routes import router as app_router
 from fit_sinc.web.auth import install_auth_middleware, install_sessions
-from fit_sinc.web.ui_v2 import router as ui_v2_router
-
 logger = logging.getLogger("fit_sinc")
 
 
@@ -88,7 +86,6 @@ install_auth_middleware(app)
 install_sessions(app)
 app.include_router(app_router)
 app.include_router(admin_router)
-app.include_router(ui_v2_router)
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

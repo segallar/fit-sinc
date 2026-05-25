@@ -8,7 +8,7 @@ from fit_sinc.users.timezones import (
     options_for_select,
     timezone_choices,
 )
-from fit_sinc.web import html as H
+from fit_sinc.web.templating import render_template
 
 
 class TestTimezones(unittest.TestCase):
@@ -24,7 +24,11 @@ class TestTimezones(unittest.TestCase):
         self.assertIn("Europe/Moscow", timezone_choices())
 
     def test_select_html_renders(self) -> None:
-        field = H.timezone_field("timezone", "Europe/Moscow")
+        field = render_template(
+            "components/timezone_select.html",
+            select_name="timezone",
+            selected="Europe/Moscow",
+        )
         self.assertIn("<select", field)
         self.assertIn("Europe/Moscow", field)
         self.assertIn("Europe/Berlin", field)

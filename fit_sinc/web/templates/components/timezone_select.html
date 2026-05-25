@@ -1,0 +1,18 @@
+<label class="flex flex-col gap-1 text-sm text-slate-600">
+  <span>Timezone</span>
+  <select name="{{ select_name }}"
+          class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
+    {% set ns = namespace(current_group=None) %}
+    {% for opt in timezone_options(selected) %}
+    {% if opt.group != ns.current_group %}
+    {% if ns.current_group is not none %}</optgroup>{% endif %}
+    {% if opt.group %}
+    <optgroup label="{{ opt.group }}">
+    {% endif %}
+    {% set ns.current_group = opt.group %}
+    {% endif %}
+    <option value="{{ opt.value }}"{% if opt.selected %} selected{% endif %}>{{ opt.value }}</option>
+    {% endfor %}
+    {% if ns.current_group %}</optgroup>{% endif %}
+  </select>
+</label>

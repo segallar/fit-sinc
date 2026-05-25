@@ -1,0 +1,51 @@
+{% extends "layouts/cabinet.html" %}
+
+{% block title %}Admin — Users — fit_sinc{% endblock %}
+
+{% block page_content %}
+<h2 class="mb-4 text-lg font-semibold">Users</h2>
+<p class="mb-4">
+  <a href="{{ admin_prefix }}/users/new"
+     class="inline-flex rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">New user</a>
+</p>
+
+<div class="table-wrap overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+  <table class="min-w-full divide-y divide-slate-100 text-sm">
+    <thead class="bg-slate-50 text-left text-slate-500">
+      <tr>
+        <th class="px-3 py-3 font-medium">id</th>
+        <th class="px-3 py-3 font-medium">slug</th>
+        <th class="px-3 py-3 font-medium">Name</th>
+        <th class="px-3 py-3 font-medium">Email</th>
+        <th class="px-3 py-3 font-medium">Telegram</th>
+        <th class="px-3 py-3 font-medium">TZ</th>
+        <th class="px-3 py-3 font-medium">HH user</th>
+        <th class="px-3 py-3 font-medium">admin</th>
+        <th class="px-3 py-3 font-medium">off</th>
+        <th class="px-3 py-3 font-medium"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for u in users %}
+      <tr class="hover:bg-slate-50/80">
+        <td class="px-3 py-2 font-mono text-xs">{{ u.id }}</td>
+        <td class="px-3 py-2">{{ u.slug }}</td>
+        <td class="px-3 py-2">{{ u.display_name }}</td>
+        <td class="px-3 py-2">{{ u.email }}</td>
+        <td class="px-3 py-2">{{ u.telegram or '—' }}</td>
+        <td class="px-3 py-2">{{ u.timezone }}</td>
+        <td class="px-3 py-2 font-mono text-xs">{{ u.hammerhead_user_id or '—' }}</td>
+        <td class="px-3 py-2">{{ 'yes' if u.is_admin else '' }}</td>
+        <td class="px-3 py-2">{{ 'yes' if u.disabled else '' }}</td>
+        <td class="px-3 py-2">
+          <a href="{{ admin_prefix }}/users/{{ u.id }}/edit"
+             class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">edit</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="px-4 py-8 text-center text-slate-500">No users</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

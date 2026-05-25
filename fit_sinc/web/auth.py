@@ -10,6 +10,7 @@ from fit_sinc.config import get_settings
 from fit_sinc.state.store import Store
 from fit_sinc.users.context import UserContext, resolve_user_context
 from fit_sinc.users.models import UserRow
+from fit_sinc.web.templating import render_template
 
 SESSION_USER_KEY = "user_id"
 APP_ADMIN_PREFIX = "/app/admin"
@@ -56,11 +57,7 @@ def logout_user(request: Request) -> None:
 
 def _admin_forbidden_page() -> HTMLResponse:
     return HTMLResponse(
-        """<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">
-<title>Forbidden</title></head><body>
-<h1>403</h1><p>Admin access required.</p>
-<p><a href="/app/">Back to dashboard</a></p>
-</body></html>""",
+        render_template("pages/forbidden.html"),
         status_code=403,
     )
 
@@ -73,9 +70,6 @@ def install_auth_middleware(app: FastAPI) -> None:
             return await call_next(request)
         if path.startswith("/webhooks"):
             return await call_next(request)
-        if path.startswith("/ui-preview"):
-            return await call_next(request)
-
         if path.startswith("/admin"):
             if path.startswith("/admin/login"):
                 return RedirectResponse("/app/login", status_code=301)
