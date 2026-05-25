@@ -1,6 +1,6 @@
 # Roadmap fit_sinc
 
-> **Статус (2026-05-25):** MVP (фазы 0–5) в production; **5b** в работе (5b.0–5b.1 ✅, UI ✅, остаток 5b.2 — Settings в nav).
+> **Статус (2026-05-25):** MVP (фазы 0–5) в production; **5b** в работе (5b.0–5b.1 ✅, UI ✅); **Security-тесты** — 📋.
 
 **Текущее состояние:** [README](../README.md) · [ARCHITECTURE.md](ARCHITECTURE.md)  
 **Операции:** [CI-CD.md](CI-CD.md) · [API Hammerhead](API_HAMMERHEAD.md) · [API Garmin](API_GARMIN.md)
@@ -22,6 +22,7 @@
 | 5 Мультипользовательность (tenants, `/admin`, `/app`) | ✅ MVP |
 | **5b** Единый кабинет, регистрация, настройки, без Basic Auth | 🔄 5b.0–5b.1 ✅ · UI ✅ · 5b.2 ⏳ Settings в nav |
 | **UI** Новый интерфейс приложения (Jinja2 + Tailwind) | ✅ |
+| **Security** Тесты доступа (session auth, страницы и API) | 📋 частично |
 | 6 UI v2 (календарь, поиск, баннер, failed) | 📋 план |
 | 6.1 Алерты (Telegram / email) | 📋 план |
 | 6.2 Локализация (i18n: ru, en, …) | 📋 план |
@@ -33,7 +34,7 @@
 
 ## Roadmap v2
 
-Порядок работ: **5 (MVP) ✅ → UI ✅ → 5b → 6 (календарь, баннер, failed) → 6.2 (i18n) → 7/8**. Routes — в конце (исследование Garmin).
+Порядок работ: **5 (MVP) ✅ → UI ✅ → 5b → Security-тесты (до 5b.5) → 6 → 6.2 (i18n) → 7/8**. Routes — в конце (исследование Garmin).
 
 ```mermaid
 flowchart TB
@@ -226,6 +227,52 @@ fit_sinc --user roman sync --since 2025-01-01
 
 ---
 
+### Security: тесты доступа (session auth)
+
+> **Отдельный пункт roadmap** — регрессия авторизации; не смешивать с функциональными тестами register/settings (**5b.6**).
+
+**Цель:** доступ к кабинету, admin и защищённым действиям — **только** с валидной cookie-сессией (`fit_sinc_session` → `user_id` в `auth.py`); публичные эндпоинты остаются открытыми по явным правилам middleware.
+
+**Модель (уже в коде):**
+
+| Зона | Без сессии | Обычный user | `is_admin` |
+|------|------------|--------------|------------|
+| `/app/login` | ✅ | ✅ | ✅ |
+| `/app/*` (кабинет) | → `/app/login` | ✅ | ✅ |
+| `/app/admin/*` | → `/app/login` | **403** | ✅ |
+| `/`, `/health`, `/static/*` | ✅ | ✅ | ✅ |
+| `/webhooks/*` | HMAC (не session) | — | — |
+
+**Уже есть (`tests/test_app_auth.py`):**
+
+| Проверка | Статус |
+|----------|--------|
+| login ok / неверный пароль | ✅ |
+| `GET /app/activities` без cookie → redirect | ✅ |
+| admin → `/app/admin/` 200; non-admin → 403 | ✅ |
+| legacy `/admin/` → 301 `/app/admin/` | ✅ |
+
+**Нужно покрыть:**
+
+| Область | Проверки |
+|---------|----------|
+| **Страницы `/app/*`** | GET без cookie → 303 `/app/login`: `/`, activities, log, session; после **5b.4** — `/app/settings` |
+| **POST `/app/*`** | `session/refresh`, `activities/.../retry`, `retry-errors` — без сессии → redirect; с сессией → ok |
+| **Скачивание FIT** | `GET /app/activities/{id}/fit` без сессии → redirect |
+| **Admin** | все GET/POST `/app/admin/*` (users, new, edit) — без сессии → login; с обычным user → 403 |
+| **Невалидная сессия** | несуществующий `user_id`, disabled user, пустая cookie → не попадает в кабинет |
+| **Изоляция tenant** | user A не получает activities/log/FIT другого user (404 или пусто, не чужие данные) |
+| **Публично** | `/`, `/health`, `/app/login`, `/static/app.css` — 200 без session |
+| **Webhook API** | без/неверный HMAC при `HAMMERHEAD_WEBHOOK_SECRET` → 403 (дополнить `test_webhook.py`) |
+
+**Реализация:** `tests/test_security_auth.py` — table-driven список `(method, path, expect_status|redirect)`; общий helper login/logout.
+
+**Когда:** параллельно **5b.4**; **блокер для 5b.5** (снятие nginx Basic Auth).
+
+**Оценка:** 1 вечер.
+
+---
+
 ### Фаза 5b: Единый кабинет, регистрация, настройки, без Basic Auth
 
 **Цель:** одно приложение и одна сессия; админ — часть UI по привилегии; пользователи сами регистрируются и управляют профилем и подключениями HH/Garmin; nginx без Basic Auth.
@@ -268,11 +315,11 @@ flowchart TB
 | **5b.3** | `/register`: slug/email/password/timezone, rate limit, auto-login → `/app/settings` | 1 вечер |
 | **5b.4** | `/app/settings`: профиль + пароль; HH OAuth callback с привязкой к сессии; Garmin connect/status; admin edit — disable, promote, сброс | 2 вечера |
 | **5b.5** | nginx: снять Basic Auth; `SESSION_SECRET` + `https_only`; обновить [CI-CD.md](CI-CD.md), README | ½ дня |
-| **5b.6** | Тесты: register, settings, `/app/admin` 403/200; зачистка `ADMIN_PASSWORD` из docs | 1 вечер |
+| **5b.6** | Функциональные тесты: register, settings, формы admin | 1 вечер |
 
-**Порядок (актуальный):** `5b.1` ✅ → **UI** ✅ → **`5b.4`** (Settings + HH/Garmin) → **`5b.5`** (nginx) → **`5b.3`** (register) → **5b.6**.
+**Порядок (актуальный):** `5b.1` ✅ → **UI** ✅ → **`5b.4`** → **[Security-тесты](#security-тесты-доступа-session-auth)** → **`5b.5`** (nginx) → **`5b.3`** (register) → **5b.6**.
 
-**MVP «можно пользоваться»:** 5b.1 ✅ + **UI** ✅ + **5b.4** + **5b.5** + **5b.3**.
+**MVP «можно пользоваться»:** 5b.1 ✅ + **UI** ✅ + **5b.4** + **Security-тесты** + **5b.5** + **5b.3**.
 
 #### 5b.2 — остаток (Settings в nav)
 
@@ -473,6 +520,7 @@ fit_sinc/web/i18n.py   # t("nav.dashboard", locale=...) → str
 | Smoke-тесты в CI (`compileall`, unittest) | 4 | ✅ | — |
 | README на GitHub | ops | ✅ | — |
 | Тесты: webhook HMAC endpoint, `sync_activity` с моками HH/Garmin | ops | ✅ | webhook, tenant, /app login, sync skip |
+| **Security-тесты:** session auth на все `/app/*`, `/app/admin/*`, webhook HMAC | **Security** | 📋 | 5b.1 ✅; блокер **5b.5** |
 | **Баннер статуса** на дашборде | 6 | 📋 | лучше после 5 (`/app`) |
 | **Очередь failed** — фильтр `status=error`, retry | 6 | 📋 | retry уже в коде |
 | Понятный sync log (`duplicate` ≠ error) | 6 | 📋 | — |
@@ -529,7 +577,8 @@ Source (download ActivityPayload + external_id)
 |------|------------|--------|
 | 5 tenants + admin (MVP) | — | ✅ |
 | **UI** новый интерфейс (Jinja2 + Tailwind) | 5 | ✅ |
-| **5b** единый кабинет, регистрация, settings, nginx | 5, UI | 2–4 вечера (5b.0–5b.1, UI ✅) |
+| **Security** тесты session auth (страницы + POST + tenant) | 5b.1, UI | 1 вечер |
+| **5b** единый кабинет, регистрация, settings, nginx | 5, UI, Security | 2–4 вечера (5b.0–5b.1, UI ✅) |
 | 6 UI v2 (календарь, поиск, баннер, failed) | 5b, UI | 2–3 дня |
 | 6.1 алерты Telegram | 5, 6 | 0.5–1 день |
 | **6.2** локализация (ru/en + `users.locale`) | UI, 6 | 2–3 вечера |
@@ -583,11 +632,12 @@ Source (download ActivityPayload + external_id)
 - [x] Фаза 5: `/app` — login email+password, сессия, UI в TZ пользователя
 - [x] **Фаза 5b.0:** `is_admin`, bootstrap, `REGISTRATION_OPEN`, CLI `promote-admin` — [5b-DECISIONS.md](5b-DECISIONS.md)
 - [x] **Фаза 5b.1:** один логин, `/app/admin/*`, убрать `/admin/login` + `ADMIN_PASSWORD`
+- [ ] **Security:** тесты доступа — session auth на страницы и POST `/app/*`, admin 403, tenant isolation, webhook HMAC
 - [ ] **Фаза 5b.2:** пункт **Settings** в nav (страница — 5b.4)
 - [ ] **Фаза 5b.3:** `/register` + `REGISTRATION_OPEN`
 - [ ] **Фаза 5b.4:** `/app/settings` — профиль, пароль, Hammerhead/Garmin (приоритет)
-- [ ] **Фаза 5b.5:** nginx без Basic Auth; `https_only` cookie
-- [ ] **Фаза 5b.6:** тесты register/settings/admin guard
+- [ ] **Фаза 5b.5:** nginx без Basic Auth; `https_only` cookie (после Security-тестов)
+- [ ] **Фаза 5b.6:** функциональные тесты register/settings/admin forms
 - [ ] Docs: ARCHITECTURE — multi-tenant `data/users/{id}/`, без глобального `data/garmin_web`
 - [ ] Фаза 6: календарь + поиск на `/app/activities`, баннер, failed, лог
 - [ ] Фаза 6.1: Telegram-алерты при ошибках sync
