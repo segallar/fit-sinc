@@ -32,6 +32,9 @@ def user_context_from_session(request: Request) -> UserContext | None:
     uid = request.session.get(SESSION_USER_KEY)
     if not uid:
         return None
+    user = Store(get_settings().db_path).get_user(str(uid))
+    if user is None or user.disabled:
+        return None
     return resolve_user_context(str(uid))
 
 
