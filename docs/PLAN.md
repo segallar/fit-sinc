@@ -1,6 +1,6 @@
 # Roadmap fit_sinc
 
-> **Статус (2026-05-25):** MVP (фазы 0–5) в production; **5b** в работе (5b.0–5b.1 ✅, 5b.2 частично).
+> **Статус (2026-05-25):** MVP (фазы 0–5) в production; **5b** в работе (5b.0–5b.1 ✅, UI ✅, остаток 5b.2 — Settings в nav).
 
 **Текущее состояние:** [README](../README.md) · [ARCHITECTURE.md](ARCHITECTURE.md)  
 **Операции:** [CI-CD.md](CI-CD.md) · [API Hammerhead](API_HAMMERHEAD.md) · [API Garmin](API_GARMIN.md)
@@ -20,7 +20,8 @@
 | 3 Garmin upload (web JWT, browser, fallback) | ✅ код / ⚠️ ops на сервере |
 | 4 CI (GitHub Actions test + deploy main) | ✅ |
 | 5 Мультипользовательность (tenants, `/admin`, `/app`) | ✅ MVP |
-| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | 🔄 5b.0–5b.1 ✅ · 5b.2 ~50% |
+| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | 🔄 5b.0–5b.1 ✅ · UI ✅ · 5b.2 ⏳ Settings в nav |
+| **UI** Новый интерфейс приложения (Jinja2 + Tailwind) | ✅ |
 | 6 UI v2 (календарь, поиск, баннер, failed) | 📋 план |
 | 6.1 Алерты (Telegram / email) | 📋 план |
 | 6.2 Локализация (i18n: ru, en, …) | 📋 план |
@@ -32,7 +33,7 @@
 
 ## Roadmap v2
 
-Порядок работ: **5 (MVP) ✅ → 5b → 6 (UI v2) → 6.2 (i18n) → 7/8**. Routes — в конце (исследование Garmin).
+Порядок работ: **5 (MVP) ✅ → UI ✅ → 5b → 6 (календарь, баннер, failed) → 6.2 (i18n) → 7/8**. Routes — в конце (исследование Garmin).
 
 ```mermaid
 flowchart TB
@@ -41,11 +42,13 @@ flowchart TB
     end
     subgraph p5b [Фаза 5b]
         R1[is_admin + /app/admin ✅]
-        UNI[layout: user bar, формы ⏳]
+        UI[новый интерфейс Jinja+Tailwind ✅]
+        UNI[Settings в nav ⏳]
         REG[саморегистрация]
         SET[настройки: профиль + HH/Garmin]
         NGX[без nginx Basic Auth]
-        R1 --> UNI
+        R1 --> UI
+        UI --> UNI
         UNI --> REG
         UNI --> SET
         SET --> NGX
@@ -194,6 +197,35 @@ fit_sinc --user roman sync --since 2025-01-01
 
 ---
 
+### UI: Новый интерфейс приложения
+
+> **Отдельный пункт roadmap** — визуальный слой и шаблоны, не путать с **Фазой 6** (календарь, баннер, failed).
+
+**Цель:** единый современный интерфейс для `/app` и `/app/admin` вместо v1 (`html.py` + inline `BASE_CSS`).
+
+**Сделано (2026-05):**
+
+| Элемент | Статус |
+|---------|--------|
+| Jinja2 layouts: `cabinet.html`, `auth.html`, `base.html` | ✅ |
+| Tailwind `app.css` (сборка из `frontend/`) | ✅ |
+| Страницы: login, dashboard, activities, log, session | ✅ |
+| Admin: users, user form | ✅ |
+| Компоненты: user bar, nav, pager, re-sync, timezone select, status badges | ✅ |
+| Удалены: `ui_v2.py`, `/ui-preview`, `H.page()` / `BASE_CSS` | ✅ |
+| `html.py` — только форматтеры (`esc`, `fmt_*`) | ✅ |
+
+**Остаток (не блокирует UI, идёт в 5b):**
+
+| Элемент | Фаза |
+|---------|------|
+| Пункт **Settings** в nav → `/app/settings` | 5b.4 |
+| Полировка UX (календарь, баннер, failed-очередь) | 6 |
+
+**Документация:** [UI.md](UI.md) · коммит `feat(web): мигрировать UI на Jinja2 и Tailwind`.
+
+---
+
 ### Фаза 5b: Единый кабинет, регистрация, настройки, без Basic Auth
 
 **Цель:** одно приложение и одна сессия; админ — часть UI по привилегии; пользователи сами регистрируются и управляют профилем и подключениями HH/Garmin; nginx без Basic Auth.
@@ -232,25 +264,23 @@ flowchart TB
 |---------|------------|--------|
 | **5b.0** | Решения: открытая регистрация / invite-only; bootstrap первого admin (`BOOTSTRAP_ADMIN_EMAIL` или CLI `user promote-admin`) | ✅ [5b-DECISIONS.md](5b-DECISIONS.md) |
 | **5b.1** | `users.is_admin`; один логин; убрать `SESSION_ADMIN_KEY` + `/admin/login`; guard `/app/admin/*`; legacy `/admin` → 301 | ✅ |
-| **5b.2** | Единый layout (`html.py` → Jinja): nav, **user bar**, форма пользователя, TZ `<select>`, пункт **Settings** в nav | 🔄 см. ниже |
+| **5b.2** | Остаток layout: пункт **Settings** в nav → `/app/settings` (основной UI — см. раздел **UI** выше) | ⏳ 5b.4 |
 | **5b.3** | `/register`: slug/email/password/timezone, rate limit, auto-login → `/app/settings` | 1 вечер |
 | **5b.4** | `/app/settings`: профиль + пароль; HH OAuth callback с привязкой к сессии; Garmin connect/status; admin edit — disable, promote, сброс | 2 вечера |
 | **5b.5** | nginx: снять Basic Auth; `SESSION_SECRET` + `https_only`; обновить [CI-CD.md](CI-CD.md), README | ½ дня |
 | **5b.6** | Тесты: register, settings, `/app/admin` 403/200; зачистка `ADMIN_PASSWORD` из docs | 1 вечер |
 
-**Порядок (актуальный):** `5b.1` ✅ → **`5b.4`** (Settings + HH/Garmin в UI — без CLI) → **`5b.5`** (nginx) → **`5b.3`** (register) → добить **5b.2** (Settings в nav, Jinja) → **5b.6**.
+**Порядок (актуальный):** `5b.1` ✅ → **UI** ✅ → **`5b.4`** (Settings + HH/Garmin) → **`5b.5`** (nginx) → **`5b.3`** (register) → **5b.6**.
 
-**MVP «можно пользоваться»:** 5b.1 ✅ + **5b.4** + **5b.5** + **5b.3** + пункт **Settings** в nav (остаток 5b.2).
+**MVP «можно пользоваться»:** 5b.1 ✅ + **UI** ✅ + **5b.4** + **5b.5** + **5b.3**.
 
-#### 5b.2 — детализация
+#### 5b.2 — остаток (Settings в nav)
 
 | Элемент | Статус |
 |---------|--------|
-| **user bar** на `/app/*` и `/app/admin/*` (имя, email, slug, admin badge, Logout) | ✅ |
-| Форма New/Edit user (секции, подсказки, `form-card`) | ✅ |
-| Timezone — `<select>` IANA (`users/timezones.py`), валидация в store | ✅ |
 | Пункт **Settings** в nav → `/app/settings` | ⏳ ждёт 5b.4 |
-| Единый Jinja `layouts/app.html` (вместо дублирования `html.py`) | ⏳ |
+
+> User bar, формы, Jinja layout, Tailwind — перенесены в раздел **[UI: Новый интерфейс приложения](#ui-новый-интерфейс-приложения)** ✅.
 
 #### Garmin Connect — сессия на каждого пользователя (уже в коде)
 
@@ -299,7 +329,7 @@ flowchart TB
 
 **Документация:** детали upload/JWT — [API_GARMIN.md](API_GARMIN.md); runtime — [ARCHITECTURE.md](ARCHITECTURE.md) (обновить схему `data/users/{id}/` при 5b.4).
 
-См. также каркас UI v2: [UI.md](UI.md).
+См. **[UI: Новый интерфейс приложения](#ui-новый-интерфейс-приложения)** и [UI.md](UI.md).
 
 ---
 
@@ -361,7 +391,7 @@ flowchart TB
 
 **Цель:** интерфейс кабинета и админки на нескольких языках; даты/числа — по `timezone` + `locale` пользователя.
 
-**Когда:** после **5b.2** (единый Jinja layout) и основных экранов **6** — иначе дважды выносить строки из `html.py` / шаблонов.
+**Когда:** после **[UI](#ui-новый-интерфейс-приложения)** ✅ и основных экранов **6** — иначе дважды выносить строки из шаблонов.
 
 #### Языки (приоритет)
 
@@ -419,11 +449,11 @@ fit_sinc/web/i18n.py   # t("nav.dashboard", locale=...) → str
 | **6.2.2** | Выбор языка в settings + cookie для гостя; `lang` в `<html>` | ½ вечера |
 | **6.2.3** | Тесты: `t()` fallback, страница login с `Accept-Language: en` | ½ вечера |
 
-**Порядок:** **5b.2** → **6.2.0–6.2.1** (можно параллельно с календарём **6**, но layout сначала) → **6.2.2** вместе с **5b.4** settings.
+**Порядок:** **[UI](#ui-новый-интерфейс-приложения)** ✅ → **6.2.0–6.2.1** (можно параллельно с календарём **6**) → **6.2.2** вместе с **5b.4** settings.
 
 #### UX
 
-- Переключатель языка в шапке (рядом с user bar) **или** только в Settings — решить в **5b.2** (не дублировать везде).
+- Переключатель языка в шапке (рядом с user bar) **или** только в Settings — решить в **5b.4** / **6.2** (не дублировать везде).
 - Непереведённый ключ → показывать ключ в dev, fallback на `ru` в prod + лог warning.
 
 #### Вне scope
@@ -449,9 +479,7 @@ fit_sinc/web/i18n.py   # t("nav.dashboard", locale=...) → str
 | **Алерты Telegram** при `sync_status=error` или N ошибок подряд | **6.1** | 📋 | поле `telegram` из Фазы 5 |
 | Email-алерты | 6.1+ | 📋 | опционально |
 
-**Порядок:** Фаза **5** ✅ → **5b** → Фаза **6** (баннер, failed, **календарь**, поиск) → **6.2** (i18n) → **6.1** (бот, тексты алертов на `locale`).
-
-UI v2 (Tailwind) можно вести параллельно с **5b.2** (общий `layouts/app.html`).
+**Порядок:** Фаза **5** ✅ → **5b** (+ **UI** ✅) → Фаза **6** (календарь, баннер, failed) → **6.2** (i18n) → **6.1** (бот).
 
 ---
 
@@ -500,10 +528,11 @@ Source (download ActivityPayload + external_id)
 | Фаза | Зависит от | Оценка |
 |------|------------|--------|
 | 5 tenants + admin (MVP) | — | ✅ |
-| **5b** единый кабинет, регистрация, settings, nginx | 5 | 4–6 вечеров (5b.0–5b.2 частично ✅) |
-| 6 UI v2 (календарь, поиск, баннер, failed) | 5b | 2–3 дня |
+| **UI** новый интерфейс (Jinja2 + Tailwind) | 5 | ✅ |
+| **5b** единый кабинет, регистрация, settings, nginx | 5, UI | 2–4 вечера (5b.0–5b.1, UI ✅) |
+| 6 UI v2 (календарь, поиск, баннер, failed) | 5b, UI | 2–3 дня |
 | 6.1 алерты Telegram | 5, 6 | 0.5–1 день |
-| **6.2** локализация (ru/en + `users.locale`) | 5b.2, 6 | 2–3 вечера |
+| **6.2** локализация (ru/en + `users.locale`) | UI, 6 | 2–3 вечера |
 | 7 multi-source | 5 | 2–4 дня на источник |
 | 8 routes | 5, spike Garmin | 1–2 недели с исследованием |
 
@@ -540,7 +569,8 @@ Source (download ActivityPayload + external_id)
 - [x] Garmin upload: web JWT, refresh, browser/HTTP/garth chain
 - [x] Проверить на sirocco: `garmin status` → `upload_ready`, sync работает (2026-05-25)
 - [x] CI: GitHub Actions [`test.yml`](../.github/workflows/test.yml) + [`deploy.yml`](../.github/workflows/deploy.yml), smoke tests
-- [x] **5b.2 (часть):** user bar, форма пользователя, IANA timezone select, тесты auth/admin form
+- [x] **UI:** новый интерфейс приложения (Jinja2 + Tailwind, `/app` + `/app/admin`) — [UI.md](UI.md)
+- [x] **5b.2 (часть):** user bar, форма пользователя, IANA timezone select, тесты auth/admin form → см. **UI** выше
 - [x] Secret `SSH_PRIVATE_KEY` в GitHub
 - [x] README GitHub + разделение docs (ARCHITECTURE / PLAN)
 - [x] Push в `main` → https://github.com/segallar/fit-sinc
@@ -553,7 +583,7 @@ Source (download ActivityPayload + external_id)
 - [x] Фаза 5: `/app` — login email+password, сессия, UI в TZ пользователя
 - [x] **Фаза 5b.0:** `is_admin`, bootstrap, `REGISTRATION_OPEN`, CLI `promote-admin` — [5b-DECISIONS.md](5b-DECISIONS.md)
 - [x] **Фаза 5b.1:** один логин, `/app/admin/*`, убрать `/admin/login` + `ADMIN_PASSWORD`
-- [ ] **Фаза 5b.2:** ⏳ Settings в nav + Jinja layout · ✅ user bar, форма user, TZ select
+- [ ] **Фаза 5b.2:** пункт **Settings** в nav (страница — 5b.4)
 - [ ] **Фаза 5b.3:** `/register` + `REGISTRATION_OPEN`
 - [ ] **Фаза 5b.4:** `/app/settings` — профиль, пароль, Hammerhead/Garmin (приоритет)
 - [ ] **Фаза 5b.5:** nginx без Basic Auth; `https_only` cookie
