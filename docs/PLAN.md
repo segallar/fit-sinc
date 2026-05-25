@@ -1,6 +1,6 @@
 # Roadmap fit_sinc
 
-> **Статус (2026-05-25):** MVP (фазы 0–4) в production.
+> **Статус (2026-05-25):** MVP (фазы 0–5) в production; **5b** в работе (5b.0–5b.1 ✅, 5b.2 частично).
 
 **Текущее состояние:** [README](../README.md) · [ARCHITECTURE.md](ARCHITECTURE.md)  
 **Операции:** [CI-CD.md](CI-CD.md) · [API Hammerhead](API_HAMMERHEAD.md) · [API Garmin](API_GARMIN.md)
@@ -20,7 +20,7 @@
 | 3 Garmin upload (web JWT, browser, fallback) | ✅ код / ⚠️ ops на сервере |
 | 4 CI (GitHub Actions test + deploy main) | ✅ |
 | 5 Мультипользовательность (tenants, `/admin`, `/app`) | ✅ MVP |
-| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | 📋 5b.0 ✅ |
+| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | 🔄 5b.0–5b.1 ✅ · 5b.2 ~50% |
 | 6 UI v2 (календарь, поиск, баннер, failed) | 📋 план |
 | 6.1 Алерты (Telegram / email) | 📋 план |
 | 6.2 Локализация (i18n: ru, en, …) | 📋 план |
@@ -37,13 +37,18 @@
 ```mermaid
 flowchart TB
     subgraph done [Сделано]
-        P5[Фаза 5 MVP: tenants, /app, /admin]
+        P5[Фаза 5 MVP: tenants, /app, admin CRUD]
     end
     subgraph p5b [Фаза 5b]
-        UNI[единый layout + is_admin в БД]
+        R1[is_admin + /app/admin ✅]
+        UNI[layout: user bar, формы ⏳]
         REG[саморегистрация]
         SET[настройки: профиль + HH/Garmin]
         NGX[без nginx Basic Auth]
+        R1 --> UNI
+        UNI --> REG
+        UNI --> SET
+        SET --> NGX
     end
     subgraph p6 [Фаза 6]
         UI2[календарь + поиск, баннер, ошибки]
@@ -61,14 +66,16 @@ flowchart TB
 
 ### Фаза 5: Мультипользовательность (MVP) — ✅
 
-**Сделано (2026-05):** `user_id` в БД и sync; `data/users/{id}/`; webhook → tenant; `/app/login` + кабинет; `/admin` CRUD users; сессии cookie; CLI `--user`.
+**Сделано (2026-05):** `user_id` в БД и sync; `data/users/{id}/`; webhook → tenant; `/app/login` + кабинет; CRUD users (сейчас `/app/admin`); сессии cookie; CLI `--user`.
 
-**Ограничения MVP (закрывает Фаза 5b):**
+**Ограничения MVP (ещё открыты в 5b):**
 
-- nginx **Basic Auth** на весь UI (двойной вход)
-- Админка — отдельный URL `/admin` и пароль из `.env` (`ADMIN_PASSWORD`), не роль в БД
-- Пользователей создаёт только админ; нет `/register`
-- Профиль и HH/Garmin в кабинете не редактируются (или только через админку)
+- nginx **Basic Auth** на весь UI (двойной вход) — снять в **5b.5**
+- Нет `/register` — **5b.3**
+- Нет `/app/settings` — профиль и HH/Garmin только через админку / CLI — **5b.4**
+- Даты в таблицах пока в MSK ([`timeutil.py`](../fit_sinc/timeutil.py)); поле `users.timezone` есть, форматирование в TZ пользователя — вместе с **6** / settings
+
+**Уже сделано в 5b.1:** один логин; админка `/app/admin/*` по `users.is_admin`; legacy `/admin/*` → 301; `ADMIN_PASSWORD` убран.
 
 Ниже — **целевая** модель Phase 5 (частично уже в коде); детальный план доработки — **Фаза 5b**.
 
@@ -164,7 +171,7 @@ fit_sinc --user roman garmin login
 fit_sinc --user roman sync --since 2025-01-01
 ```
 
-#### Админка (MVP: `/admin` — ✅; цель 5b: `/app/admin`)
+#### Админка (`/app/admin/*` — ✅ с 5b.1; legacy `/admin` → 301)
 
 | Страница | Действия |
 |----------|----------|
@@ -224,16 +231,47 @@ flowchart TB
 | Подфаза | Содержание | Оценка |
 |---------|------------|--------|
 | **5b.0** | Решения: открытая регистрация / invite-only; bootstrap первого admin (`BOOTSTRAP_ADMIN_EMAIL` или CLI `user promote-admin`) | ✅ [5b-DECISIONS.md](5b-DECISIONS.md) |
-| **5b.1** | `users.is_admin`; один логин; убрать `SESSION_ADMIN_KEY` + `/admin/login`; guard `/app/admin/*`; миграция `default` → admin | 1 вечер |
-| **5b.2** | Единый layout (сейчас `html.py`, далее Jinja); nav + **user bar** (имя, email, slug, admin badge, Logout) на всех `/app/*` и `/app/admin/*`; форма New/Edit user (секции, TZ select); Settings в меню; Jinja — позже | 1–2 вечера |
+| **5b.1** | `users.is_admin`; один логин; убрать `SESSION_ADMIN_KEY` + `/admin/login`; guard `/app/admin/*`; legacy `/admin` → 301 | ✅ |
+| **5b.2** | Единый layout (`html.py` → Jinja): nav, **user bar**, форма пользователя, TZ `<select>`, пункт **Settings** в nav | 🔄 см. ниже |
 | **5b.3** | `/register`: slug/email/password/timezone, rate limit, auto-login → `/app/settings` | 1 вечер |
 | **5b.4** | `/app/settings`: профиль + пароль; HH OAuth callback с привязкой к сессии; Garmin connect/status; admin edit — disable, promote, сброс | 2 вечера |
 | **5b.5** | nginx: снять Basic Auth; `SESSION_SECRET` + `https_only`; обновить [CI-CD.md](CI-CD.md), README | ½ дня |
 | **5b.6** | Тесты: register, settings, `/app/admin` 403/200; зачистка `ADMIN_PASSWORD` из docs | 1 вечер |
 
-**Порядок:** `5b.1` → `5b.5` (можно сразу после ролей) → `5b.2` → `5b.3` → `5b.4` → `5b.6`.
+**Порядок (актуальный):** `5b.1` ✅ → **`5b.4`** (Settings + HH/Garmin в UI — без CLI) → **`5b.5`** (nginx) → **`5b.3`** (register) → добить **5b.2** (Settings в nav, Jinja) → **5b.6**.
 
-**MVP «можно пользоваться»:** 5b.1 + 5b.5 + 5b.3 + 5b.4 (только подключения) + 5b.2 (меню).
+**MVP «можно пользоваться»:** 5b.1 ✅ + **5b.4** + **5b.5** + **5b.3** + пункт **Settings** в nav (остаток 5b.2).
+
+#### 5b.2 — детализация
+
+| Элемент | Статус |
+|---------|--------|
+| **user bar** на `/app/*` и `/app/admin/*` (имя, email, slug, admin badge, Logout) | ✅ |
+| Форма New/Edit user (секции, подсказки, `form-card`) | ✅ |
+| Timezone — `<select>` IANA (`users/timezones.py`), валидация в store | ✅ |
+| Пункт **Settings** в nav → `/app/settings` | ⏳ ждёт 5b.4 |
+| Единый Jinja `layouts/app.html` (вместо дублирования `html.py`) | ⏳ |
+
+#### Garmin Connect — сессия на каждого пользователя (уже в коде)
+
+Каждый tenant: `data/users/{id}/garmin_web/session.json` (`JWT_WEB`, `session`, …), отдельно `garth/` для OAuth fallback.
+
+| Вопрос | Как сейчас |
+|--------|------------|
+| JWT общий? | **Нет** — свой на `user_id`; фоновый цикл в `app.py` обновляет по списку пользователей |
+| N виртуальных браузеров? | **Нет** — headless Chromium **по операции** (refresh/upload), затем `browser.close()` |
+| Refresh JWT | Сначала HTTP (`curl_cffi` + cookie `session`), Playwright — fallback |
+| Первичная привязка | На пользователя: `fit_sinc --user <slug> garmin login` или import cookies (до **5b.4** — только CLI) |
+
+**Чеклист нового пользователя (ops, до Settings UI):**
+
+1. Создать user (админка или `fit_sinc user create`)
+2. Заполнить `hammerhead_user_id` (= `userId` в webhook)
+3. `fit_sinc --user <slug> hammerhead auth`
+4. `fit_sinc --user <slug> garmin login` (или import-web-cookies)
+5. `fit_sinc --user <slug> garmin status` → `upload_ready`
+
+**Техдолг:** глобальные `GARMIN_EMAIL` / `GARMIN_PASSWORD` в `.env` используются как fallback при отсутствии сессии — для нескольких разных Garmin-аккаунтов **не подходит**; убрать из prod-сценария после **5b.4** (логин только в контексте сессии пользователя).
 
 #### `/app/settings` (детально)
 
@@ -251,11 +289,15 @@ flowchart TB
 | Риск | Mitigation |
 |------|------------|
 | Спам-регистрации | `REGISTRATION_OPEN=false` по умолчанию на prod; rate limit; позже captcha |
-| Снятие Basic Auth до готового login | 5b.5 только после 5b.1 |
+| Снятие Basic Auth до готового login | 5b.5 после 5b.1 ✅ и желательно после 5b.4 (Settings) |
+| Несколько Garmin-аккаунтов | Не использовать общий `GARMIN_*` в `.env`; per-user cookies в **5b.4** |
+| Много пользователей + частый Playwright refresh | Последовательный цикл refresh; при росте — очередь/лимиты (post-5b) |
 | Смена email | UNIQUE + понятная ошибка |
 | HH OAuth без привязки к сессии | signed `state` в callback |
 
-**Не переписывать:** `user_id` в store/sync, `data/users/{id}/`, webhook routing, per-user JWT refresh.
+**Не переписывать:** `user_id` в store/sync, `data/users/{id}/`, webhook routing, per-user JWT refresh (HTTP → Playwright fallback).
+
+**Документация:** детали upload/JWT — [API_GARMIN.md](API_GARMIN.md); runtime — [ARCHITECTURE.md](ARCHITECTURE.md) (обновить схему `data/users/{id}/` при 5b.4).
 
 См. также каркас UI v2: [UI.md](UI.md).
 
@@ -458,7 +500,7 @@ Source (download ActivityPayload + external_id)
 | Фаза | Зависит от | Оценка |
 |------|------------|--------|
 | 5 tenants + admin (MVP) | — | ✅ |
-| **5b** единый кабинет, регистрация, settings, nginx | 5 | 6–8 вечеров |
+| **5b** единый кабинет, регистрация, settings, nginx | 5 | 4–6 вечеров (5b.0–5b.2 частично ✅) |
 | 6 UI v2 (календарь, поиск, баннер, failed) | 5b | 2–3 дня |
 | 6.1 алерты Telegram | 5, 6 | 0.5–1 день |
 | **6.2** локализация (ru/en + `users.locale`) | 5b.2, 6 | 2–3 вечера |
@@ -497,7 +539,8 @@ Source (download ActivityPayload + external_id)
 - [x] Документация деплоя → [CI-CD.md](CI-CD.md)
 - [x] Garmin upload: web JWT, refresh, browser/HTTP/garth chain
 - [x] Проверить на sirocco: `garmin status` → `upload_ready`, sync работает (2026-05-25)
-- [x] CI pipeline: GitHub Actions, `scripts/ci/deploy.sh`, smoke tests
+- [x] CI: GitHub Actions [`test.yml`](../.github/workflows/test.yml) + [`deploy.yml`](../.github/workflows/deploy.yml), smoke tests
+- [x] **5b.2 (часть):** user bar, форма пользователя, IANA timezone select, тесты auth/admin form
 - [x] Secret `SSH_PRIVATE_KEY` в GitHub
 - [x] README GitHub + разделение docs (ARCHITECTURE / PLAN)
 - [x] Push в `main` → https://github.com/segallar/fit-sinc
@@ -506,15 +549,16 @@ Source (download ActivityPayload + external_id)
 ### Roadmap v2 (план)
 
 - [x] Фаза 5: tenants, `user_id` в БД, webhook → user, `data/users/{id}/`
-- [x] Фаза 5: `/admin` — CRUD users (email, telegram, timezone, password, HH id)
+- [x] Фаза 5: CRUD users (email, telegram, timezone, password, HH id) — сейчас `/app/admin`
 - [x] Фаза 5: `/app` — login email+password, сессия, UI в TZ пользователя
 - [x] **Фаза 5b.0:** `is_admin`, bootstrap, `REGISTRATION_OPEN`, CLI `promote-admin` — [5b-DECISIONS.md](5b-DECISIONS.md)
 - [x] **Фаза 5b.1:** один логин, `/app/admin/*`, убрать `/admin/login` + `ADMIN_PASSWORD`
-- [ ] **Фаза 5b.2:** единый layout + меню (Admin только для admin); ✅ user bar + форма пользователя (html.py); ⏳ Jinja + Settings в nav
+- [ ] **Фаза 5b.2:** ⏳ Settings в nav + Jinja layout · ✅ user bar, форма user, TZ select
 - [ ] **Фаза 5b.3:** `/register` + `REGISTRATION_OPEN`
-- [ ] **Фаза 5b.4:** `/app/settings` — профиль, пароль, Hammerhead/Garmin
+- [ ] **Фаза 5b.4:** `/app/settings` — профиль, пароль, Hammerhead/Garmin (приоритет)
 - [ ] **Фаза 5b.5:** nginx без Basic Auth; `https_only` cookie
 - [ ] **Фаза 5b.6:** тесты register/settings/admin guard
+- [ ] Docs: ARCHITECTURE — multi-tenant `data/users/{id}/`, без глобального `data/garmin_web`
 - [ ] Фаза 6: календарь + поиск на `/app/activities`, баннер, failed, лог
 - [ ] Фаза 6.1: Telegram-алерты при ошибках sync
 - [ ] **Фаза 6.2.0:** `users.locale`, каталоги `ru` / `en`, функция `t()`
