@@ -149,7 +149,7 @@ fit_sinc serve
 | **1 Auth** | Hammerhead OAuth, Garmin OAuth + web-сессия, webhook HMAC, dashboard |
 | **2 Sync** | `sync_activity()`, backfill, webhook → background sync, UI log/activities |
 | **3 Upload** | Web JWT, Playwright / HTTP / garth fallback |
-| **4 CI** | GitHub Actions: test + deploy на `main` — [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) |
+| **4 CI** | GitHub Actions: Test + Deploy на `main` — [test.yml](../.github/workflows/test.yml), [deploy.yml](../.github/workflows/deploy.yml) |
 
 **Hammerhead Developer Portal (production):**
 

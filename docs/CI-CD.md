@@ -1,6 +1,6 @@
 # CI/CD и деплой fit_sinc
 
-> Личный сервис на одном VPS. **CI:** GitHub Actions ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) — test на push/PR, deploy на `main` → sirocco. Альтернатива: [`.gitlab-ci.yml`](../.gitlab-ci.yml). Ручной deploy с Mac — ниже.
+> Личный сервис на одном VPS. **CI:** GitHub Actions — [`test.yml`](../.github/workflows/test.yml) (push/PR) и [`deploy.yml`](../.github/workflows/deploy.yml) (sirocco после успешного Test на `main`). Отдельные badges в README. Альтернатива: [`.gitlab-ci.yml`](../.gitlab-ci.yml). Ручной deploy с Mac — ниже.
 
 ## Схема
 
@@ -174,7 +174,9 @@ systemctl restart fit-sinc
 
 ## GitHub Actions (основной)
 
-Конфиг: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), деплой: [`scripts/ci/deploy.sh`](../scripts/ci/deploy.sh).
+Конфиг: [`.github/workflows/test.yml`](../.github/workflows/test.yml), [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml), деплой: [`scripts/ci/deploy.sh`](../scripts/ci/deploy.sh).
+
+**Badges:** `Tests` — compile + unittest; `Deploy` — rsync + systemd на sirocco. Красный Deploy при падении SSH/restart не означает, что тесты сломаны.
 
 ```mermaid
 flowchart LR

@@ -1,0 +1,41 @@
+# fit_sinc — deploy to sirocco after successful Test on push to main
+#
+# Secrets: SSH_PRIVATE_KEY
+# Optional vars: FIT_SINC_SSH_HOST, FIT_SINC_SSH_USER, FIT_SINC_DEPLOY_PATH
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [Test]
+    types: [completed]
+    branches: [main, master]
+
+concurrency:
+  group: deploy-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Install rsync and SSH client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq rsync openssh-client
+
+      - name: Deploy to sirocco
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          FIT_SINC_SSH_HOST: ${{ vars.FIT_SINC_SSH_HOST }}
+          FIT_SINC_SSH_USER: ${{ vars.FIT_SINC_SSH_USER }}
+          FIT_SINC_DEPLOY_PATH: ${{ vars.FIT_SINC_DEPLOY_PATH }}
+        run: |
+          chmod +x scripts/ci/deploy.sh
+          ./scripts/ci/deploy.sh

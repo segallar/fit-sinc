@@ -10,7 +10,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
-  <img src="https://github.com/segallar/fit-sinc/actions/workflows/ci.yml/badge.svg" alt="CI">
+  <a href="https://github.com/segallar/fit-sinc/actions/workflows/test.yml"><img src="https://github.com/segallar/fit-sinc/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/segallar/fit-sinc/actions/workflows/deploy.yml"><img src="https://github.com/segallar/fit-sinc/actions/workflows/deploy.yml/badge.svg" alt="Deploy"></a>
 </p>
 
 ---
@@ -167,7 +168,7 @@ fit_sinc serve                  # http://127.0.0.1:8080 — webhook + UI
 
 ## Деплой и CI
 
-- **CI:** GitHub Actions — тесты на push/PR, deploy на `main` → VPS (секрет `SSH_PRIVATE_KEY`)
+- **CI:** GitHub Actions — **Tests** (push/PR) и **Deploy** (sirocco после Test на `main`; badges в шапке)
 - **Ручной deploy:** rsync + systemd — [docs/CI-CD.md](docs/CI-CD.md)
 - Юниты: `deploy/fit-sinc.service`, `deploy/nginx/fit.conf`
 
