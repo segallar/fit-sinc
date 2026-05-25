@@ -57,8 +57,12 @@ Certbot для `fit.romansegalla.online` — отдельно, если cert е�
 
 ### 1. Код приложения
 
+Перед rsync собирается Tailwind (`scripts/ci/build-frontend-css.sh` → `fit_sinc/web/static/app.css`). Нужны Node.js и `npm` локально.
+
 ```bash
 cd /Users/roman/fit_sinc
+
+./scripts/ci/build-frontend-css.sh   # опционально отдельно
 
 rsync -avz --delete --exclude-from=.rsyncignore \
   -e "ssh -i ~/.ssh/id_ed25519" \
@@ -83,7 +87,7 @@ EOF
 |------|---------|
 | `.env`, `data/` | Секреты и runtime на сервере |
 | `.venv`, `.git` | Локальное / создаётся на VPS |
-| `frontend/node_modules/` | Только для `npm run build:css` на Mac/CI; на сервер уходит готовый `fit_sinc/web/static/app.css` |
+| `frontend/node_modules/` | Сборка CSS на Mac/CI (`build-frontend-css.sh`); на сервер — только `fit_sinc/web/static/app.css` |
 
 С `--delete` лишние каталоги на сервере (например старый `frontend/node_modules`) удаляются при следующем deploy.
 

@@ -30,6 +30,8 @@ export RSYNC_RSH="$RSYNC_SSH"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
+"${ROOT}/scripts/ci/build-frontend-css.sh"
+
 rsync -avz --delete --exclude-from=.rsyncignore \
   ./ "${USER}@${HOST}:${DEPLOY_PATH}/"
 
