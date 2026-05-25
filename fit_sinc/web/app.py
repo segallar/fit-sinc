@@ -19,6 +19,7 @@ from fit_sinc.users.migrate import infer_hammerhead_user_id, migrate_legacy_file
 from fit_sinc.web.admin_routes import router as admin_router
 from fit_sinc.web.app_routes import router as app_router
 from fit_sinc.web.auth import install_auth_middleware, install_sessions
+from fit_sinc.web.site_routes import router as site_router
 logger = logging.getLogger("fit_sinc")
 
 
@@ -84,6 +85,7 @@ app = FastAPI(title="fit_sinc", version="0.4.0", lifespan=_lifespan)
 # иначе request.session недоступен (500 на /, /app, /admin).
 install_auth_middleware(app)
 install_sessions(app)
+app.include_router(site_router)
 app.include_router(app_router)
 app.include_router(admin_router)
 

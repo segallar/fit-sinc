@@ -94,9 +94,7 @@ def install_auth_middleware(app: FastAPI) -> None:
             return await call_next(request)
 
         if path == "/":
-            if user_context_from_session(request):
-                return RedirectResponse("/app/", status_code=303)
-            return RedirectResponse("/app/login", status_code=303)
+            return await call_next(request)
 
         legacy = (
             "/activities",

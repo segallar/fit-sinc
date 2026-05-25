@@ -28,15 +28,46 @@ class TestImports(unittest.TestCase):
 
         self.assertEqual(app.title, "fit_sinc")
 
-    def test_root_redirects_not_500(self) -> None:
+    def test_root_landing_not_500(self) -> None:
         from fastapi.testclient import TestClient
 
         from fit_sinc.web.app import app
 
         client = TestClient(app, raise_server_exceptions=True)
         r = client.get("/", follow_redirects=False)
-        self.assertEqual(r.status_code, 303)
-        self.assertEqual(r.headers.get("location"), "/app/login")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("fit_sinc", r.text)
+        self.assertIn("/app/login", r.text)
+
+    def test_root_redirects_when_logged_in(self) -> None:
+        import tempfile
+        from pathlib import Path
+
+        from fastapi.testclient import TestClient
+
+        from fit_sinc.state.store import Store
+        from helpers import isolated_env
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(Path(tmp)):
+                settings = __import__(
+                    "fit_sinc.config", fromlist=["get_settings"]
+                ).get_settings()
+                Store(settings.db_path).ensure_default_user(
+                    email="u@test.local",
+                    password="secret",
+                )
+                from fit_sinc.web.app import app
+
+                client = TestClient(app)
+                client.post(
+                    "/app/login",
+                    data={"email": "u@test.local", "password": "secret"},
+                    follow_redirects=False,
+                )
+                r = client.get("/", follow_redirects=False)
+                self.assertEqual(r.status_code, 303)
+                self.assertEqual(r.headers.get("location"), "/app/")
 
     def test_token_set_roundtrip(self) -> None:
         ts = TokenSet("a", "r", 3600, "u1", 1000.0)

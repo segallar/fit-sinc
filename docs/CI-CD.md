@@ -18,7 +18,8 @@ flowchart LR
 |-----------|----------|
 | Сервер | `sirocco.romansegalla.online` (`134.209.133.187`) |
 | SSH | `ssh -i ~/.ssh/id_ed25519 root@sirocco.romansegalla.online` |
-| Домен | `fit.romansegalla.online` (DNS only, без Cloudflare proxy) |
+| Домен app | `fit.romansegalla.online` (DNS only, без Cloudflare proxy) |
+| Лендинг | `romansegalla.online` — proxy на `:8080`, публичный `/` с формой входа |
 | Каталог приложения | `/opt/fit_sinc` |
 | Пользователь сервиса | `fit_sinc:fit_sinc` |
 | Python venv | `/opt/fit_sinc/.venv` |
@@ -122,7 +123,10 @@ curl -sk -o /dev/null -w "%{http_code}\n" -X POST \
   -H "Content-Type: application/json" \
   -d '{"activityId":"test","userId":"192184"}'
 
-# UI (с Basic Auth)
+# Лендинг + логин (без Basic Auth на romansegalla.online)
+curl -sk https://romansegalla.online/ | head -20
+
+# UI fit (с Basic Auth, пока 5b.5 не снят)
 curl -sk -u admin:PASSWORD https://fit.romansegalla.online/
 
 # На сервере
@@ -141,6 +145,17 @@ ssh root@sirocco.romansegalla.online \
 | `/`, `/static/*`, `/favicon.ico` | Basic Auth | UI и статика |
 
 Конфиг: [`deploy/nginx/fit.conf`](../deploy/nginx/fit.conf)
+
+**romansegalla.online** — лендинг и тот же uvicorn без Basic Auth:
+
+```bash
+scp -i ~/.ssh/id_ed25519 deploy/nginx/romansegalla.conf \
+  root@sirocco.romansegalla.online:/etc/nginx/sites-available/romansegalla.online
+ssh -i ~/.ssh/id_ed25519 root@sirocco.romansegalla.online \
+  'nginx -t && systemctl reload nginx'
+```
+
+Конфиг: [`deploy/nginx/romansegalla.conf`](../deploy/nginx/romansegalla.conf). Статический fallback: [`deploy/www/index.html`](../deploy/www/index.html) (если proxy не включён — форма ведёт на fit).
 
 ---
 

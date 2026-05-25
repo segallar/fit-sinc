@@ -163,10 +163,12 @@ async def app_login_submit(
     request: Request,
     email: str = Form(""),
     password: str = Form(""),
+    next: str = Form(""),
 ) -> RedirectResponse:
     user = _store().verify_user_password(email, password)
     if not user:
-        return RedirectResponse(f"{P}/login?error=1", status_code=303)
+        dest = "/?error=1" if (next or "").strip() == "/" else f"{P}/login?error=1"
+        return RedirectResponse(dest, status_code=303)
     login_user(request, user.id)
     return RedirectResponse(f"{P}/", status_code=303)
 

@@ -3,21 +3,84 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>romansegalla.online</title>
+  <title>fit_sinc — Hammerhead → Garmin</title>
   <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
     body {
-      font-family: system-ui, sans-serif;
-      max-width: 32rem;
-      margin: 4rem auto;
-      padding: 0 1rem;
-      color: #222;
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      background: #f8fafc;
+      color: #0f172a;
       line-height: 1.5;
     }
-    a { color: #0f766e; }
+    .wrap { max-width: 28rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+    .brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem; }
+    .brand img { width: 48px; height: 48px; border-radius: 0.75rem; }
+    .brand p { margin: 0; font-size: 0.875rem; color: #0f766e; font-weight: 500; }
+    .brand h1 { margin: 0.1rem 0 0; font-size: 1.5rem; font-weight: 600; }
+    h2 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+    .lead { color: #475569; font-size: 0.9375rem; margin: 0 0 1rem; }
+    ul { margin: 0 0 1.5rem; padding-left: 1.1rem; color: #475569; font-size: 0.875rem; }
+    form { display: flex; flex-direction: column; gap: 1rem; }
+    label { display: block; font-size: 0.875rem; color: #475569; }
+    label span { display: block; margin-bottom: 0.25rem; }
+    input {
+      width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0;
+      border-radius: 0.5rem; font-size: 0.875rem;
+    }
+    input:focus { outline: 2px solid #14b8a6; border-color: #14b8a6; }
+    button {
+      margin-top: 0.25rem; padding: 0.55rem 1rem; border: none; border-radius: 0.5rem;
+      background: #0f766e; color: #fff; font-size: 0.875rem; font-weight: 600; cursor: pointer;
+    }
+    button:hover { background: #115e59; }
+    .foot { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;
+             font-size: 0.75rem; color: #64748b; }
+    .foot a { color: #0f766e; }
+    .note { font-size: 0.8125rem; color: #64748b; margin-top: 1rem; }
   </style>
 </head>
 <body>
-  <p><a href="https://fit.romansegalla.online/">fit.romansegalla.online</a> — fit_sinc</p>
-  <p><small>fit_sinc защищён паролем (Basic Auth). Webhook и /health — без пароля.</small></p>
+  <div class="wrap">
+    <header class="brand">
+      <img src="https://fit.romansegalla.online/static/icon.svg" alt="" width="48" height="48">
+      <div>
+        <p>Hammerhead → Garmin</p>
+        <h1>fit_sinc</h1>
+      </div>
+    </header>
+
+    <h2>Синхронизация тренировок</h2>
+    <p class="lead">
+      Сервис автоматически переносит поездки с Hammerhead Karoo в Garmin Connect:
+      webhook от Karoo → скачивание оригинального&nbsp;.fit → загрузка в ваш Garmin.
+    </p>
+    <ul>
+      <li>Без ручного импорта после каждой тренировки</li>
+      <li>Отдельный аккаунт Hammerhead и Garmin на пользователя</li>
+      <li>Кабинет: статус sync, журнал, повторная отправка</li>
+    </ul>
+
+    <h2>Вход в кабинет</h2>
+    <form method="post" action="https://fit.romansegalla.online/app/login">
+      <label>
+        <span>Email</span>
+        <input type="email" name="email" required autocomplete="username">
+      </label>
+      <label>
+        <span>Пароль</span>
+        <input type="password" name="password" required autocomplete="current-password">
+      </label>
+      <button type="submit">Войти</button>
+    </form>
+    <p class="note">После входа откроется кабинет на fit.romansegalla.online. Для единого домена обновите nginx: <code>deploy/nginx/romansegalla.conf</code>.</p>
+
+    <footer class="foot">
+      <a href="https://fit.romansegalla.online/">fit.romansegalla.online</a> ·
+      <a href="https://romansegalla.online/health">/health</a>
+    </footer>
+  </div>
 </body>
 </html>
