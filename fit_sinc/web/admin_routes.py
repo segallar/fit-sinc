@@ -3,17 +3,12 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
 from fit_sinc.config import get_settings
 from fit_sinc.state.store import Store
 from fit_sinc.web import html as H
-from fit_sinc.web.auth import (
-    is_admin_session,
-    login_admin,
-    logout_admin,
-    verify_admin_credentials,
-)
+from fit_sinc.web.auth import login_admin, logout_admin, verify_admin_credentials
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -116,7 +111,7 @@ async def admin_user_create(
     timezone: str = Form("Europe/Moscow"),
     telegram: str = Form(""),
     hammerhead_user_id: str = Form(""),
-) -> RedirectResponse:
+) -> Response:
     store = _store()
     try:
         store.create_user(

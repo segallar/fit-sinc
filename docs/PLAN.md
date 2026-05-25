@@ -19,7 +19,7 @@
 | 2 Sync core + webhook sync + UI | ✅ |
 | 3 Garmin upload (web JWT, browser, fallback) | ✅ код / ⚠️ ops на сервере |
 | 4 CI (GitHub Actions test + deploy main) | ✅ |
-| 5 Мультипользовательность (tenants, `/admin`, `/app`) | 📋 план |
+| 5 Мультипользовательность (tenants, `/admin`, `/app`) | ✅ |
 | 6 UI v2 (календарь, поиск, баннер, failed) | 📋 план |
 | 6.1 Алерты (Telegram / email) | 📋 план |
 | — Ops: README + тесты CI | ✅ README / 📋 расширить тесты |
@@ -340,9 +340,9 @@ Source (download ActivityPayload + external_id)
 
 ### Roadmap v2 (план)
 
-- [ ] Фаза 5: tenants, `user_id` в БД, webhook → user, `data/users/{id}/`
-- [ ] Фаза 5: `/admin` — CRUD users (email, telegram, timezone, password, HH id)
-- [ ] Фаза 5: `/app` — login email+password, сессия, UI в TZ пользователя
+- [x] Фаза 5: tenants, `user_id` в БД, webhook → user, `data/users/{id}/`
+- [x] Фаза 5: `/admin` — CRUD users (email, telegram, timezone, password, HH id)
+- [x] Фаза 5: `/app` — login email+password, сессия, UI в TZ пользователя
 - [ ] Фаза 6: календарь + поиск на `/app/activities`, баннер, failed, лог
 - [ ] Фаза 6.1: Telegram-алерты при ошибках sync
 - [ ] Ops: расширить smoke (webhook endpoint, sync mocks)

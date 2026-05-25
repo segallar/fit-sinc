@@ -82,9 +82,18 @@ class Store:
         rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
         return any(r["name"] == column for r in rows)
 
+    @staticmethod
+    def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
+        row = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (table,),
+        ).fetchone()
+        return row is not None
+
     def _init_schema(self) -> None:
+        """Create schema; migrate v1 DB before indexes that reference user_id."""
         with self._conn() as conn:
-            conn.executescript(
+            conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS users (
                     id TEXT PRIMARY KEY,
@@ -98,56 +107,108 @@ class Store:
                     disabled INTEGER NOT NULL DEFAULT 0,
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
-                );
-
-                CREATE TABLE IF NOT EXISTS activities (
-                    user_id TEXT NOT NULL,
-                    activity_id TEXT NOT NULL,
-                    name TEXT,
-                    activity_date TEXT,
-                    distance REAL,
-                    duration REAL,
-                    sync_status TEXT NOT NULL DEFAULT 'pending',
-                    fit_path TEXT,
-                    garmin_result TEXT,
-                    synced_at TEXT,
-                    error_message TEXT,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    PRIMARY KEY (user_id, activity_id)
-                );
-
+                )
+                """
+            )
+            self._ensure_activities_table(conn)
+            self._ensure_sync_events_table(conn)
+            self._ensure_session_refresh_table(conn)
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_activities_user_date
-                    ON activities(user_id, activity_date DESC);
+                    ON activities(user_id, activity_date DESC)
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_sync_events_created
+                    ON sync_events(created_at DESC)
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_session_refresh_created
+                    ON session_refresh_events(created_at DESC)
+                """
+            )
 
-                CREATE TABLE IF NOT EXISTS sync_events (
+    def _ensure_activities_table(self, conn: sqlite3.Connection) -> None:
+        if self._table_exists(conn, "activities"):
+            if not self._table_has_column(conn, "activities", "user_id"):
+                self._migrate_activities_v1(conn)
+            return
+        conn.execute(
+            """
+            CREATE TABLE activities (
+                user_id TEXT NOT NULL,
+                activity_id TEXT NOT NULL,
+                name TEXT,
+                activity_date TEXT,
+                distance REAL,
+                duration REAL,
+                sync_status TEXT NOT NULL DEFAULT 'pending',
+                fit_path TEXT,
+                garmin_result TEXT,
+                synced_at TEXT,
+                error_message TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY (user_id, activity_id)
+            )
+            """
+        )
+
+    def _ensure_sync_events_table(self, conn: sqlite3.Connection) -> None:
+        if not self._table_exists(conn, "sync_events"):
+            conn.execute(
+                """
+                CREATE TABLE sync_events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT,
                     activity_id TEXT,
                     event_type TEXT NOT NULL,
                     message TEXT,
                     created_at TEXT NOT NULL
-                );
+                )
+                """
+            )
+            return
+        if not self._table_has_column(conn, "sync_events", "user_id"):
+            conn.execute("ALTER TABLE sync_events ADD COLUMN user_id TEXT")
+            conn.execute(
+                """
+                UPDATE sync_events SET user_id = (
+                    SELECT user_id FROM activities
+                    WHERE activities.activity_id = sync_events.activity_id
+                    LIMIT 1
+                )
+                WHERE user_id IS NULL
+                """
+            )
+            conn.execute("UPDATE sync_events SET user_id = 'default' WHERE user_id IS NULL")
 
-                CREATE INDEX IF NOT EXISTS idx_sync_events_created
-                    ON sync_events(created_at DESC);
-
-                CREATE TABLE IF NOT EXISTS session_refresh_events (
+    def _ensure_session_refresh_table(self, conn: sqlite3.Connection) -> None:
+        if not self._table_exists(conn, "session_refresh_events"):
+            conn.execute(
+                """
+                CREATE TABLE session_refresh_events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT,
                     trigger TEXT NOT NULL,
                     event_type TEXT NOT NULL,
                     message TEXT,
                     created_at TEXT NOT NULL
-                );
-
-                CREATE INDEX IF NOT EXISTS idx_session_refresh_created
-                    ON session_refresh_events(created_at DESC);
+                )
                 """
             )
-            self._migrate_legacy_schema(conn)
+            return
+        if not self._table_has_column(conn, "session_refresh_events", "user_id"):
+            conn.execute("ALTER TABLE session_refresh_events ADD COLUMN user_id TEXT")
+            conn.execute(
+                "UPDATE session_refresh_events SET user_id = 'default' WHERE user_id IS NULL"
+            )
 
-    def _migrate_legacy_schema(self, conn: sqlite3.Connection) -> None:
+    def _migrate_activities_v1(self, conn: sqlite3.Connection) -> None:
         if not self._table_has_column(conn, "activities", "user_id"):
             conn.execute(
                 """
@@ -190,26 +251,6 @@ class Store:
                 CREATE INDEX IF NOT EXISTS idx_activities_user_date
                     ON activities(user_id, activity_date DESC)
                 """
-            )
-
-        if not self._table_has_column(conn, "sync_events", "user_id"):
-            conn.execute("ALTER TABLE sync_events ADD COLUMN user_id TEXT")
-            conn.execute(
-                """
-                UPDATE sync_events SET user_id = (
-                    SELECT user_id FROM activities
-                    WHERE activities.activity_id = sync_events.activity_id
-                    LIMIT 1
-                )
-                WHERE user_id IS NULL
-                """
-            )
-            conn.execute("UPDATE sync_events SET user_id = 'default' WHERE user_id IS NULL")
-
-        if not self._table_has_column(conn, "session_refresh_events", "user_id"):
-            conn.execute("ALTER TABLE session_refresh_events ADD COLUMN user_id TEXT")
-            conn.execute(
-                "UPDATE session_refresh_events SET user_id = 'default' WHERE user_id IS NULL"
             )
 
     @staticmethod

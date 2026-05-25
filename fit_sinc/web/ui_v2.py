@@ -12,6 +12,7 @@ from fit_sinc.garmin.session import garmin_status
 from fit_sinc.garmin.web_refresh import session_monitor
 from fit_sinc.hammerhead.client import HammerheadClient
 from fit_sinc.state.store import Store
+from fit_sinc.users.context import resolve_user_context
 from fit_sinc.web import html as H
 from fit_sinc.web.templating import render_template
 
@@ -32,7 +33,8 @@ def _store() -> Store:
 
 def _safe_list_activities(limit: int = 8) -> list:
     try:
-        return _store().list_activities(limit=limit)
+        ctx = resolve_user_context()
+        return _store().list_activities(ctx.user_id, limit=limit)
     except Exception as exc:
         logger.debug("ui-preview: activities unavailable (%s)", exc)
         return []
@@ -59,8 +61,9 @@ def _demo_activity_rows() -> list[dict]:
 
 @router.get("/ui-preview", response_class=HTMLResponse, include_in_schema=False)
 async def ui_preview() -> str:
-    hh = HammerheadClient().status()
-    gm = garmin_status()
+    ctx = resolve_user_context()
+    hh = HammerheadClient(ctx).status()
+    gm = garmin_status(ctx)
     activities = _safe_list_activities(limit=8)
 
     if gm.get("upload_ready"):
@@ -108,7 +111,8 @@ async def ui_preview_status_fragment() -> str:
         logger.debug("ui-preview fragment: session monitor unavailable (%s)", exc)
         ttl = "—"
     try:
-        count = len(_store().list_activities(limit=500))
+        uctx = resolve_user_context()
+        count = len(_store().list_activities(uctx.user_id, limit=500))
     except Exception:
         count = 0
     return render_template(
