@@ -9,6 +9,7 @@ from typing import Any, Iterator
 
 from fit_sinc.users.models import UserRow
 from fit_sinc.users.passwords import hash_password
+from fit_sinc.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{1,62}$")
 
@@ -335,6 +336,7 @@ class Store:
         slug = slug.strip().lower()
         if not _SLUG_RE.match(slug):
             raise ValueError("slug: 2–63 chars, a-z, 0-9, _, -")
+        tz = normalize_timezone(timezone)
         uid = (user_id or slug).strip()
         now = _utcnow()
         with self._conn() as conn:
@@ -352,7 +354,7 @@ class Store:
                     display_name.strip(),
                     email.strip().lower(),
                     telegram.strip() if telegram else None,
-                    timezone.strip() or "Europe/Moscow",
+                    tz,
                     hammerhead_user_id,
                     hash_password(password),
                     1 if is_admin else 0,
@@ -380,11 +382,12 @@ class Store:
     ) -> None:
         fields: list[str] = ["updated_at = ?"]
         values: list[Any] = [_utcnow()]
+        tz_val = normalize_timezone(timezone) if timezone is not None else None
         for col, val in (
             ("display_name", display_name),
             ("email", email.strip().lower() if email else None),
             ("telegram", telegram),
-            ("timezone", timezone),
+            ("timezone", tz_val),
             ("hammerhead_user_id", hammerhead_user_id),
             ("disabled", 1 if disabled else 0 if disabled is False else None),
             ("is_admin", 1 if is_admin else 0 if is_admin is False else None),

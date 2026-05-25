@@ -20,7 +20,12 @@ from fit_sinc.state.store import Store
 from fit_sinc.sync.service import sync_activity
 from fit_sinc.users.context import UserContext
 from fit_sinc.web import html as H
-from fit_sinc.web.auth import login_user, logout_user, user_context_from_session
+from fit_sinc.web.auth import (
+    login_user,
+    logout_user,
+    user_context_from_session,
+    user_row_from_session,
+)
 
 logger = logging.getLogger("fit_sinc")
 router = APIRouter(prefix="/app", tags=["app"])
@@ -36,6 +41,26 @@ def _ctx(request: Request) -> UserContext:
     if not ctx:
         raise HTTPException(status_code=401)
     return ctx
+
+
+def _cabinet_page(
+    request: Request,
+    title: str,
+    body: str,
+    *,
+    active: str = "",
+    wide: bool = False,
+) -> str:
+    user = user_row_from_session(request)
+    return H.page(
+        title,
+        body,
+        active=active,
+        wide=wide,
+        prefix=P,
+        show_admin=bool(user and user.is_admin),
+        current_user=user,
+    )
 
 
 def _safe_return_url(next_url: str, default: str) -> str:
@@ -212,7 +237,6 @@ async def dashboard(request: Request) -> str:
             '<tr><td colspan="5"><em>No activities yet — waiting for webhook or run backfill.</em></td></tr>'
         )
 
-    who = user.display_name if user else ctx.user_id
     sync_bits = []
     for label, key in (
         ("synced", "synced"),
@@ -240,7 +264,6 @@ async def dashboard(request: Request) -> str:
         else ""
     )
     body = f"""
-  <p>Hammerhead → Garmin Connect · <strong>{H.esc(who)}</strong></p>
   <p><small>Sync status (SQLite): {H.esc(sync_summary)}.{errors_link}</small></p>
   {retry_errors}
 
@@ -257,13 +280,7 @@ async def dashboard(request: Request) -> str:
   </table>
   <p><small>Updated {H.esc(now)} · TZ {H.esc(user.timezone if user else "—")}</small></p>
 """
-    return H.page(
-        "Dashboard",
-        body,
-        active="/",
-        prefix=P,
-        show_admin=bool(user and user.is_admin),
-    )
+    return _cabinet_page(request, "Dashboard", body, active="/")
 
 
 @router.get("/activities", response_class=HTMLResponse, include_in_schema=False)
@@ -419,7 +436,7 @@ async def activities_browser(
   <div class="pager">{pager}</div>
   <p><small>Updated {H.esc(H.fmt_now())}</small></p>
 """
-    return H.page("Activities", body, active="/activities", wide=True, prefix=P)
+    return _cabinet_page(request, "Activities", body, active="/activities", wide=True)
 
 
 @router.get("/log", response_class=HTMLResponse, include_in_schema=False)
@@ -459,7 +476,7 @@ async def sync_log(request: Request, page: int = Query(1, ge=1)) -> str:
   </table>
   <div class="pager">{prev_link}<span>Page {page}</span>{next_link}</div>
 """
-    return H.page("Sync log", body, active="/log", prefix=P)
+    return _cabinet_page(request, "Sync log", body, active="/log")
 
 
 def _session_event_class(event_type: str) -> str:
@@ -524,7 +541,7 @@ async def session_monitor_page(request: Request) -> str:
   </table>
   <p><small>Updated {H.esc(H.fmt_now())}</small></p>
 """
-    return H.page("Garmin session", body, active="/session", prefix=P)
+    return _cabinet_page(request, "Garmin session", body, active="/session")
 
 
 @router.post("/session/refresh", include_in_schema=False)

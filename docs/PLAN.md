@@ -23,6 +23,7 @@
 | **5b** Единый кабинет, регистрация, настройки, без Basic Auth | 📋 5b.0 ✅ |
 | 6 UI v2 (календарь, поиск, баннер, failed) | 📋 план |
 | 6.1 Алерты (Telegram / email) | 📋 план |
+| 6.2 Локализация (i18n: ru, en, …) | 📋 план |
 | — Ops: README + тесты CI | ✅ README / 📋 расширить тесты |
 | 7 Синхронизация из нескольких источников | 📋 план |
 | 8 Маршруты (routes) | 📋 план / исследование |
@@ -31,7 +32,7 @@
 
 ## Roadmap v2
 
-Порядок работ: **5 (MVP) ✅ → 5b (единый кабинет + регистрация) → 6 (UI v2) → 7/8**. Routes — в конце (исследование Garmin).
+Порядок работ: **5 (MVP) ✅ → 5b → 6 (UI v2) → 6.2 (i18n) → 7/8**. Routes — в конце (исследование Garmin).
 
 ```mermaid
 flowchart TB
@@ -46,6 +47,8 @@ flowchart TB
     end
     subgraph p6 [Фаза 6]
         UI2[календарь + поиск, баннер, ошибки]
+        I18N[локализация ru / en / …]
+        UI2 --> I18N
     end
     subgraph p7 [Фаза 7]
         SRC[источники: HH, файл, …]
@@ -53,7 +56,7 @@ flowchart TB
     subgraph p8 [Фаза 8]
         RTE[routes HH ↔ Garmin courses]
     end
-    done --> p5b --> p6 --> p7 --> p8
+    done --> p5b --> UI2 --> p7 --> p8
 ```
 
 ### Фаза 5: Мультипользовательность (MVP) — ✅
@@ -106,6 +109,7 @@ flowchart TB
 | `email` | Логин в кабинет (unique), уведомления (опционально) |
 | `telegram` | `@username` или `chat_id` — алерты об ошибках sync (Phase 6+), контакт для админа |
 | `timezone` | IANA, напр. `Europe/Moscow`, `Europe/Berlin` — **все даты в кабинете** пользователя |
+| `locale` | **6.2:** язык UI, напр. `ru`, `en` — см. [Фаза 6.2](#фаза-62-локализация-i18nl10n) |
 | `password` | Регистрация / смена в кабинете; админ может сбросить; в БД только `password_hash` |
 | `is_admin` | **5b:** флаг в БД; пункты меню Admin только при `is_admin=1` |
 | `hammerhead_user_id` | Связь с webhook `userId`; заполняется после OAuth Hammerhead в настройках |
@@ -125,6 +129,7 @@ users(
   email TEXT UNIQUE,
   telegram TEXT,           -- nullable
   timezone TEXT NOT NULL DEFAULT 'Europe/Moscow',
+  locale TEXT NOT NULL DEFAULT 'ru',   -- 6.2: BCP 47, напр. ru, en
   hammerhead_user_id TEXT UNIQUE,
   password_hash TEXT NOT NULL,
   is_admin INTEGER DEFAULT 0,   -- 5b
@@ -220,7 +225,7 @@ flowchart TB
 |---------|------------|--------|
 | **5b.0** | Решения: открытая регистрация / invite-only; bootstrap первого admin (`BOOTSTRAP_ADMIN_EMAIL` или CLI `user promote-admin`) | ✅ [5b-DECISIONS.md](5b-DECISIONS.md) |
 | **5b.1** | `users.is_admin`; один логин; убрать `SESSION_ADMIN_KEY` + `/admin/login`; guard `/app/admin/*`; миграция `default` → admin | 1 вечер |
-| **5b.2** | Единый Jinja layout; nav Dashboard / Activities / Log / Session / **Settings**; Admin-* для `is_admin`; перенос `admin_routes` → `/app/admin` (алиас `/admin` → 301) | 1–2 вечера |
+| **5b.2** | Единый layout (сейчас `html.py`, далее Jinja); nav + **user bar** (имя, email, slug, admin badge, Logout) на всех `/app/*` и `/app/admin/*`; форма New/Edit user (секции, TZ select); Settings в меню; Jinja — позже | 1–2 вечера |
 | **5b.3** | `/register`: slug/email/password/timezone, rate limit, auto-login → `/app/settings` | 1 вечер |
 | **5b.4** | `/app/settings`: профиль + пароль; HH OAuth callback с привязкой к сессии; Garmin connect/status; admin edit — disable, promote, сброс | 2 вечера |
 | **5b.5** | nginx: снять Basic Auth; `SESSION_SECRET` + `https_only`; обновить [CI-CD.md](CI-CD.md), README | ½ дня |
@@ -234,7 +239,7 @@ flowchart TB
 
 | Секция | Поля / действия |
 |--------|------------------|
-| **Профиль** | `display_name`, `email`, `telegram`, `timezone` |
+| **Профиль** | `display_name`, `email`, `telegram`, `timezone`, `locale` (язык UI — см. [6.2](#фаза-62-локализация-i18nl10n)) |
 | **Безопасность** | смена пароля (старый + новый) |
 | **Hammerhead** | статус; «Подключить» / «Отключить»; OAuth → `hammerhead_user_id` + `data/users/{id}/hammerhead_tokens.json` |
 | **Garmin** | `upload_ready`, JWT TTL; «Подключить» (garmin login / import cookies / refresh); пароль в UI не показывать |
@@ -310,6 +315,83 @@ flowchart TB
 
 ---
 
+### Фаза 6.2: Локализация (i18n/l10n)
+
+**Цель:** интерфейс кабинета и админки на нескольких языках; даты/числа — по `timezone` + `locale` пользователя.
+
+**Когда:** после **5b.2** (единый Jinja layout) и основных экранов **6** — иначе дважды выносить строки из `html.py` / шаблонов.
+
+#### Языки (приоритет)
+
+| Этап | Языки | Примечание |
+|------|--------|------------|
+| **6.2.0** | `ru` (default), `en` | Покрыть весь `/app` + `/app/admin` |
+| **6.2.1+** | `de`, `fr`, `es`, … | По запросу; тот же механизм каталогов |
+| Вне scope v1 | CLI, `docs/`, логи сервера | Остаются EN или RU как сейчас |
+
+#### Хранение и выбор языка
+
+| Источник | Поведение |
+|----------|-----------|
+| **Профиль** | `users.locale` (`ru` / `en` / …) — главный источник для залогиненного UI |
+| **Настройки** | `/app/settings` → выпадающий список языка (рядом с timezone) |
+| **Регистрация** | **5b.3:** опционально выбор языка; иначе `Accept-Language` браузера → fallback `ru` |
+| **Гость** | `Accept-Language` на `/login`, `/register`; cookie `fit_sinc_lang` на 14 дней |
+| **Админ** | Тот же `locale` что у пользователя-оператора (не отдельный «язык админки») |
+
+#### Техника (рекомендация)
+
+```text
+fit_sinc/locale/
+  ru.json          # или ru/LC_MESSAGES/messages.po (gettext)
+  en.json
+fit_sinc/web/i18n.py   # t("nav.dashboard", locale=...) → str
+```
+
+| Вариант | Плюсы | Минусы |
+|---------|--------|--------|
+| **JSON-каталоги** + `t(key)` | Просто, без Babel, удобно в Jinja `{{ t('…') }}` | Нет plural/forms без доп. логики |
+| **gettext (Babel)** | Стандарт, plural, `pybabel extract` | Тяжелее CI, `.po` для редакторов |
+
+**Рекомендация для fit_sinc:** JSON + ключи `section.item` на старте; при росте — миграция на gettext.
+
+**Jinja2:** все пользовательские строки в шаблонах (`layouts/app.html`, страницы `/app`, `/app/admin`); в Python — только `t()` для flash/ошибок валидации.
+
+**Даты:** `timeutil` / `babel.dates` — формат по `user.timezone` + `user.locale` (не хардкод «MSK» в подписи).
+
+#### Объём перевода (чеклист)
+
+- Nav: Dashboard, Activities, Sync log, Garmin session, Settings, Admin, Logout
+- Login / register / ошибки auth
+- Dashboard: connections, статусы sync, кнопки re-sync
+- Activities: фильтры, календарь, таблица
+- Admin: users CRUD, promote/disable
+- Telegram/email шаблоны (**6.1**) — отдельные ключи `alerts.*`
+
+#### Подфазы
+
+| Подфаза | Содержание | Оценка |
+|---------|------------|--------|
+| **6.2.0** | `locale` в БД, миграция `default` → `ru`; `t()` + `ru.json` / `en.json` | ½ дня |
+| **6.2.1** | Перенос строк из `html.py` / `app_routes` в каталоги; Jinja filter `t` | 1–2 вечера |
+| **6.2.2** | Выбор языка в settings + cookie для гостя; `lang` в `<html>` | ½ вечера |
+| **6.2.3** | Тесты: `t()` fallback, страница login с `Accept-Language: en` | ½ вечера |
+
+**Порядок:** **5b.2** → **6.2.0–6.2.1** (можно параллельно с календарём **6**, но layout сначала) → **6.2.2** вместе с **5b.4** settings.
+
+#### UX
+
+- Переключатель языка в шапке (рядом с user bar) **или** только в Settings — решить в **5b.2** (не дублировать везде).
+- Непереведённый ключ → показывать ключ в dev, fallback на `ru` в prod + лог warning.
+
+#### Вне scope
+
+- Автоперевод API (DeepL) для имён активностей с Hammerhead/Garmin
+- RTL (арабский) — только если явный запрос
+- Локализация README/docs на сайте — отдельно от приложения
+
+---
+
 ### Надёжность и ops
 
 > **Не путать с Фазой 5 (tenants).** Здесь — меньше сюрпризов ночью и порядок в репозитории.
@@ -325,7 +407,7 @@ flowchart TB
 | **Алерты Telegram** при `sync_status=error` или N ошибок подряд | **6.1** | 📋 | поле `telegram` из Фазы 5 |
 | Email-алерты | 6.1+ | 📋 | опционально |
 
-**Порядок:** Фаза **5** ✅ → **5b** → Фаза **6** (баннер, failed, **календарь**, поиск) → **6.1** (бот).
+**Порядок:** Фаза **5** ✅ → **5b** → Фаза **6** (баннер, failed, **календарь**, поиск) → **6.2** (i18n) → **6.1** (бот, тексты алертов на `locale`).
 
 UI v2 (Tailwind) можно вести параллельно с **5b.2** (общий `layouts/app.html`).
 
@@ -379,6 +461,7 @@ Source (download ActivityPayload + external_id)
 | **5b** единый кабинет, регистрация, settings, nginx | 5 | 6–8 вечеров |
 | 6 UI v2 (календарь, поиск, баннер, failed) | 5b | 2–3 дня |
 | 6.1 алерты Telegram | 5, 6 | 0.5–1 день |
+| **6.2** локализация (ru/en + `users.locale`) | 5b.2, 6 | 2–3 вечера |
 | 7 multi-source | 5 | 2–4 дня на источник |
 | 8 routes | 5, spike Garmin | 1–2 недели с исследованием |
 
@@ -427,13 +510,16 @@ Source (download ActivityPayload + external_id)
 - [x] Фаза 5: `/app` — login email+password, сессия, UI в TZ пользователя
 - [x] **Фаза 5b.0:** `is_admin`, bootstrap, `REGISTRATION_OPEN`, CLI `promote-admin` — [5b-DECISIONS.md](5b-DECISIONS.md)
 - [x] **Фаза 5b.1:** один логин, `/app/admin/*`, убрать `/admin/login` + `ADMIN_PASSWORD`
-- [ ] **Фаза 5b.2:** единый layout + меню (Admin только для admin)
+- [ ] **Фаза 5b.2:** единый layout + меню (Admin только для admin); ✅ user bar + форма пользователя (html.py); ⏳ Jinja + Settings в nav
 - [ ] **Фаза 5b.3:** `/register` + `REGISTRATION_OPEN`
 - [ ] **Фаза 5b.4:** `/app/settings` — профиль, пароль, Hammerhead/Garmin
 - [ ] **Фаза 5b.5:** nginx без Basic Auth; `https_only` cookie
 - [ ] **Фаза 5b.6:** тесты register/settings/admin guard
 - [ ] Фаза 6: календарь + поиск на `/app/activities`, баннер, failed, лог
 - [ ] Фаза 6.1: Telegram-алерты при ошибках sync
+- [ ] **Фаза 6.2.0:** `users.locale`, каталоги `ru` / `en`, функция `t()`
+- [ ] **Фаза 6.2.1:** перевести `/app` и `/app/admin` (Jinja + html.py)
+- [ ] **Фаза 6.2.2:** выбор языка в settings, cookie / Accept-Language для гостя
 - [x] Ops: расширить smoke (webhook endpoint, tenant routing, /app login, sync skip)
 - [ ] Фаза 7: абстракция Source/Sink, manual FIT
 - [ ] Фаза 8: spike routes / Garmin courses

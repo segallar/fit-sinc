@@ -154,12 +154,19 @@ def user_create(
         display_name = slug
     if not password:
         password = typer.prompt("Password", hide_input=True)
+    from fit_sinc.users.timezones import normalize_timezone
+
+    try:
+        tz = normalize_timezone(timezone)
+    except ValueError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1)
     row = store.create_user(
         slug=slug,
         display_name=display_name,
         email=email,
         password=password,
-        timezone=timezone,
+        timezone=tz,
         telegram=telegram or None,
         hammerhead_user_id=hammerhead_user_id or None,
     )

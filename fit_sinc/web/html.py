@@ -51,6 +51,30 @@ BASE_CSS = """
   .dt-date { display: block; font-weight: 500; }
   .dt-time { display: block; font-size: 0.85em; color: #666; }
   .table-wrap { overflow-x: auto; }
+  .user-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+              flex-wrap: wrap; padding: 0.65rem 1rem; margin: 0 0 1.25rem;
+              background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; }
+  .user-bar-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+  .user-bar-info strong { font-size: 1rem; }
+  .user-bar-meta { font-size: 0.85rem; color: #555; }
+  .user-bar-badges { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.15rem; }
+  .badge { font-size: 0.75rem; padding: 0.1rem 0.45rem; border-radius: 4px; font-weight: 600; }
+  .badge-admin { background: #0f766e; color: #fff; }
+  .badge-off { background: #fee2e2; color: #991b1b; }
+  .btn-logout { border-color: #0f766e; color: #0f766e; white-space: nowrap; }
+  .btn-logout:hover { background: #ccfbf1; }
+  .form-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+               padding: 1.25rem 1.5rem; margin: 1rem 0; max-width: 640px; }
+  .user-form { display: flex; flex-direction: column; gap: 1.25rem; }
+  .form-section { border: none; margin: 0; padding: 0; }
+  .form-section legend { font-weight: 600; font-size: 0.95rem; color: #0f766e;
+                          padding: 0 0.25rem; margin-bottom: 0.5rem; }
+  .form-grid { display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
+  @media (min-width: 520px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+  .form-grid .span-2 { grid-column: 1 / -1; }
+  .form-hint { font-size: 0.8rem; color: #666; margin: 0.15rem 0 0; }
+  .form-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; padding-top: 0.5rem;
+                  border-top: 1px solid #eee; }
 """
 
 
@@ -58,6 +82,28 @@ def esc(value: object) -> str:
     if value is None:
         return "—"
     return html.escape(str(value))
+
+
+def timezone_field(name: str = "timezone", selected: str | None = None) -> str:
+    """HTML <select> with grouped IANA timezones."""
+    from fit_sinc.users.timezones import options_for_select
+
+    opts = options_for_select(selected)
+    parts: list[str] = []
+    current_group: str | None = None
+    for group, value, is_sel in opts:
+        sel_attr = " selected" if is_sel else ""
+        if group != current_group:
+            if current_group is not None:
+                parts.append("</optgroup>")
+            if group:
+                parts.append(f'<optgroup label="{esc(group)}">')
+            current_group = group
+        parts.append(f'<option value="{esc(value)}"{sel_attr}>{esc(value)}</option>')
+    if current_group is not None and current_group:
+        parts.append("</optgroup>")
+    inner = "".join(parts)
+    return f'<label>Timezone <select name="{esc(name)}">{inner}</select></label>'
 
 
 def fmt_date(iso: str | None) -> str:
@@ -170,6 +216,26 @@ def fmt_ttl(seconds: float | None) -> str:
     return format_ttl(seconds)
 
 
+def user_bar(user: Any, *, prefix: str = "/app") -> str:
+    """Current session user + logout (all authenticated pages)."""
+    badges: list[str] = []
+    if getattr(user, "is_admin", False):
+        badges.append('<span class="badge badge-admin">admin</span>')
+    if getattr(user, "disabled", False):
+        badges.append('<span class="badge badge-off">disabled</span>')
+    badge_html = (
+        f'<div class="user-bar-badges">{"".join(badges)}</div>' if badges else ""
+    )
+    return f"""<div class="user-bar">
+  <div class="user-bar-info">
+    <strong>{esc(user.display_name)}</strong>
+    <span class="user-bar-meta">{esc(user.email)} · <code>{esc(user.slug)}</code></span>
+    {badge_html}
+  </div>
+  <a class="btn btn-logout" href="{esc(prefix)}/logout">Logout</a>
+</div>"""
+
+
 def resync_form(
     prefix: str,
     activity_id: str,
@@ -205,6 +271,7 @@ def page(
     prefix: str = "/app",
     show_admin: bool = False,
     admin_active: str = "",
+    current_user: Any | None = None,
 ) -> str:
     nav = [
         ("", "Dashboard"),
@@ -213,7 +280,6 @@ def page(
         ("/session", "Garmin session"),
     ]
     links = []
-    logout = f'<a href="{prefix}/logout">Logout</a>'
     for href, label in nav:
         cls = ' style="font-weight:600"' if (href == active or (active == "/" and href == "")) else ""
         path = f"{prefix}{href}" if href else f"{prefix}/"
@@ -221,7 +287,7 @@ def page(
     if show_admin:
         adm_cls = ' style="font-weight:600"' if admin_active.startswith("/admin") else ""
         links.append(f'<a href="{prefix}/admin/"{adm_cls}>Admin</a>')
-    links.append(logout)
+    user_strip = user_bar(current_user, prefix=prefix) if current_user else ""
     body_class = "wide" if wide else ""
     body_attr = f' class="{body_class}"' if body_class else ""
     return f"""<!DOCTYPE html>
@@ -241,6 +307,7 @@ def page(
     <h1>fit_sinc</h1>
   </header>
   <nav>{"".join(links)}</nav>
+  {user_strip}
   {body}
 </body>
 </html>"""
