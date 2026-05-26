@@ -59,9 +59,10 @@ def render_cabinet(
     **context: object,
 ) -> str:
     ctx = cabinet_context(request, active=active, wide=wide)
+    display_tz = ctx.pop("display_timezone")
     return render_template(
         template,
-        display_timezone=ctx["display_timezone"],
+        display_timezone=display_tz,
         **ctx,
         **context,
     )
