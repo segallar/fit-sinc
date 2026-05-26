@@ -14,7 +14,7 @@
   {% block head_extra %}{% endblock %}
 </head>
 <body class="{% block body_class %}bg-light{% endblock %} d-flex flex-column min-vh-100">
-  <div class="{% block container_class %}container{% endblock %}{% block container_padding %} py-4{% endblock %} flex-grow-1">
+  <div class="{% block container_class %}container{% endblock %}{% block container_padding %} py-4{% endblock %} flex-grow-1 d-flex flex-column">
     {% block header %}
     <header class="d-flex align-items-center gap-3 mb-4">
       <img src="/static/icon.svg" alt="" width="48" height="48" class="rounded-3 shadow-sm">
@@ -25,16 +25,16 @@
     </header>
     {% endblock %}
     {% block header_extra %}{% endblock %}
-    <main>
+    <main class="flex-grow-1">
       {% block content %}{% endblock %}
     </main>
-    {% block footer %}
-    <footer class="getsync-footer text-muted small">
-      {% block footer_extra %}{% endblock %}
-      {% block footer_build %}{% include "components/build_footer.html" %}{% endblock %}
-    </footer>
-    {% endblock %}
   </div>
+  {% block footer %}
+  <footer class="getsync-footer text-muted small">
+    {% block footer_extra %}{% endblock %}
+    {% block footer_build %}{% include "components/build_footer.html" %}{% endblock %}
+  </footer>
+  {% endblock %}
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
           integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
           crossorigin="anonymous"></script>

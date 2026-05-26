@@ -1,57 +1,58 @@
-{% extends "layouts/site_auth.html" %}
+{% extends "layouts/auth.html" %}
 
-{% block html_lang %}{{ form_t.html_lang }}{% endblock %}
-{% block title %}{% if closed %}{{ form_t.page_title_closed }}{% else %}{{ form_t.page_title }}{% endif %}{% endblock %}
+{% block title %}{% if closed %}Регистрация недоступна{% else %}Sign up — GetSync{% endif %}{% endblock %}
 
-{% block auth_content %}
+{% block page_content %}
 {% if closed %}
-<h2 class="h4 mb-3 text-center">{{ form_t.closed_h2 }}</h2>
-<p class="text-muted text-center">{{ form_t.closed_body }}</p>
-<div class="d-flex flex-wrap gap-2 mt-4 justify-content-center">
-  <a href="/app/login" class="btn btn-primary btn-lg">{{ form_t.closed_sign_in }}</a>
-  <a href="/" class="btn btn-outline-primary btn-lg">{{ form_t.closed_home }}</a>
+<h2 class="h4 mb-3">Регистрация недоступна</h2>
+<p class="text-muted">
+  Сейчас нельзя создать аккаунт через сайт. Попросите администратор GetSync выдать доступ
+  или войдите, если аккаунт уже есть.
+</p>
+<div class="d-flex flex-wrap gap-2 mt-4">
+  <a href="/app/login" class="btn btn-primary">Войти</a>
+  <a href="/" class="btn btn-outline-secondary">На главную</a>
 </div>
 {% else %}
-<h2 class="h4 mb-2 text-center">{{ form_t.sign_up_h2 }}</h2>
-<p class="text-muted small mb-4 text-center">{{ form_t.intro }}</p>
+<h2 class="h4 mb-2">Sign up</h2>
+<p class="text-muted small mb-4">
+  Аккаунт для синхронизации Hammerhead → Garmin. Slug создаётся автоматически из email.
+</p>
 {% if error %}
 <div class="alert alert-danger">{{ error }}</div>
 {% endif %}
-<form method="post" action="/register" class="getsync-auth-form">
-  {% set field_id = 'register-email' %}
-  {% set label = form_t.email_label %}
-  {% set name = 'email' %}
-  {% set input_type = 'email' %}
-  {% set required = true %}
-  {% set autocomplete = 'email' %}
-  {% set value = form.email if form else '' %}
-  {% include "components/auth_form_field.html" %}
-  {% set field_id = 'register-display-name' %}
-  {% set label = form_t.display_name_label %}
-  {% set name = 'display_name' %}
-  {% set input_type = 'text' %}
-  {% set required = false %}
-  {% set autocomplete = 'name' %}
-  {% set value = form.display_name if form else '' %}
-  {% include "components/auth_form_field.html" %}
-  {% set field_id = 'register-password' %}
-  {% set label = form_t.password_label %}
-  {% set name = 'password' %}
-  {% set input_type = 'password' %}
-  {% set required = true %}
-  {% set autocomplete = 'new-password' %}
-  {% set minlength = 8 %}
-  {% set value = '' %}
-  {% include "components/auth_form_field.html" %}
-  {% set field_id = 'register-password-confirm' %}
-  {% set label = form_t.password_confirm_label %}
-  {% set name = 'password_confirm' %}
-  {% set autocomplete = 'new-password' %}
-  {% include "components/auth_form_field.html" %}
-  <button type="submit" class="btn btn-primary btn-lg w-100">{{ form_t.submit_button }}</button>
+<form method="post" action="/register">
+  <div class="mb-3">
+    <label class="form-label">Email</label>
+    <input type="email" name="email" class="form-control" required autocomplete="email"
+           value="{{ form.email if form else '' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Имя (необязательно)</label>
+    <input type="text" name="display_name" class="form-control" autocomplete="name"
+           value="{{ form.display_name if form else '' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Пароль</label>
+    <input type="password" name="password" class="form-control" required minlength="8" autocomplete="new-password">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Повтор пароля</label>
+    <input type="password" name="password_confirm" class="form-control" required minlength="8" autocomplete="new-password">
+  </div>
+  {% set select_name = 'timezone' %}
+  {% set selected = form.timezone if form else 'Europe/Moscow' %}
+  {% include "components/timezone_select.html" %}
+  <button type="submit" class="btn btn-primary w-100">Создать аккаунт</button>
 </form>
 <p class="mt-3 mb-0 text-center small text-muted">
-  {{ form_t.already_have_account }} <a href="/app/login">{{ form_t.sign_in_link }}</a>
+  Уже есть аккаунт? <a href="/app/login">Войти</a>
 </p>
 {% endif %}
+{% endblock %}
+
+{% block footer_extra %}
+<p class="mb-0">
+  <a href="/">Главная</a> · <a href="/app/login">Login</a>
+</p>
 {% endblock %}

@@ -1,32 +1,30 @@
-{% extends "layouts/site_auth.html" %}
+{% extends "layouts/auth.html" %}
 
-{% block html_lang %}{{ form_t.html_lang }}{% endblock %}
-{% block title %}{{ form_t.page_title }}{% endblock %}
+{% block title %}Login — GetSync{% endblock %}
 
-{% block auth_content %}
-<h2 class="h4 mb-4 text-center">{{ form_t.sign_in_h2 }}</h2>
+{% block page_content %}
+<h2 class="h4 mb-4">Sign in</h2>
 {% if error %}
-<div class="alert alert-danger">{{ form_t.error_invalid_credentials }}</div>
+<div class="alert alert-danger">Invalid email or password</div>
 {% endif %}
-<form method="post" action="{{ prefix }}/login" class="getsync-auth-form">
-  {% set field_id = 'login-email' %}
-  {% set label = form_t.email_label %}
-  {% set name = 'email' %}
-  {% set input_type = 'email' %}
-  {% set required = true %}
-  {% set autocomplete = 'username' %}
-  {% include "components/auth_form_field.html" %}
-  {% set field_id = 'login-password' %}
-  {% set label = form_t.password_label %}
-  {% set name = 'password' %}
-  {% set input_type = 'password' %}
-  {% set autocomplete = 'current-password' %}
-  {% include "components/auth_form_field.html" %}
-  <button type="submit" class="btn btn-primary btn-lg w-100">{{ form_t.sign_in_button }}</button>
+<form method="post" action="{{ prefix }}/login">
+  <div class="mb-3">
+    <label class="form-label">Email</label>
+    <input type="email" name="email" class="form-control" required autocomplete="username">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Password</label>
+    <input type="password" name="password" class="form-control" required autocomplete="current-password">
+  </div>
+  <button type="submit" class="btn btn-primary w-100">Sign in</button>
 </form>
 {% if registration_open %}
 <p class="mt-3 mb-0 text-center small text-muted">
-  {{ form_t.no_account }} <a href="/register">{{ form_t.sign_up_link }}</a>
+  Нет аккаунта? <a href="/register">Sign up</a>
 </p>
 {% endif %}
+{% endblock %}
+
+{% block footer_extra %}
+<p class="mb-0"><a href="/">Главная</a></p>
 {% endblock %}

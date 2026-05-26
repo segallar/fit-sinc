@@ -25,8 +25,9 @@ class TestTemplates(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn("/static/app.css", r.text)
         self.assertIn("Sign in", r.text)
-        self.assertIn("getsync-site", r.text)
-        self.assertNotIn("Hammerhead → Garmin", r.text)
+        self.assertIn("card shadow-sm", r.text)
+        self.assertIn("Hammerhead → Garmin", r.text)
+        self.assertNotIn("getsync-site", r.text)
 
     def test_home_page_bootstrap_sri(self) -> None:
         from getsync.web.app import app
