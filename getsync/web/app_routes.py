@@ -21,7 +21,7 @@ from getsync.activities.browse import (
     ActivityBrowseRow,
     fetch_activities_page,
 )
-from getsync.activities.calendar import build_activity_calendar
+from getsync.activities.calendar import attach_calendar_row_views, build_activity_calendar
 from getsync.timeutil import zone_info
 from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 from getsync.config import get_settings
@@ -591,37 +591,48 @@ async def activities_browser(
                 view="list",
             )
 
-        calendar = build_activity_calendar(
-            store,
-            ctx.user_id,
+        cal_return = _activities_return_url(
+            per_page=per_page,
+            filters=filters,
+            view="calendar",
             year=cal_year,
             month=cal_month,
-            display_tz=display_tz,
-            prev_href=_activities_return_url(
-                per_page=per_page,
+        )
+        calendar = attach_calendar_row_views(
+            build_activity_calendar(
+                store,
+                ctx.user_id,
+                year=cal_year,
+                month=cal_month,
+                display_tz=display_tz,
+                prev_href=_activities_return_url(
+                    per_page=per_page,
+                    filters=filters,
+                    view="calendar",
+                    year=_shift_month(cal_year, cal_month, -1)[0],
+                    month=_shift_month(cal_year, cal_month, -1)[1],
+                ),
+                next_href=_activities_return_url(
+                    per_page=per_page,
+                    filters=filters,
+                    view="calendar",
+                    year=_shift_month(cal_year, cal_month, 1)[0],
+                    month=_shift_month(cal_year, cal_month, 1)[1],
+                ),
+                today_href=_activities_return_url(
+                    per_page=per_page,
+                    filters=filters,
+                    view="calendar",
+                    year=today.year,
+                    month=today.month,
+                ),
+                day_list_href=day_list_href,
+                selected_from=filters.date_from,
+                selected_to=filters.date_to,
+                source=src,
                 filters=filters,
-                view="calendar",
-                year=_shift_month(cal_year, cal_month, -1)[0],
-                month=_shift_month(cal_year, cal_month, -1)[1],
             ),
-            next_href=_activities_return_url(
-                per_page=per_page,
-                filters=filters,
-                view="calendar",
-                year=_shift_month(cal_year, cal_month, 1)[0],
-                month=_shift_month(cal_year, cal_month, 1)[1],
-            ),
-            today_href=_activities_return_url(
-                per_page=per_page,
-                filters=filters,
-                view="calendar",
-                year=today.year,
-                month=today.month,
-            ),
-            day_list_href=day_list_href,
-            selected_from=filters.date_from,
-            selected_to=filters.date_to,
-            source=src,
+            lambda row: _activity_row_view(row, return_url=cal_return),
         )
         return render_cabinet(
             request,

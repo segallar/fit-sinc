@@ -1,6 +1,7 @@
-/** Row click opens activity menu (popover on body — avoids table overflow clipping). */
+/** Row / calendar chip click opens activity menu near the pointer. */
 (function () {
   let openMenu = null;
+  let menuPoint = { x: 0, y: 0 };
 
   function closeMenu() {
     if (openMenu) {
@@ -9,27 +10,44 @@
     }
   }
 
-  function positionMenu(menu, row) {
-    const rect = row.getBoundingClientRect();
-    const gap = 4;
+  function clampMenuPosition(menu, x, y) {
+    const pad = 8;
+    const offset = 6;
+    let left = x + offset;
+    let top = y + offset;
+    const width = menu.offsetWidth;
+    const height = menu.offsetHeight;
+    const maxLeft = window.innerWidth - width - pad;
+    const maxTop = window.innerHeight - height - pad;
+    if (left > maxLeft) {
+      left = Math.max(pad, x - width - offset);
+    }
+    if (top > maxTop) {
+      top = Math.max(pad, y - height - offset);
+    }
+    menu.style.left = `${Math.max(pad, Math.min(left, maxLeft))}px`;
+    menu.style.top = `${Math.max(pad, Math.min(top, maxTop))}px`;
+  }
+
+  function positionMenu(menu, x, y) {
     menu.style.position = "fixed";
     menu.style.zIndex = "1060";
     menu.style.display = "block";
-    const maxLeft = Math.max(8, window.innerWidth - menu.offsetWidth - 8);
-    let left = rect.left;
-    if (left > maxLeft) {
-      left = maxLeft;
-    }
-    let top = rect.bottom + gap;
-    if (top + menu.offsetHeight > window.innerHeight - 8) {
-      top = Math.max(8, rect.top - menu.offsetHeight - gap);
-    }
-    menu.style.left = `${left}px`;
-    menu.style.top = `${top}px`;
+    menu.style.left = "0";
+    menu.style.top = "0";
+    clampMenuPosition(menu, x, y);
   }
 
-  function openRowMenu(row) {
-    const source = row.querySelector(".getsync-activity-row-menu");
+  function pointerFromAnchor(anchor) {
+    const rect = anchor.getBoundingClientRect();
+    return {
+      x: rect.left + Math.min(rect.width / 2, 48),
+      y: rect.top + rect.height / 2,
+    };
+  }
+
+  function openRowMenu(anchor, event) {
+    const source = anchor.querySelector(".getsync-activity-row-menu");
     if (!source) {
       return;
     }
@@ -39,13 +57,19 @@
     menu.classList.add("getsync-activity-row-menu-popover", "show");
     menu.removeAttribute("hidden");
     document.body.appendChild(menu);
-    positionMenu(menu, row);
+
+    if (event && Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+      menuPoint = { x: event.clientX, y: event.clientY };
+    } else {
+      menuPoint = pointerFromAnchor(anchor);
+    }
+    positionMenu(menu, menuPoint.x, menuPoint.y);
     openMenu = menu;
   }
 
-  function onTableClick(event) {
-    const row = event.target.closest("tr.getsync-activity-row");
-    if (!row) {
+  function onActivityClick(event) {
+    const anchor = event.target.closest(".getsync-activity-row");
+    if (!anchor) {
       return;
     }
     if (event.target.closest(".getsync-activity-row-menu-popover")) {
@@ -60,11 +84,28 @@
     }
     event.preventDefault();
     event.stopPropagation();
-    openRowMenu(row);
+    openRowMenu(anchor, event);
+  }
+
+  function onActivityKeydown(event) {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    const anchor = event.target.closest(".getsync-activity-row");
+    if (!anchor || !anchor.classList.contains("getsync-cal-activity")) {
+      return;
+    }
+    event.preventDefault();
+    openRowMenu(anchor, null);
   }
 
   document.querySelectorAll(".getsync-activities-table").forEach((table) => {
-    table.addEventListener("click", onTableClick);
+    table.addEventListener("click", onActivityClick);
+  });
+
+  document.querySelectorAll(".getsync-activity-calendar").forEach((cal) => {
+    cal.addEventListener("click", onActivityClick);
+    cal.addEventListener("keydown", onActivityKeydown);
   });
 
   document.addEventListener("click", (event) => {
@@ -90,12 +131,7 @@
       if (!openMenu) {
         return;
       }
-      const row = document.querySelector(
-        ".getsync-activity-row-menu-popover-source"
-      );
-      if (row) {
-        positionMenu(openMenu, row);
-      }
+      positionMenu(openMenu, menuPoint.x, menuPoint.y);
     },
     { passive: true }
   );

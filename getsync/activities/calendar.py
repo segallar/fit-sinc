@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 import calendar as cal_mod
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
+from typing import Any
 
-from getsync.state.store import Store
+from getsync.activities.browse import (
+    ActivityBrowseRow,
+    ActivityFilters,
+    _matches_filters,
+    catalog_row_to_browse_row,
+)
+from getsync.state.store import Store, SyncIndexEntry
 from getsync.timeutil import _parse_iso, zone_info
 from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 
@@ -34,6 +41,8 @@ class CalendarDayCell:
     is_today: bool
     is_selected: bool
     list_href: str
+    activities: tuple[ActivityBrowseRow, ...] = ()
+    activity_rows: tuple[dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -82,6 +91,64 @@ def aggregate_days_by_local_date(
     return stats
 
 
+def _calendar_cell_filters(filters: ActivityFilters | None) -> ActivityFilters | None:
+    if filters is None:
+        return None
+    return ActivityFilters(
+        q=filters.q,
+        status=filters.status,
+        activity_type=filters.activity_type,
+        date_from="",
+        date_to="",
+        source=filters.source,
+    )
+
+
+def _browse_sort_key(row: ActivityBrowseRow) -> float:
+    dt = _parse_iso(row.activity_date or "")
+    return -(dt.timestamp() if dt else 0.0)
+
+
+def _activities_by_local_day(
+    store: Store,
+    user_id: str,
+    *,
+    year: int,
+    month: int,
+    display_tz: str,
+    source: str | None,
+    filters: ActivityFilters | None,
+    index: dict[str, SyncIndexEntry],
+    by_garmin: dict[int, SyncIndexEntry],
+) -> dict[str, list[ActivityBrowseRow]]:
+    cell_filters = _calendar_cell_filters(filters)
+    catalog = store.list_activity_catalog_for_calendar(user_id, source=source)
+    by_day: dict[str, list[ActivityBrowseRow]] = {}
+    for row in catalog:
+        browse = catalog_row_to_browse_row(row, index, by_garmin)
+        if cell_filters and not _matches_filters(
+            browse, cell_filters, display_tz=display_tz
+        ):
+            continue
+        dt = _parse_iso(row.activity_date or "", tz=display_tz)
+        if dt is None or dt.year != year or dt.month != month:
+            continue
+        iso = dt.date().isoformat()
+        by_day.setdefault(iso, []).append(browse)
+    for iso in by_day:
+        by_day[iso].sort(key=_browse_sort_key)
+    return by_day
+
+
+def _day_stat_from_activities(
+    activities: tuple[ActivityBrowseRow, ...],
+) -> CalendarDayStat:
+    worst: str | None = None
+    for act in activities:
+        worst = _worst_status(worst, act.sync_status) or worst
+    return CalendarDayStat(count=len(activities), worst_status=worst)
+
+
 def build_activity_calendar(
     store: Store,
     user_id: str,
@@ -96,13 +163,27 @@ def build_activity_calendar(
     selected_from: str = "",
     selected_to: str = "",
     source: str | None = None,
+    filters: ActivityFilters | None = None,
 ) -> ActivityCalendarView:
     tz_name = normalize_timezone(display_tz or DEFAULT_TIMEZONE)
     tz = zone_info(tz_name)
     today = datetime.now(tz).date()
 
-    rows = store.list_activity_calendar_rows(user_id, source=source or None)
-    day_stats = aggregate_days_by_local_date(rows, display_tz=tz_name, year=year, month=month)
+    index = store.build_sync_index(user_id)
+    by_garmin = {
+        entry.garmin_id: entry for entry in index.values() if entry.garmin_id
+    }
+    by_day = _activities_by_local_day(
+        store,
+        user_id,
+        year=year,
+        month=month,
+        display_tz=tz_name,
+        source=source,
+        filters=filters,
+        index=index,
+        by_garmin=by_garmin,
+    )
 
     selected_day = selected_from if selected_from and selected_from == selected_to else ""
 
@@ -113,11 +194,16 @@ def build_activity_calendar(
         for d in week:
             iso = d.isoformat()
             in_month = d.month == month
-            stat = day_stats.get(iso) if in_month else None
-            count = stat.count if stat else 0
+            day_acts: tuple[ActivityBrowseRow, ...] = ()
+            count = 0
+            worst: str | None = None
             if in_month:
+                acts = by_day.get(iso, [])
+                day_acts = tuple(acts)
+                stat = _day_stat_from_activities(day_acts)
+                count = stat.count
+                worst = stat.worst_status
                 total += count
-            worst = stat.worst_status if stat else None
             week_cells.append(
                 CalendarDayCell(
                     iso=iso,
@@ -128,6 +214,7 @@ def build_activity_calendar(
                     is_today=d == today,
                     is_selected=in_month and iso == selected_day,
                     list_href=day_list_href(iso) if in_month else "",
+                    activities=day_acts,
                 )
             )
         weeks_out.append(tuple(week_cells))
@@ -144,3 +231,18 @@ def build_activity_calendar(
         total_in_month=total,
         source_note="From GetSync catalog (SQLite). Cloud-only days may be missing until browse sync.",
     )
+
+
+def attach_calendar_row_views(
+    view: ActivityCalendarView,
+    row_view,
+) -> ActivityCalendarView:
+    """Attach template-ready row dicts (menus) to each day cell."""
+    weeks_out: list[tuple[CalendarDayCell, ...]] = []
+    for week in view.weeks:
+        cells: list[CalendarDayCell] = []
+        for cell in week:
+            rows = tuple(row_view(act) for act in cell.activities)
+            cells.append(replace(cell, activity_rows=rows))
+        weeks_out.append(tuple(cells))
+    return replace(view, weeks=tuple(weeks_out))

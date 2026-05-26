@@ -1,9 +1,13 @@
 """Activity month calendar aggregation."""
 
+import tempfile
 import unittest
+from pathlib import Path
 
+from getsync.activities.browse import catalog_row_to_browse_row
 from getsync.activities.calendar import (
     aggregate_days_by_local_date,
+    attach_calendar_row_views,
     build_activity_calendar,
 )
 from getsync.state.store import Store
@@ -23,12 +27,7 @@ class TestActivityCalendar(unittest.TestCase):
         self.assertEqual(stats["2026-05-10"].worst_status, "error")
         self.assertEqual(stats["2026-05-11"].count, 1)
 
-    def test_build_calendar_links_and_navigation(self) -> None:
-        import tempfile
-        from pathlib import Path
-
-        from getsync.config import get_settings
-
+    def test_build_calendar_activities_and_menu_rows(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / "cal.db"
             store = Store(db)
@@ -42,10 +41,18 @@ class TestActivityCalendar(unittest.TestCase):
             store.upsert_activity(
                 user.id,
                 "a1",
-                name="Ride",
+                name="Morning Ride",
                 activity_date="2026-05-15T10:00:00+00:00",
                 sync_status="synced",
                 source="hammerhead",
+            )
+            store.upsert_activity(
+                user.id,
+                "g1",
+                name="Evening Run",
+                activity_date="2026-05-15T18:00:00+00:00",
+                sync_status="not synced",
+                source="garmin",
             )
 
             view = build_activity_calendar(
@@ -60,16 +67,59 @@ class TestActivityCalendar(unittest.TestCase):
                 day_list_href=lambda d: f"/list?date={d}",
             )
             self.assertEqual(view.month_label, "May 2026")
-            self.assertEqual(view.prev_href, "/prev")
-            self.assertGreater(view.total_in_month, 0)
-            found = False
+            self.assertEqual(view.total_in_month, 2)
+
+            day_cell = None
             for week in view.weeks:
                 for cell in week:
                     if cell.iso == "2026-05-15":
-                        found = True
-                        self.assertEqual(cell.count, 1)
-                        self.assertEqual(cell.list_href, "/list?date=2026-05-15")
-            self.assertTrue(found)
+                        day_cell = cell
+                        break
+            self.assertIsNotNone(day_cell)
+            assert day_cell is not None
+            self.assertEqual(day_cell.count, 2)
+            self.assertEqual(day_cell.list_href, "/list?date=2026-05-15")
+            self.assertEqual(len(day_cell.activities), 2)
+            names = {a.name for a in day_cell.activities}
+            self.assertEqual(names, {"Morning Ride", "Evening Run"})
+
+            rendered = attach_calendar_row_views(
+                view,
+                lambda row: {"name": row.name, "source": row.source},
+            )
+            rendered_day = None
+            for week in rendered.weeks:
+                for cell in week:
+                    if cell.iso == "2026-05-15":
+                        rendered_day = cell
+                        break
+            assert rendered_day is not None
+            self.assertEqual(len(rendered_day.activity_rows), 2)
+
+    def test_catalog_row_to_browse_hammerhead_fit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            db = Path(tmp) / "cal.db"
+            store = Store(db)
+            user = store.create_user(
+                slug="fit",
+                display_name="Fit",
+                email="fit@example.com",
+                password="secretpass123",
+            )
+            store.upsert_activity(
+                user.id,
+                "hh-1",
+                source="hammerhead",
+                name="Ride",
+                sync_status="synced",
+                storage_key="activities/hammerhead/hh-1.fit",
+            )
+            row = store.get_activity(user.id, "hh-1", source="hammerhead")
+            assert row is not None
+            index = store.build_sync_index(user.id)
+            browse = catalog_row_to_browse_row(row, index, {})
+            self.assertTrue(browse.fit_available)
+            self.assertEqual(browse.hammerhead_id, "hh-1")
 
 
 if __name__ == "__main__":

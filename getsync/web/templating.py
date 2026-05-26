@@ -78,9 +78,9 @@ def jinja_env() -> Environment:
     defaults = formatter_globals(DEFAULT_TIMEZONE)
     env.globals.update(
         app_version=__version__,
-        git_commit=git_commit_short(),
-        deploy_number=deploy_number(),
-        deploy_time=deploy_time_footer(),
+        git_commit=git_commit_short,
+        deploy_number=deploy_number,
+        deploy_time=deploy_time_footer,
         esc=H.esc,
         fmt_km=H.fmt_km,
         fmt_duration=H.fmt_duration,

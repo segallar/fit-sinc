@@ -1,0 +1,9 @@
+{# row: activity row view dict (same as list table). #}
+<div class="getsync-cal-activity getsync-activity-row" role="button" tabindex="0"
+     title="{{ row.name }}">
+  <span class="getsync-cal-activity-icon">
+    {% with source=row.source %}{% include "components/activity_source_icon.html" %}{% endwith %}
+  </span>
+  <span class="getsync-cal-activity-name text-truncate">{{ row.name }}</span>
+  {% include "components/activity_row_menu.html" %}
+</div>

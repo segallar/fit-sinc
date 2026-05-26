@@ -156,6 +156,7 @@ flowchart LR
 | **3.8** | 🔵 | Email-алерты, очередь Playwright (много tenants) | post-scale | — |
 | **3.9** | 🔵 | Модули, контракты, границы — [§ 3.9](#39-модульность) | 1–2 недели | **2.8** |
 | **3.10** | 🔵 | Расширенные метрики тренировок, карты | backlog | **3.5** |
+| **3.11** | 🔵 | Garmin pull: FIT, шаги, сон — [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) | 5–8 вечеров | **2.12**, browse ✅ |
 
 **Admin (в H2):** подменю Users / Statistics / Logs — 📋 (сейчас только users list).
 
@@ -304,3 +305,4 @@ Strava/Wahoo, импорт архива, сложные правила — то�
 | [1.5-RENAME.md](1.5-RENAME.md) | Cutover бренда |
 | [2.1-REGISTER.md](2.1-REGISTER.md) | Регистрация (реализовано) |
 | [2.1e-EMAIL.md](2.1e-EMAIL.md) | Email (**2.6**) |
+| [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) | Garmin pull: FIT, steps, sleep (**3.11**) |

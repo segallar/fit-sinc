@@ -16,7 +16,7 @@
 | Upload FIT | Playwright `/app/import-data` → HTTP → `garth.upload()` |
 | Refresh JWT | HTTP → Playwright → re-login ([`web_refresh.py`](../getsync/garmin/web_refresh.py)) |
 
-Scope v1: **только upload активности**, без чтения wellness/stats.
+Scope v1: **upload активности**. Чтение списка — для browse. Pull FIT + wellness — **[3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md)**.
 
 **Per tenant:** у каждого `user_id` свой `garmin_web/` и `garth/`. Общей сессии на сервер нет ([ARCHITECTURE.md](ARCHITECTURE.md)).
 
@@ -111,7 +111,7 @@ User-Agent эмулирует мобильный клиент; TLS — `curl_cff
 ## Connect API (справочно)
 
 garth-ng умеет `garth.connectapi(...)` для списка активностей и профиля.  
-GetSync v1 **не читает** активности из Garmin — только upload. Список в UI строится из Hammerhead + локального SQLite.
+GetSync v1 **не читает** FIT активностей из Garmin — только upload. Список в UI — metadata через `Activity.list`. Download FIT + wellness — план **[3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md)**.
 
 ---
 

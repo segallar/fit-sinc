@@ -211,6 +211,16 @@ body {
 .getsync-app-shell-wrap {
   padding: 0 !important;
   max-width: none !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.getsync-app-shell-wrap > main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .getsync-app-layout {
@@ -296,21 +306,22 @@ body {
 }
 
 .getsync-app-layout--activities-page {
-  min-height: 100vh;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .getsync-app-main--activities {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 3.25rem);
+  flex: 1 1 auto;
+  min-height: 0;
   padding: var(--getsync-space-3) 0 var(--getsync-space-4);
 }
 
 .getsync-activities-page {
   flex: 1 1 auto;
   min-height: 0;
-  padding-left: 0;
-  margin-left: 0;
+  padding-inline: var(--getsync-activities-gutter-x);
   max-width: 100%;
 }
 
@@ -333,14 +344,8 @@ body {
   background: transparent;
 }
 
-.getsync-activities-table thead th:first-child,
-.getsync-activities-table tbody td:first-child {
-  padding-left: 0;
-}
-
 .getsync-activities-table-scroll {
   overflow: auto;
-  margin-left: 0;
 }
 
 .getsync-activities-data-hint {
@@ -695,8 +700,9 @@ body {
 }
 
 footer.getsync-footer:not(.getsync-site-footer) {
-  margin-top: 2.5rem;
-  padding-top: 1rem;
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 0.75rem var(--getsync-space-5);
   border-top: 1px solid var(--bs-border-color);
 }
 
@@ -709,8 +715,7 @@ footer.getsync-footer:not(.getsync-site-footer) {
 }
 
 .getsync-activity-calendar--fullscreen > .card-body {
-  padding-left: 0;
-  padding-right: 0;
+  padding-inline: 0;
 }
 
 .getsync-cal-grid {
@@ -781,17 +786,26 @@ footer.getsync-footer:not(.getsync-site-footer) {
   border-left: 3px solid var(--getsync-status-neutral);
 }
 
-.getsync-cal-day-link {
+.getsync-cal-day-inner {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-decoration: none;
-  color: inherit;
+  align-items: stretch;
   min-height: 2.75rem;
+  height: 100%;
   width: 100%;
+  gap: 0.125rem;
 }
 
-.getsync-cal-day-link:hover {
+.getsync-cal-day-num-link {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  color: inherit;
+  align-self: flex-start;
+}
+
+.getsync-cal-day-num-link:hover {
   color: var(--getsync-primary-700);
 }
 
@@ -799,6 +813,47 @@ footer.getsync-footer:not(.getsync-site-footer) {
   font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1.2;
+}
+
+.getsync-cal-day-activities {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.getsync-cal-activity {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.125rem 0.25rem;
+  border-radius: var(--getsync-radius-sm);
+  cursor: pointer;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  background: var(--bs-secondary-bg);
+  border: 1px solid transparent;
+}
+
+.getsync-cal-activity:hover,
+.getsync-cal-activity:focus-visible {
+  border-color: var(--getsync-primary-300);
+  background: var(--getsync-primary-50);
+  outline: none;
+}
+
+.getsync-cal-activity-icon .getsync-source-icon img {
+  width: 14px;
+  height: 14px;
+}
+
+.getsync-cal-activity-name {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .getsync-cal-day-count {

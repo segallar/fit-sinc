@@ -1,6 +1,5 @@
 {# row: fit_url, resync, cross_*, garmin_href #}
-<ul class="dropdown-menu dropdown-menu-end getsync-activity-row-menu shadow-sm d-none" role="menu">
-  <li><h6 class="dropdown-header">Linked</h6></li>
+<ul class="dropdown-menu getsync-activity-row-menu shadow-sm d-none" role="menu">
   {% if row.cross_href %}
   <li>
     <a class="dropdown-item" href="{{ row.cross_href }}"{% if row.cross_external %} target="_blank" rel="noopener"{% endif %}>
@@ -15,7 +14,6 @@
 
   {% if row.fit_url or row.resync or row.garmin_href %}
   <li><hr class="dropdown-divider"></li>
-  <li><h6 class="dropdown-header">Actions</h6></li>
   {% if row.fit_url %}
   <li><a class="dropdown-item" href="{{ row.fit_url }}">Download .fit</a></li>
   {% endif %}

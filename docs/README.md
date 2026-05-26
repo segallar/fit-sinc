@@ -28,6 +28,7 @@
 | [2.1-REGISTER.md](2.1-REGISTER.md) | Auth | Саморегистрация `/register`, план email verify (**2.1e**) |
 | [2.1e-EMAIL.md](2.1e-EMAIL.md) | Auth / Ops | Отправка email: SMTP/API, verify, алерты (**2.1e**, **2.6**) |
 | [3.4-OAUTH-LOGIN.md](3.4-OAUTH-LOGIN.md) | Auth | Вход через Google / Apple (OIDC), **3.4** / фаза 10 |
+| [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) | Integrations | Скачивание FIT, шаги и сон из Garmin (**3.11**) |
 
 ---
 

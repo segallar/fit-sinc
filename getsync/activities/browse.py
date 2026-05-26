@@ -11,7 +11,7 @@ from getsync.activities.catalog import persist_browse_rows
 from getsync.users.context import UserContext, as_context
 from getsync.garmin.activities import list_garmin_activities
 from getsync.hammerhead.client import HammerheadClient
-from getsync.state.store import Store, SyncIndexEntry
+from getsync.state.store import ActivityRow, Store, SyncIndexEntry
 from getsync.timeutil import _parse_iso, parse_date_only
 from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 
@@ -598,6 +598,66 @@ def _hh_sync_labels(entry: SyncIndexEntry | None) -> tuple[str, str | None]:
     if entry.sync_status == "pending":
         return "pending", None
     return entry.sync_status, detail
+
+
+def catalog_row_to_browse_row(
+    row: ActivityRow,
+    index: dict[str, SyncIndexEntry],
+    by_garmin: dict[int, SyncIndexEntry],
+) -> ActivityBrowseRow:
+    """Map SQLite catalog row to browse row (calendar + linked menus)."""
+    if row.source == "hammerhead":
+        entry = index.get(row.activity_id)
+        status, detail = _hh_sync_labels(entry)
+        if entry is None:
+            status = row.sync_status
+            detail = row.error_message
+        garmin_id = entry.garmin_id if entry else None
+        fit_available = bool(
+            (entry and (entry.storage_key or entry.fit_path))
+            or row.storage_key
+            or row.fit_path
+        )
+        return ActivityBrowseRow(
+            source="hammerhead",
+            external_id=row.activity_id,
+            name=row.name or "—",
+            activity_date=row.activity_date,
+            distance=row.distance,
+            duration=row.duration,
+            activity_type=row.activity_type,
+            sync_status=status,
+            sync_detail=detail,
+            hammerhead_id=row.activity_id,
+            garmin_id=garmin_id,
+            fit_available=fit_available,
+        )
+
+    try:
+        garmin_id = int(row.activity_id)
+    except (TypeError, ValueError):
+        garmin_id = None
+    entry = by_garmin.get(garmin_id) if garmin_id is not None else None
+    status, detail, hh_id = _garmin_sync_labels(entry)
+    if entry is None:
+        status = row.sync_status
+        detail = row.error_message
+        hh_id = None
+    fit_available = bool(entry and (entry.storage_key or entry.fit_path))
+    return ActivityBrowseRow(
+        source="garmin",
+        external_id=row.activity_id,
+        name=row.name or "—",
+        activity_date=row.activity_date,
+        distance=row.distance,
+        duration=row.duration,
+        activity_type=row.activity_type,
+        sync_status=status,
+        sync_detail=detail,
+        hammerhead_id=hh_id,
+        garmin_id=garmin_id,
+        fit_available=fit_available,
+    )
 
 
 def _garmin_sync_labels(

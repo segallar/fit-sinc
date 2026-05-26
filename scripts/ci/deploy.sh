@@ -43,6 +43,24 @@ cd "$ROOT"
 
 COMMIT="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || true)"
 DEPLOY_NUMBER="${GETSYNC_DEPLOY_NUMBER:-${GITHUB_RUN_NUMBER:-}}"
+if [[ -z "${DEPLOY_NUMBER}" ]]; then
+  last="$(
+    ssh "${SSH_OPTS[@]}" "${SSH_USER}@${HOST}" \
+      "python3 -c \"import json; from pathlib import Path; p=Path('${DEPLOY_PATH}/getsync/_build_meta.json');
+print(int(json.loads(p.read_text()).get('deploy_number') or 0)) if p.is_file() else 0\"" \
+      2>/dev/null || echo "0"
+  )"
+  if [[ "${last}" == "0" ]]; then
+    : "${GETSYNC_PUBLIC_HEALTH_URL:=https://romansegalla.online/health}"
+    last="$(
+      curl -sf --max-time 8 "${GETSYNC_PUBLIC_HEALTH_URL}" 2>/dev/null \
+        | python3 -c "import json,sys; d=json.load(sys.stdin); print(int(d.get('deploy_number') or 0))" 2>/dev/null \
+        || echo "0"
+    )"
+  fi
+  DEPLOY_NUMBER=$((last + 1))
+  log "manual deploy #${DEPLOY_NUMBER} (previous: ${last})"
+fi
 DEPLOYED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 python3 - "$COMMIT" "$DEPLOY_NUMBER" "$DEPLOYED_AT" <<'PY'
 import json

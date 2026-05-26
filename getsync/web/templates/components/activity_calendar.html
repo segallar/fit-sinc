@@ -28,16 +28,22 @@
         {% for day in week %}
         <div class="getsync-cal-cell getsync-cal-day{% if not day.in_month %} getsync-cal-day--muted{% endif %}{% if day.is_today %} getsync-cal-day--today{% endif %}{% if day.is_selected %} getsync-cal-day--selected{% endif %}{% if day.worst_status %} getsync-cal-day--{{ day.worst_status | replace(' ', '-') }}{% endif %}"
              role="gridcell">
-          {% if day.in_month and day.list_href %}
-          <a href="{{ day.list_href }}" class="getsync-cal-day-link">
+          <div class="getsync-cal-day-inner">
+            {% if day.in_month and day.list_href %}
+            <a href="{{ day.list_href }}" class="getsync-cal-day-num-link" title="Open day in list">{{ day.day_num }}</a>
+            {% else %}
             <span class="getsync-cal-day-num">{{ day.day_num }}</span>
-            {% if day.count %}
+            {% endif %}
+            {% if day.activity_rows %}
+            <div class="getsync-cal-day-activities">
+              {% for row in day.activity_rows %}
+              {% include "components/activity_calendar_chip.html" %}
+              {% endfor %}
+            </div>
+            {% elif day.in_month and day.count %}
             <span class="getsync-cal-day-count">{{ day.count }}</span>
             {% endif %}
-          </a>
-          {% else %}
-          <span class="getsync-cal-day-num">{{ day.day_num }}</span>
-          {% endif %}
+          </div>
         </div>
         {% endfor %}
       </div>
