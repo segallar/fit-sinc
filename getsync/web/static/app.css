@@ -107,8 +107,8 @@ body {
   color: var(--getsync-primary-700);
 }
 
-.getsync-filter-link.dropdown-toggle::after {
-  display: none;
+.getsync-filter-dropdown .dropdown-toggle::after {
+  display: none !important;
 }
 
 .getsync-filter-link--icon {
@@ -129,54 +129,8 @@ body {
   box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 8%);
 }
 
-.getsync-view-toggle {
-  display: inline-flex;
-  align-items: stretch;
-  border: 1px solid var(--getsync-border);
-  border-radius: 0.375rem;
-  overflow: hidden;
-  background: var(--getsync-surface);
-}
-
-.getsync-view-toggle__item {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.3rem 0.875rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.25;
-  color: var(--getsync-primary-700);
-  text-decoration: none;
-  background: transparent;
-  border: 0;
-  border-right: 1px solid var(--getsync-border);
-}
-
-.getsync-view-toggle__item:last-child {
-  border-right: 0;
-}
-
-.getsync-view-toggle__item:hover,
-.getsync-view-toggle__item:focus {
-  color: var(--getsync-primary-800);
-  background: var(--getsync-primary-50);
-}
-
-.getsync-view-toggle__item--active {
-  color: #fff;
-  background: var(--getsync-primary-600);
-}
-
-.getsync-view-toggle__item--active:hover,
-.getsync-view-toggle__item--active:focus {
-  color: #fff;
-  background: var(--getsync-primary-700);
-}
-
-.getsync-view-toggle__item--disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  pointer-events: none;
+.getsync-view-toggle .btn {
+  min-width: 4.25rem;
 }
 
 .getsync-activities-filter__row {
@@ -349,13 +303,15 @@ body {
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 3.25rem);
-  padding-left: 0;
-  padding-right: var(--getsync-space-4);
+  padding: var(--getsync-space-3) 0 var(--getsync-space-4);
 }
 
 .getsync-activities-page {
   flex: 1 1 auto;
   min-height: 0;
+  padding-left: 0;
+  margin-left: 0;
+  max-width: 100%;
 }
 
 .getsync-activities-page .getsync-activities-subheader {
@@ -377,12 +333,20 @@ body {
   background: transparent;
 }
 
-.getsync-activities-table-card .getsync-activities-table > :not(caption) > * > :first-child {
+.getsync-activities-table thead th:first-child,
+.getsync-activities-table tbody td:first-child {
   padding-left: 0;
 }
 
 .getsync-activities-table-scroll {
   overflow: auto;
+  margin-left: 0;
+}
+
+.getsync-activities-data-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  opacity: 0.85;
 }
 
 .getsync-activities-table thead th {
@@ -428,18 +392,18 @@ body {
   background-color: var(--getsync-primary-50);
 }
 
-.getsync-activity-row-menu-btn {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  opacity: 0;
-  min-width: 0;
-  min-height: 0;
-  cursor: pointer;
+.getsync-activity-row-menu-anchor {
+  white-space: nowrap;
 }
 
-.getsync-activity-row-menu-anchor .dropdown-menu {
-  z-index: 1050;
+.getsync-activity-row-menu-popover {
+  display: block;
+  min-width: 12rem;
+}
+
+.getsync-activity-row-menu-popover .dropdown-item:active {
+  color: var(--bs-dropdown-link-active-color);
+  background-color: var(--bs-dropdown-link-active-bg);
 }
 
 .getsync-activity-row-menu .dropdown-item form {

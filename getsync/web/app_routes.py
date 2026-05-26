@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 
 from getsync.activities.browse import (
     ACTIVITY_TYPE_FILTER_CHOICES,
+    BROWSE_CACHE_TTL_SEC,
     ActivityFilters,
     ActivityBrowseRow,
     fetch_activities_page,
@@ -211,12 +212,13 @@ def _activities_subheader_context(
         type_links.append(
             {
                 "href": _activities_return_url(
-                    page=page,
+                    page=1,
                     per_page=per_page,
                     filters=nf,
                     view=view,
                     year=cal_year if view == "calendar" else None,
                     month=cal_month if view == "calendar" else None,
+                    extra={"refresh": "1"},
                 ),
                 "label": label,
                 "active": active,
@@ -515,6 +517,7 @@ async def activities_browser(
     activity_type: str = Query(""),
     date_from: str = Query(""),
     date_to: str = Query(""),
+    refresh: str = Query(""),
 ) -> str:
     ctx = _ctx(request)
     store = _store()
@@ -631,12 +634,14 @@ async def activities_browser(
             **common,
         )
 
+    bust_cache = refresh.strip() in ("1", "true", "yes")
     result = await fetch_activities_page(
         page=page,
         per_page=per_page,
         filters=filters,
         ctx=ctx,
         display_tz=display_tz,
+        refresh=bust_cache,
     )
     query_params = _activities_query_params(
         page=result.page,
@@ -688,6 +693,10 @@ async def activities_browser(
         rows_load_url=_activities_rows_load_url(per_page=per_page, filters=filters),
         next_page=result.page + 1,
         has_more_rows=has_more,
+        data_source_hint=(
+            "Hammerhead & Garmin APIs · metadata in SQLite · "
+            f"list cached {BROWSE_CACHE_TTL_SEC // 60} min"
+        ),
         activities_tab_query=_activities_tab_query_factory(tab_base),
         **{k: v for k, v in common.items() if k != "activities_tab_query"},
     )

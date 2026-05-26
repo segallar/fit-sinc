@@ -4,6 +4,7 @@
       method="get"
       action="{{ prefix }}/activities">
   <input type="hidden" name="view" value="{{ activities_view }}">
+  <input type="hidden" name="refresh" value="1">
   {% if activities_view == 'calendar' and calendar %}
   <input type="hidden" name="year" value="{{ calendar.year }}">
   <input type="hidden" name="month" value="{{ calendar.month }}">
@@ -13,7 +14,7 @@
   {% if filters.status %}<input type="hidden" name="status" value="{{ filters.status }}">{% endif %}
   {% if filters.activity_type %}<input type="hidden" name="activity_type" value="{{ filters.activity_type }}">{% endif %}
   {% if activities_view == 'list' %}
-  <input type="hidden" name="page" value="{{ page | default(1) }}">
+  <input type="hidden" name="page" value="1">
   <input type="hidden" name="per_page" value="{{ per_page }}">
   {% endif %}
 
@@ -24,7 +25,7 @@
 
       <div class="dropdown getsync-filter-dropdown d-inline-block">
         <a href="#"
-           class="getsync-filter-link dropdown-toggle"
+           class="getsync-filter-link"
            data-bs-toggle="dropdown"
            data-bs-auto-close="outside"
            aria-expanded="false"
@@ -45,7 +46,7 @@
 
       <div class="dropdown getsync-filter-dropdown d-inline-block">
         <a href="#"
-           class="getsync-filter-link dropdown-toggle"
+           class="getsync-filter-link"
            data-bs-toggle="dropdown"
            data-bs-auto-close="outside"
            aria-expanded="false"
@@ -64,7 +65,7 @@
 
       <div class="dropdown getsync-filter-dropdown d-inline-block">
         <a href="#"
-           class="getsync-filter-link dropdown-toggle"
+           class="getsync-filter-link"
            data-bs-toggle="dropdown"
            aria-expanded="false"
            aria-label="Activity type filter"
@@ -80,7 +81,7 @@
 
       <div class="dropdown getsync-filter-dropdown d-inline-block">
         <a href="#"
-           class="getsync-filter-link getsync-filter-link--icon dropdown-toggle"
+           class="getsync-filter-link getsync-filter-link--icon"
            data-bs-toggle="dropdown"
            data-bs-auto-close="outside"
            aria-expanded="false"

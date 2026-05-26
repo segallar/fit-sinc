@@ -10,17 +10,9 @@
   <td>{{ row.activity_type }}</td>
   <td>{{ fmt_km(row.distance) }}</td>
   <td>{{ row.duration_fmt }}</td>
-  <td class="getsync-activity-row-menu-anchor position-relative">
+  <td class="getsync-activity-row-menu-anchor">
     {{ status_badge(row.sync_status, row.sync_detail) }}
-    <div class="dropdown position-absolute top-0 start-0 w-100 h-100">
-      <button type="button"
-              class="btn p-0 border-0 getsync-activity-row-menu-btn w-100 h-100"
-              data-bs-toggle="dropdown"
-              data-bs-display="static"
-              data-bs-auto-close="outside"
-              aria-label="Activity linked info and actions"></button>
-      {% include "components/activity_row_menu.html" %}
-    </div>
+    {% include "components/activity_row_menu.html" %}
   </td>
 </tr>
 {% endfor %}

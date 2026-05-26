@@ -1,9 +1,9 @@
-<div class="getsync-view-toggle flex-shrink-0" role="group" aria-label="Activities view">
+<div class="btn-group getsync-view-toggle flex-shrink-0" role="group" aria-label="Activities view">
   <a href="{{ prefix }}/activities?{{ activities_tab_query('list') }}"
-     class="getsync-view-toggle__item{% if activities_view == 'list' %} getsync-view-toggle__item--active{% endif %}"
+     class="btn btn-sm{% if activities_view == 'list' %} btn-primary{% else %} btn-outline-primary{% endif %}"
      {% if activities_view == 'list' %}aria-current="page"{% endif %}>List</a>
   <a href="{{ prefix }}/activities?{{ activities_tab_query('calendar') }}"
-     class="getsync-view-toggle__item{% if activities_view == 'calendar' %} getsync-view-toggle__item--active{% endif %}"
+     class="btn btn-sm{% if activities_view == 'calendar' %} btn-primary{% else %} btn-outline-primary{% endif %}"
      {% if activities_view == 'calendar' %}aria-current="page"{% endif %}>Calendar</a>
-  <span class="getsync-view-toggle__item getsync-view-toggle__item--disabled" title="Planned">Map</span>
+  <button type="button" class="btn btn-sm btn-outline-primary" disabled title="Planned">Map</button>
 </div>

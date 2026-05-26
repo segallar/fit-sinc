@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import time
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -32,6 +33,43 @@ ACTIVITY_TYPE_FILTER_CHOICES: tuple[tuple[str, str], ...] = (
 MAX_HH_SCAN_PAGES = 25
 MAX_GM_SCAN_ITEMS = 500
 GM_SCAN_BATCH = 100
+BROWSE_CACHE_TTL_SEC = 300
+
+
+@dataclass
+class _CachedBrowse:
+    expires_at: float
+    mode: BrowseMode
+    rows: list[ActivityBrowseRow]
+    errors: list[str]
+
+
+_BROWSE_CACHE: dict[str, _CachedBrowse] = {}
+
+
+def browse_cache_key(user_id: str, filters: ActivityFilters, display_tz: str) -> str:
+    return "|".join(
+        (
+            user_id,
+            display_tz,
+            filters.q,
+            filters.status,
+            filters.activity_type,
+            filters.date_from,
+            filters.date_to,
+            filters.source,
+        )
+    )
+
+
+def clear_browse_cache(user_id: str | None = None) -> None:
+    if user_id is None:
+        _BROWSE_CACHE.clear()
+        return
+    prefix = f"{user_id}|"
+    for key in list(_BROWSE_CACHE):
+        if key.startswith(prefix):
+            del _BROWSE_CACHE[key]
 
 
 @dataclass(frozen=True)
@@ -206,15 +244,13 @@ def _browse_mode(filters: ActivityFilters) -> BrowseMode:
     return "all" if not src else src  # type: ignore[return-value]
 
 
-async def _fetch_unified(
+async def _load_unified_rows(
     *,
-    page: int,
-    per_page: int,
     filters: ActivityFilters,
     ctx: UserContext,
     store: Store,
     display_tz: str,
-) -> ActivityBrowsePage:
+) -> tuple[BrowseMode, list[ActivityBrowseRow], list[str]]:
     mode = _browse_mode(filters)
     src = filters.source_filter()
     index = store.build_sync_index(ctx.user_id)
@@ -239,7 +275,19 @@ async def _fetch_unified(
     filtered = [row for row in rows if _matches_filters(row, filters, display_tz=display_tz)]
     filtered = _sort_rows_by_date(filtered, display_tz=display_tz)
     persist_browse_rows(store, ctx.user_id, filtered)
-    result = _paginate(mode, filtered, page=page, per_page=per_page, filters=filters)
+    return mode, filtered, errors
+
+
+def _page_from_unified(
+    *,
+    mode: BrowseMode,
+    rows: list[ActivityBrowseRow],
+    errors: list[str],
+    page: int,
+    per_page: int,
+    filters: ActivityFilters,
+) -> ActivityBrowsePage:
+    result = _paginate(mode, rows, page=page, per_page=per_page, filters=filters)
     if errors and not result.rows:
         return ActivityBrowsePage(
             mode=mode,
@@ -265,6 +313,51 @@ async def _fetch_unified(
     return result
 
 
+async def _fetch_unified(
+    *,
+    page: int,
+    per_page: int,
+    filters: ActivityFilters,
+    ctx: UserContext,
+    store: Store,
+    display_tz: str,
+    refresh: bool = False,
+) -> ActivityBrowsePage:
+    key = browse_cache_key(ctx.user_id, filters, display_tz)
+    if not refresh:
+        cached = _BROWSE_CACHE.get(key)
+        if cached and cached.expires_at > time.monotonic():
+            return _page_from_unified(
+                mode=cached.mode,
+                rows=cached.rows,
+                errors=cached.errors,
+                page=page,
+                per_page=per_page,
+                filters=filters,
+            )
+
+    mode, rows, errors = await _load_unified_rows(
+        filters=filters,
+        ctx=ctx,
+        store=store,
+        display_tz=display_tz,
+    )
+    _BROWSE_CACHE[key] = _CachedBrowse(
+        time.monotonic() + BROWSE_CACHE_TTL_SEC,
+        mode,
+        rows,
+        errors,
+    )
+    return _page_from_unified(
+        mode=mode,
+        rows=rows,
+        errors=errors,
+        page=page,
+        per_page=per_page,
+        filters=filters,
+    )
+
+
 async def fetch_activities_page(
     *,
     page: int = 1,
@@ -273,6 +366,7 @@ async def fetch_activities_page(
     ctx: UserContext | None = None,
     store: Store | None = None,
     display_tz: str | None = None,
+    refresh: bool = False,
 ) -> ActivityBrowsePage:
     user_ctx = as_context(ctx)
     store = store or Store(user_ctx.db_path)
@@ -297,6 +391,7 @@ async def fetch_activities_page(
         ctx=user_ctx,
         store=store,
         display_tz=tz,
+        refresh=refresh,
     )
 
 
