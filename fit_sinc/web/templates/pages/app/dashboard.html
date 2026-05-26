@@ -20,19 +20,7 @@
 </form>
 {% endif %}
 
-<h2 class="mb-3 text-lg font-semibold">Connections</h2>
-<section class="mb-8 grid gap-4 sm:grid-cols-2">
-  <article class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-    <p class="text-sm text-slate-500">Hammerhead</p>
-    <p class="mt-1 text-lg font-semibold {% if hh_connected %}text-emerald-700{% else %}text-amber-700{% endif %}">
-      {{ "connected" if hh_connected else "not connected" }}
-    </p>
-  </article>
-  <article class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-    <p class="text-sm text-slate-500">Garmin</p>
-    <p class="mt-1 text-lg font-semibold {% if gm_ok %}text-emerald-700{% else %}text-amber-700{% endif %}">{{ gm_label }}</p>
-  </article>
-</section>
+{% include "components/connections_banner.html" %}
 
 <section class="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
   <div class="border-b border-slate-100 px-5 py-4">

@@ -14,9 +14,7 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 
 from fit_sinc.activities.browse import ActivityFilters, ActivityBrowseRow, fetch_activities_page
 from fit_sinc.config import get_settings
-from fit_sinc.garmin.session import garmin_status
 from fit_sinc.garmin.web_refresh import refresh_web_session, session_monitor
-from fit_sinc.hammerhead.client import HammerheadClient
 from fit_sinc.state.store import Store
 from fit_sinc.sync.service import sync_activity
 from fit_sinc.users.context import UserContext
@@ -28,6 +26,7 @@ from fit_sinc.web.auth import (
     user_row_from_session,
 )
 from fit_sinc.web.cabinet import render_cabinet
+from fit_sinc.web.connections import connection_status
 from fit_sinc.web.templating import render_template
 
 logger = logging.getLogger("fit_sinc")
@@ -182,23 +181,12 @@ async def app_logout(request: Request) -> RedirectResponse:
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def dashboard(request: Request) -> str:
     ctx = _ctx(request)
-    hh = HammerheadClient(ctx).status()
-    gm = garmin_status(ctx)
+    user = _store().get_user(ctx.user_id)
     store = _store()
     activities = store.list_activities(ctx.user_id, limit=30)
     status_counts = store.count_activities_by_status(ctx.user_id)
     error_n = status_counts.get("error", 0)
     dash_return = f"{P}/"
-
-    if gm.get("upload_ready"):
-        gm_label = "upload ready"
-        gm_ok = True
-    elif gm.get("connected"):
-        gm_label = "oauth only (run garmin login for upload)"
-        gm_ok = False
-    else:
-        gm_label = "not connected"
-        gm_ok = False
 
     activity_rows = []
     for a in activities:
@@ -250,9 +238,7 @@ async def dashboard(request: Request) -> str:
         error_count=error_n,
         dash_return=dash_return,
         errors_url=errors_url,
-        hh_connected=bool(hh.get("connected")),
-        gm_label=gm_label,
-        gm_ok=gm_ok,
+        connections=connection_status(ctx, user),
         activities=activity_rows,
     )
 

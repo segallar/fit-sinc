@@ -9,15 +9,14 @@ from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from fit_sinc.config import get_settings
-from fit_sinc.garmin.session import garmin_status
 from fit_sinc.garmin.web_refresh import refresh_web_session
 from fit_sinc.hammerhead.client import HammerheadClient
 from fit_sinc.hammerhead.oauth import HammerheadOAuth
 from fit_sinc.state.store import Store
 from fit_sinc.storage import save_json
 from fit_sinc.users.context import UserContext
-from fit_sinc.web import html as H
 from fit_sinc.web.auth import user_context_from_session
+from fit_sinc.web.connections import connection_settings_view
 from fit_sinc.web.cabinet import render_cabinet
 from fit_sinc.web.oauth_state import sign_hammerhead_oauth_state, verify_hammerhead_oauth_state
 
@@ -96,25 +95,6 @@ def _hammerhead_oauth(request: Request) -> HammerheadOAuth:
     )
 
 
-def _connection_view(ctx: UserContext, user) -> dict[str, object]:
-    hh = HammerheadClient(ctx).status()
-    gm = garmin_status(ctx)
-    web = gm.get("web") or {}
-    jwt_exp = web.get("expires_at")
-    return {
-        "hh_connected": bool(hh.get("connected")),
-        "hh_user_id": user.hammerhead_user_id or hh.get("user_id") or "—",
-        "hh_expired": hh.get("expired"),
-        "hh_path": hh.get("path"),
-        "garmin_upload_ready": bool(gm.get("upload_ready")),
-        "garmin_oauth": bool((gm.get("oauth") or {}).get("connected")),
-        "garmin_web": bool(web.get("connected")),
-        "garmin_jwt_expires": H.fmt_ts(jwt_exp) if jwt_exp else "—",
-        "garmin_web_reason": web.get("reason") or "—",
-        "hammerhead_oauth_configured": bool(get_settings().hammerhead_client_id),
-    }
-
-
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def settings_page(request: Request) -> str:
     ctx = _ctx(request)
@@ -127,7 +107,7 @@ async def settings_page(request: Request) -> str:
         active=f"{P}/",
         user=user,
         flash=_flash_from_query(request),
-        conn=_connection_view(ctx, user),
+        conn=connection_settings_view(ctx, user),
     )
 
 

@@ -170,7 +170,7 @@ fit_sinc serve
 
 ## Ограничения (актуальные)
 
-- Даты в UI в TZ пользователя (`users.timezone`, `DateFormatter`)
+- Дашборд: баннер HH + Garmin (`upload_ready`, JWT TTL) — [`connections.py`](../fit_sinc/web/connections.py)
 - Нет `/app/settings` и `/register` — HH/Garmin через CLI или админку (5b.3–5b.4)
 - Даты в кабинете: UTC в SQLite, отображение и фильтры `date_from`/`date_to` в `users.timezone`
 - Только активности Hammerhead → Garmin (не routes)
