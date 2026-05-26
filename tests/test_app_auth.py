@@ -38,7 +38,8 @@ class TestAppLogin(unittest.TestCase):
 
                 dash = client.get("/app/", follow_redirects=False)
                 self.assertEqual(dash.status_code, 200)
-                self.assertIn("Connections", dash.text)
+                self.assertIn('aria-label="Connections"', dash.text)
+                self.assertIn("upload", dash.text)
                 self.assertIn("user-bar", dash.text)
                 self.assertIn("owner@test.local", dash.text)
                 self.assertIn("/app/logout", dash.text)
