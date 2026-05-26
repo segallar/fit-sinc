@@ -18,13 +18,74 @@ flowchart LR
 |-----------|----------|
 | Сервер | `sirocco.romansegalla.online` (`134.209.133.187`) |
 | SSH | `ssh -i ~/.ssh/id_ed25519 root@sirocco.romansegalla.online` |
-| Домен app | `fit.romansegalla.online` (DNS only, без Cloudflare proxy) |
+| Домен app (legacy) | `fit.romansegalla.online` (DNS only, без Cloudflare proxy) |
+| **GetSync (целевой)** | `getsync.me` + `app.getsync.me` — см. [DNS](#dns-и-домены) |
 | Лендинг | `romansegalla.online` — proxy на `:8080`, публичный `/` с формой входа |
 | Каталог приложения | `/opt/fit_sinc` |
 | Пользователь сервиса | `fit_sinc:fit_sinc` |
 | Python venv | `/opt/fit_sinc/.venv` |
 | Конфиг | `/opt/fit_sinc/.env` (не в git) |
 | Данные | `/opt/fit_sinc/data/` (tokens, garth session, fits, SQLite) |
+
+---
+
+## DNS и домены
+
+### GetSync — `getsync.me`
+
+| Роль | Где | Значение |
+|------|-----|----------|
+| **Регистратор** | GoDaddy | домен `getsync.me` (оплата/владелец) |
+| **DNS-зона** | **Cloudflare** (Free) | NS делегированы с GoDaddy → Cloudflare |
+| **Приложение** | `app.getsync.me` | A/AAAA → `134.209.133.187` (sirocco), **DNS only** |
+| **Лендинг** | `getsync.me` | A/AAAA → sirocco (рекомендуется **DNS only** на старте) |
+
+Детали бренда и cutover: [1.5-RENAME.md](1.5-RENAME.md).
+
+### Зачем Cloudflare при регистрации в GoDaddy
+
+- Регистратор остаётся **GoDaddy**; переносится только **управление DNS** (смена nameservers).
+- Удобные записи, редиректы (`thefitsync.com` → `getsync.me`), один аккаунт для нескольких зон.
+- **Не обязательно** включать orange-cloud (proxy) на `app.*`.
+
+### Политика proxy (как у `fit.romansegalla.online`)
+
+| Host | Cloudflare proxy | Причина |
+|------|------------------|---------|
+| **`app.getsync.me`** | **Выкл.** (DNS only, серое облако) | Webhook Hammerhead, `/app`, долгие POST; меньше сюрпризов с TLS и IP |
+| **`getsync.me`** | Выкл. на старте; proxy опционально для статики | Проще certbot HTTP-01 и отладка |
+
+Orange-cloud на `app.*` без теста **не включать** — возможны лишние hop, блокировки, отличия TLS от origin.
+
+### Подключение зоны (один раз)
+
+1. [Cloudflare](https://dash.cloudflare.com) → **Add a site** → `getsync.me` → план **Free**.
+2. Cloudflare покажет **2 nameserver** (например `xxx.ns.cloudflare.com`).
+3. **GoDaddy:** Domain → `getsync.me` → **DNS** → **Nameservers** → **Change** → **Enter my own nameservers** → вставить NS Cloudflare → Save.
+4. Дождаться статуса **Active** в Cloudflare (от минут до 24 ч).
+5. В Cloudflare → **DNS** → **Records**:
+
+| Type | Name | Content | Proxy |
+|------|------|---------|-------|
+| A | `@` | `134.209.133.187` | DNS only |
+| A | `app` | `134.209.133.187` | DNS only |
+| AAAA | `@`, `app` | при наличии IPv6 на VPS — опционально | DNS only |
+
+6. **На sirocco:** nginx-конфиг для `getsync.me` / `app.getsync.me` (см. [1.5-RENAME.md](1.5-RENAME.md) этап C), затем certbot:
+
+```bash
+certbot --nginx -d getsync.me -d app.getsync.me
+```
+
+7. **Hammerhead Developer:** webhook URL и OAuth redirect URI на `https://app.getsync.me/...` **после** рабочего HTTPS.
+
+### Редиректы (портфель доменов)
+
+Пока зоны `thefitsync.com` / `fitnesssync.io` на других DNS — **Page Rule** или **Redirect Rules** в Cloudflare (или nginx на sirocco), цель `https://getsync.me`. После cutover: `fit.romansegalla.online` → `https://app.getsync.me` (301).
+
+### Альтернатива без Cloudflare
+
+DNS только в GoDaddy: A-записи `@` и `app` → IP sirocco. Работает; редиректы и несколько зон менее удобны.
 
 ---
 
