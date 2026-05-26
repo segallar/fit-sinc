@@ -4,7 +4,7 @@
 
 {% block page_content %}
 <section class="py-5 getsync-hero rounded-3 mb-5">
-  <div class="container py-4 text-center">
+  <div class="py-2 text-center">
     <h2 class="display-5 fw-bold">{{ t.hero_title }}</h2>
     <p class="lead text-muted mx-auto col-lg-10">{{ t.hero_lead }}</p>
     <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center mt-4">
@@ -42,7 +42,7 @@
 
 <section id="faq" class="mb-5 scroll-mt-5">
   <h3 class="h2 text-center mb-4">{{ t.faq_title }}</h3>
-  <div class="accordion col-lg-8 mx-auto" id="faqAccordion">
+  <div class="accordion getsync-faq mx-auto" id="faqAccordion">
     {% for item in t.faq %}
     <div class="accordion-item">
       <h4 class="accordion-header">
@@ -75,11 +75,4 @@
     </div>
   </div>
 </section>
-{% endblock %}
-
-{% block footer_extra %}
-<nav class="mb-2">
-  <a href="/health" class="me-3">Health</a>
-  <a href="https://getsync.me">getsync.me</a>
-</nav>
 {% endblock %}

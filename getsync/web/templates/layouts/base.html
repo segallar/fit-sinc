@@ -13,8 +13,8 @@
   <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
   {% block head_extra %}{% endblock %}
 </head>
-<body class="bg-light d-flex flex-column min-vh-100">
-  <div class="{% block container_class %}container{% endblock %} py-4 flex-grow-1">
+<body class="{% block body_class %}bg-light{% endblock %} d-flex flex-column min-vh-100">
+  <div class="{% block container_class %}container{% endblock %}{% block container_padding %} py-4{% endblock %} flex-grow-1">
     {% block header %}
     <header class="d-flex align-items-center gap-3 mb-4">
       <img src="/static/icon.svg" alt="" width="48" height="48" class="rounded-3 shadow-sm">

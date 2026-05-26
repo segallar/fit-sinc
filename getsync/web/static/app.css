@@ -4,7 +4,7 @@
 [data-bs-theme="light"] {
   --getsync-primary-50: #e6f4f1;
   --getsync-primary-100: #c0e4dc;
-  --getsync-primary-600: #29917d;
+  --getsync-primary-600: rgb(41, 145, 125);
   --getsync-primary-700: #237d6c;
   --getsync-primary-900: #14473d;
   --getsync-text: #1f2d1f;
@@ -32,6 +32,26 @@
 body {
   min-height: 100vh;
   color: var(--getsync-text);
+}
+
+/* Landing layout — horizontal gutters like fitsync.io (container + px-6) */
+.getsync-site-inner {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+.getsync-site-main {
+  padding-block: 2rem 2.5rem;
+}
+
+.getsync-site .getsync-footer {
+  padding-bottom: 2rem;
+}
+
+.getsync-faq {
+  max-width: 42rem;
 }
 
 .getsync-brand-sub {
@@ -93,8 +113,8 @@ body {
 }
 
 .btn-primary {
-  --bs-btn-bg: var(--getsync-primary-600);
-  --bs-btn-border-color: var(--getsync-primary-600);
+  --bs-btn-bg: rgb(41, 145, 125);
+  --bs-btn-border-color: rgb(41, 145, 125);
   --bs-btn-hover-bg: var(--getsync-primary-700);
   --bs-btn-hover-border-color: var(--getsync-primary-700);
   --bs-btn-active-bg: var(--getsync-primary-700);
@@ -103,11 +123,19 @@ body {
 
 .btn-outline-primary {
   --bs-btn-color: var(--getsync-primary-700);
-  --bs-btn-border-color: var(--getsync-primary-600);
-  --bs-btn-hover-bg: var(--getsync-primary-600);
-  --bs-btn-hover-border-color: var(--getsync-primary-600);
+  --bs-btn-border-color: rgb(41, 145, 125);
+  --bs-btn-hover-bg: rgb(41, 145, 125);
+  --bs-btn-hover-border-color: rgb(41, 145, 125);
+  --bs-btn-hover-color: #fff;
   --bs-btn-active-bg: var(--getsync-primary-700);
   --bs-btn-active-border-color: var(--getsync-primary-700);
+  --bs-btn-active-color: #fff;
+}
+
+.getsync-site .accordion-button:not(.collapsed) {
+  background-color: var(--getsync-primary-50);
+  color: var(--getsync-primary-700);
+  box-shadow: none;
 }
 
 .text-muted {
