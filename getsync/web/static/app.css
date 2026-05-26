@@ -140,6 +140,17 @@ body {
   max-width: 36rem;
 }
 
+.getsync-auth-card {
+  border: 1px solid var(--getsync-border);
+  border-radius: 0.75rem;
+  box-shadow: none;
+}
+
+.getsync-auth-shell .card-title,
+.getsync-auth-card .h4 {
+  color: var(--getsync-text);
+}
+
 .getsync-feature-card {
   border: 1px solid var(--getsync-border);
   border-radius: 0.75rem;

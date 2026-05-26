@@ -65,7 +65,7 @@ class TestRegisterRoutes(unittest.TestCase):
 
                 r = TestClient(app).get("/register")
                 self.assertEqual(r.status_code, 403)
-                self.assertIn("Регистрация недоступна", r.text)
+                self.assertIn("Registration closed", r.text)
 
     def test_closed_post_returns_forbidden(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -84,9 +84,8 @@ class TestRegisterRoutes(unittest.TestCase):
                 self.assertEqual(r.status_code, 200)
                 self.assertIn("Sign up", r.text)
                 self.assertIn('name="email"', r.text)
-                self.assertIn('name="timezone"', r.text)
-                self.assertIn("card shadow-sm", r.text)
-                self.assertNotIn("getsync-site", r.text)
+                self.assertNotIn('name="timezone"', r.text)
+                self.assertIn("getsync-site", r.text)
 
     def test_register_success_auto_login_and_slug(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -165,7 +164,7 @@ class TestRegisterRoutes(unittest.TestCase):
 
                 r = _post_register(TestClient(app), email="not-an-email")
                 self.assertEqual(r.status_code, 400)
-                self.assertIn("корректный email", r.text)
+                self.assertIn("valid email", r.text)
 
     def test_short_password(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -178,7 +177,7 @@ class TestRegisterRoutes(unittest.TestCase):
                     password_confirm="short",
                 )
                 self.assertEqual(r.status_code, 400)
-                self.assertIn("не короче", r.text)
+                self.assertIn("at least", r.text)
 
     def test_password_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -191,7 +190,7 @@ class TestRegisterRoutes(unittest.TestCase):
                     password_confirm="other123",
                 )
                 self.assertEqual(r.status_code, 400)
-                self.assertIn("не совпадают", r.text)
+                self.assertIn("do not match", r.text)
 
     def test_duplicate_email(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -211,7 +210,7 @@ class TestRegisterRoutes(unittest.TestCase):
 
                 r = _post_register(TestClient(app), email="taken@test.local")
                 self.assertEqual(r.status_code, 400)
-                self.assertIn("уже есть", r.text)
+                self.assertIn("already exists", r.text)
 
     def test_rate_limit_after_max_attempts(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -226,7 +225,7 @@ class TestRegisterRoutes(unittest.TestCase):
                         self.assertEqual(r.status_code, 400)
                     r = _post_register(client, email="bad-email")
                     self.assertEqual(r.status_code, 429)
-                    self.assertIn("Слишком много попыток", r.text)
+                    self.assertIn("Too many attempts", r.text)
 
     def test_logged_in_user_redirects_from_register(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -268,21 +267,31 @@ class TestRegisterRoutes(unittest.TestCase):
                 self.assertNotIn('href="/register"', login.text)
 
 
-class TestRegisterLayout(unittest.TestCase):
-    def test_register_uses_auth_card_with_timezone(self) -> None:
+class TestRegisterI18n(unittest.TestCase):
+    def test_register_russian_via_cookie(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(Path(tmp), REGISTRATION_OPEN="true"):
+                from getsync.web.app import app
+                from getsync.web.site_i18n import LANG_COOKIE
+
+                client = TestClient(app)
+                client.cookies.set(LANG_COOKIE, "ru")
+                r = client.get("/register")
+                self.assertEqual(r.status_code, 200)
+                self.assertIn("Регистрация", r.text)
+                self.assertIn("Создаётся автоматически по email", r.text)
+                self.assertNotIn("Slug", r.text)
+                self.assertNotIn("Hammerhead → Garmin", r.text)
+
+    def test_register_intro_no_slug_jargon(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp), REGISTRATION_OPEN="true"):
                 from getsync.web.app import app
 
                 r = TestClient(app).get("/register")
-                self.assertEqual(r.status_code, 200)
-                self.assertIn("Sign up", r.text)
-                self.assertIn("card shadow-sm", r.text)
-                self.assertIn("Hammerhead → Garmin", r.text)
-                self.assertIn("Slug", r.text)
-                self.assertIn('name="timezone"', r.text)
-                self.assertNotIn("getsync-site", r.text)
-                self.assertNotIn('id="siteNav"', r.text)
+                self.assertNotIn("Slug", r.text)
+                self.assertNotIn("Hammerhead → Garmin", r.text)
+                self.assertIn("workout sync", r.text)
 
 
 if __name__ == "__main__":

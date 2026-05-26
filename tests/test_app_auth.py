@@ -208,8 +208,8 @@ class TestAdminAccess(unittest.TestCase):
                 self.assertEqual(r.headers.get("location"), "/app/admin/")
 
 
-class TestAppLoginLayout(unittest.TestCase):
-    def test_login_uses_auth_card_not_landing_nav(self) -> None:
+class TestAppLoginI18n(unittest.TestCase):
+    def test_login_default_english(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 from getsync.web.app import app
@@ -217,11 +217,44 @@ class TestAppLoginLayout(unittest.TestCase):
                 r = TestClient(app).get("/app/login")
                 self.assertEqual(r.status_code, 200)
                 self.assertIn("Sign in", r.text)
-                self.assertIn("card shadow-sm", r.text)
-                self.assertIn("Hammerhead → Garmin", r.text)
-                self.assertNotIn("getsync-site", r.text)
-                self.assertNotIn('id="siteNav"', r.text)
-                self.assertNotIn("getsync-site-footer", r.text)
+                self.assertIn('lang="en"', r.text)
+                self.assertIn('id="siteLangDropdown"', r.text)
+
+    def test_login_russian_via_cookie(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(Path(tmp)):
+                from getsync.web.app import app
+                from getsync.web.site_i18n import LANG_COOKIE
+
+                client = TestClient(app)
+                client.cookies.set(LANG_COOKIE, "ru")
+                r = client.get("/app/login")
+                self.assertIn("Войти", r.text)
+                self.assertIn('lang="ru"', r.text)
+                self.assertIn("Преимущества", r.text)
+                self.assertIn("getsync-site-footer", r.text)
+
+    def test_login_german_via_query_sets_cookie(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(Path(tmp)):
+                from getsync.web.app import app
+                from getsync.web.site_i18n import LANG_COOKIE
+
+                r = TestClient(app).get("/app/login?lang=de", follow_redirects=False)
+                self.assertEqual(r.status_code, 200)
+                self.assertIn("Anmelden", r.text)
+                self.assertEqual(r.cookies.get(LANG_COOKIE), "de")
+                self.assertIn("/set-lang?lang=de&next=", r.text)
+
+    def test_login_lang_switcher_uses_set_lang(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(Path(tmp)):
+                from getsync.web.app import app
+
+                r = TestClient(app).get("/app/login")
+                self.assertIn("/set-lang?lang=ru&next=%2Fapp%2Flogin", r.text)
+                self.assertIn("getsync-site", r.text)
+                self.assertIn('id="siteNav"', r.text)
 
 
 if __name__ == "__main__":

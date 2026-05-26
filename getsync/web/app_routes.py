@@ -20,6 +20,7 @@ from getsync.sync.service import sync_activity
 from getsync.users.bootstrap import registration_is_open
 from getsync.users.context import UserContext
 from getsync.web import html as H
+from getsync.web.app_i18n import auth_strings
 from getsync.web.auth import (
     login_user,
     logout_user,
@@ -28,11 +29,23 @@ from getsync.web.auth import (
 )
 from getsync.web.cabinet import render_cabinet
 from getsync.web.connections import connection_status
+from getsync.web.site_i18n import LANG_COOKIE, lang_from_request, landing_strings
 from getsync.web.templating import render_template
 
 logger = logging.getLogger("getsync")
 router = APIRouter(prefix="/app", tags=["app"])
 P = "/app"
+_LANG_COOKIE_MAX_AGE = 365 * 24 * 3600
+
+
+def _set_lang_cookie(response: RedirectResponse | HTMLResponse, lang: str) -> None:
+    response.set_cookie(
+        LANG_COOKIE,
+        lang,
+        max_age=_LANG_COOKIE_MAX_AGE,
+        httponly=False,
+        samesite="lax",
+    )
 
 
 def _store() -> Store:
@@ -150,13 +163,29 @@ def _activity_row_view(
 
 
 @router.get("/login", response_class=HTMLResponse, include_in_schema=False)
-async def app_login_form(error: str = "") -> str:
-    return render_template(
-        "pages/app/login.html",
-        prefix=P,
-        error=bool(error),
-        registration_open=registration_is_open(),
+async def app_login_form(
+    request: Request,
+    error: str = "",
+    lang: str | None = Query(None),
+) -> HTMLResponse:
+    resolved = lang_from_request(request, lang)
+    lang_next = f"{P}/login" + ("?error=1" if error else "")
+    response = HTMLResponse(
+        render_template(
+            "pages/app/login.html",
+            prefix=P,
+            error=bool(error),
+            registration_open=registration_is_open(),
+            lang=resolved,
+            lang_next_path=lang_next,
+            active_nav="login",
+            t=landing_strings(resolved),
+            form_t=auth_strings(resolved),
+        )
     )
+    if lang is not None:
+        _set_lang_cookie(response, resolved)
+    return response
 
 
 @router.post("/login", include_in_schema=False)
