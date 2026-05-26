@@ -14,7 +14,7 @@ from getsync.hammerhead.oauth import verify_webhook_signature
 from getsync.state.store import Store
 from getsync.sync.service import resolve_user_for_webhook, sync_activity
 from getsync.users.context import UserContext
-from getsync.users.bootstrap import apply_bootstrap_admin
+from getsync.users.bootstrap import apply_bootstrap_admin, registration_is_open
 from getsync.users.migrate import infer_hammerhead_user_id, migrate_legacy_files
 from getsync.web.admin_routes import router as admin_router
 from getsync.web.app_routes import router as app_router
@@ -113,8 +113,13 @@ async def favicon() -> FileResponse:
 
 
 @app.get("/health")
-async def health() -> dict[str, str]:
-    return {"status": "ok", "service": "getsync", "version": "0.5.0"}
+async def health() -> dict[str, str | bool]:
+    return {
+        "status": "ok",
+        "service": "getsync",
+        "version": "0.5.0",
+        "registration_open": registration_is_open(),
+    }
 
 
 @app.post("/webhooks/hammerhead")
