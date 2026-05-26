@@ -1,7 +1,15 @@
 import html
+from dataclasses import dataclass
 from urllib.parse import urlencode
 
-from fit_sinc.timeutil import format_datetime_parts, format_iso, format_ts, format_ttl, now_msk
+from fit_sinc.timeutil import (
+    format_datetime_parts,
+    format_iso,
+    format_ts,
+    format_ttl,
+    now_in_tz,
+)
+from fit_sinc.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 
 
 def esc(value: object) -> str:
@@ -10,32 +18,50 @@ def esc(value: object) -> str:
     return html.escape(str(value))
 
 
-def fmt_date(iso: str | None) -> str:
-    return format_iso(iso)
+@dataclass(frozen=True)
+class DateFormatter:
+    """Format dates in a single IANA timezone (typically users.timezone)."""
+
+    tz: str = DEFAULT_TIMEZONE
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "tz", normalize_timezone(self.tz))
+
+    def fmt_date(self, iso: str | None) -> str:
+        return format_iso(iso, tz=self.tz)
+
+    def fmt_datetime(self, iso: str | None) -> str:
+        date_part, time_part = format_datetime_parts(iso, tz=self.tz)
+        if not date_part:
+            return "—"
+        if not time_part:
+            return esc(date_part)
+        iso_attr = esc(iso or "")
+        return (
+            f'<time class="dt" datetime="{iso_attr}">'
+            f'<span class="dt-date">{esc(date_part)}</span>'
+            f'<span class="dt-time">{esc(time_part)}</span>'
+            f"</time>"
+        )
+
+    def fmt_now(self) -> str:
+        return now_in_tz(self.tz)
+
+    def fmt_ts(self, ts: float | None) -> str:
+        return format_ts(ts, tz=self.tz)
+
+    def datetime_parts(self, iso: str | None) -> dict[str, str | None]:
+        date_part, time_part = format_datetime_parts(iso, tz=self.tz)
+        return {"iso": iso, "date": date_part, "time": time_part}
 
 
-def fmt_datetime(iso: str | None) -> str:
-    date_part, time_part = format_datetime_parts(iso)
-    if not date_part:
-        return "—"
-    if not time_part:
-        return esc(date_part)
-    iso_attr = esc(iso or "")
-    return (
-        f'<time class="dt" datetime="{iso_attr}">'
-        f'<span class="dt-date">{esc(date_part)}</span>'
-        f'<span class="dt-time">{esc(time_part)}</span>'
-        f"</time>"
-    )
+def make_formatter(tz: str | None = None) -> DateFormatter:
+    return DateFormatter(tz=tz or DEFAULT_TIMEZONE)
 
 
 def query_string(params: dict[str, object]) -> str:
     clean = {k: v for k, v in params.items() if v not in (None, "", [])}
     return urlencode(clean)
-
-
-def fmt_now() -> str:
-    return now_msk()
 
 
 def fmt_km(distance: float | None) -> str:
@@ -65,10 +91,6 @@ def fmt_duration_sec(duration: float | None) -> str:
     if h:
         return f"{h}h {m}m"
     return f"{m}m {s}s"
-
-
-def fmt_ts(ts: float | None) -> str:
-    return format_ts(ts)
 
 
 def fmt_ttl(seconds: float | None) -> str:

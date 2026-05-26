@@ -1,6 +1,6 @@
 # Roadmap fit_sinc
 
-> **Статус (2026-05-26):** MVP (фазы 0–5) в production; **5b** горизонт 1: **1.1–1.4** ✅; далее **1.7**, **1.8**, **2.1**.
+> **Статус (2026-05-26):** MVP (фазы 0–5) в production; **5b** горизонт 1: **1.1–1.4**, **1.7** ✅; далее **1.8**, **2.1**.
 
 **Текущее состояние:** [README](../README.md) · [ARCHITECTURE.md](ARCHITECTURE.md)  
 **Операции:** [CI-CD.md](CI-CD.md) · [API Hammerhead](API_HAMMERHEAD.md) · [API Garmin](API_GARMIN.md)
@@ -79,7 +79,7 @@
 | **1.4** | 5b.5 | Снять nginx Basic Auth |
 | **1.5** | 9 | **GetSync** — getsync.me, rename — [1.5-RENAME.md](1.5-RENAME.md) |
 | **1.6** | Docs | ARCHITECTURE: `data/users/{id}/` |
-| **1.7** | Ops | Даты в UI по `users.timezone` |
+| **1.7** | Ops | Даты в UI по `users.timezone` | ✅ |
 | **1.8** | 6 мин | Баннер HH + Garmin на дашборде |
 | **2.1** | 5b.3 | `/register` + `REGISTRATION_OPEN` |
 | **2.2** | 5b.6 | Тесты register / settings / admin |
@@ -116,7 +116,7 @@
 | **1.4** | **5b.5:** снять nginx Basic Auth; `SESSION_SECRET`, `https_only` cookie | ✅ | **1.1** |
 | **1.5** | **9:** **GetSync** — бренд, `getsync` package, **getsync.me** ([план](1.5-RENAME.md)) | 1–2 дня | **1.4**; DNS ready |
 | **1.6** | **Docs:** ARCHITECTURE — `data/users/{id}/`, без глобального `garmin_web` | 1–2 ч | — |
-| **1.7** | **Ops:** даты в UI в `users.timezone` (убрать хардкод MSK в подписях) | ½ вечера | **1.2** |
+| **1.7** | **Ops:** даты в UI в `users.timezone` (убрать хардкод MSK в подписях) | ✅ | **1.2** |
 | **1.8** | **6 (мин):** баннер HH + Garmin `upload_ready` / TTL JWT на дашборде | ½ вечера | **1.2** |
 
 **Порядок выполнения:** **1.1** → **1.2**+**1.3** → **1.4** → **1.5** (сразу, если имя готово) → **1.7**–**1.8** параллельно → **1.6**.
@@ -236,7 +236,7 @@ flowchart TB
 - ~~nginx Basic Auth~~ — снят (**1.4**)
 - Нет `/register` — **2.1** (5b.3)
 - Нет `/app/settings` — профиль и HH/Garmin только через админку / CLI — **1.2** (5b.4)
-- Даты в таблицах пока в MSK ([`timeutil.py`](../fit_sinc/timeutil.py)); поле `users.timezone` есть, форматирование в TZ пользователя — вместе с **6** / settings
+- Даты в кабинете в `users.timezone` ([`timeutil.py`](../fit_sinc/timeutil.py), `DateFormatter` в [`html.py`](../fit_sinc/web/html.py))
 
 **Уже сделано в 5b.1:** один логин; админка `/app/admin/*` по `users.is_admin`; legacy `/admin/*` → 301; `ADMIN_PASSWORD` убран.
 
@@ -1203,7 +1203,7 @@ StorageBackend          — LocalFS | S3 (boto3)
 - [x] **1.4** 5b.5 — nginx без Basic Auth; `SESSION_COOKIE_SECURE` (https_only cookie)
 - [ ] **1.5** 9 — **GetSync**, getsync.me — [1.5-RENAME.md](1.5-RENAME.md) (домен ✅; A/B/C после DNS)
 - [x] **1.6** Docs — ARCHITECTURE: `data/users/{id}/`
-- [ ] **1.7** Ops — даты в UI по `users.timezone`
+- [x] **1.7** Ops — даты в UI по `users.timezone`
 - [ ] **1.8** 6 мин — баннер HH + Garmin на дашборде
 
 ### 🟡 Горизонт 2 — средний срок (TODO)

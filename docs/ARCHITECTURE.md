@@ -170,9 +170,9 @@ fit_sinc serve
 
 ## Ограничения (актуальные)
 
-- Даты в UI в MSK (1.7)
+- Даты в UI в TZ пользователя (`users.timezone`, `DateFormatter`)
 - Нет `/app/settings` и `/register` — HH/Garmin через CLI или админку (5b.3–5b.4)
-- Даты в UI в основном MSK (`timeutil.py`); `users.timezone` — поле есть, полное форматирование в TZ — позже
+- Даты в кабинете: UTC в SQLite, отображение и фильтры `date_from`/`date_to` в `users.timezone`
 - Только активности Hammerhead → Garmin (не routes)
 - Неофициальный Garmin API (web + garth-ng)
 

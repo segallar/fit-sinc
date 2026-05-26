@@ -6,8 +6,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from fit_sinc.timeutil import format_datetime_parts
-from fit_sinc.users.timezones import options_for_select
+from fit_sinc.users.timezones import DEFAULT_TIMEZONE, options_for_select
 from fit_sinc.web import html as H
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -20,9 +19,15 @@ def timezone_options(selected: str | None = None) -> list[dict[str, object]]:
     ]
 
 
-def fmt_datetime_safe(iso: str | None) -> dict[str, str | None]:
-    date_part, time_part = format_datetime_parts(iso)
-    return {"iso": iso, "date": date_part, "time": time_part}
+def formatter_globals(tz: str | None = None) -> dict[str, object]:
+    f = H.make_formatter(tz)
+    return {
+        "fmt_date": f.fmt_date,
+        "fmt_datetime": f.fmt_datetime,
+        "fmt_datetime_safe": f.datetime_parts,
+        "fmt_now": f.fmt_now,
+        "fmt_ts": f.fmt_ts,
+    }
 
 
 def pager_items(page: int, total_pages: int) -> list[int | str]:
@@ -50,24 +55,30 @@ def jinja_env() -> Environment:
         loader=FileSystemLoader(_TEMPLATES_DIR),
         autoescape=select_autoescape(["html", "xml"]),
     )
+    defaults = formatter_globals(DEFAULT_TIMEZONE)
     env.globals.update(
         esc=H.esc,
-        fmt_date=H.fmt_date,
-        fmt_datetime=H.fmt_datetime,
-        fmt_datetime_safe=fmt_datetime_safe,
-        fmt_now=H.fmt_now,
         fmt_km=H.fmt_km,
         fmt_duration=H.fmt_duration,
         fmt_duration_sec=H.fmt_duration_sec,
-        fmt_ts=H.fmt_ts,
         fmt_ttl=H.fmt_ttl,
         query_string=H.query_string,
         timezone_options=timezone_options,
         pager_items=pager_items,
         pager_query=pager_query,
+        **defaults,
     )
     return env
 
 
-def render_template(name: str, **context: object) -> str:
-    return jinja_env().get_template(name).render(**context)
+def render_template(
+    name: str,
+    *,
+    display_timezone: str | None = None,
+    **context: object,
+) -> str:
+    tz = display_timezone if display_timezone is not None else DEFAULT_TIMEZONE
+    return jinja_env().get_template(name).render(
+        **formatter_globals(tz),
+        **context,
+    )

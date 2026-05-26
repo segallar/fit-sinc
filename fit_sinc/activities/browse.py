@@ -11,6 +11,7 @@ from fit_sinc.garmin.activities import list_garmin_activities
 from fit_sinc.hammerhead.client import HammerheadClient
 from fit_sinc.state.store import Store, SyncIndexEntry
 from fit_sinc.timeutil import _parse_iso, parse_date_only
+from fit_sinc.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 
 Source = Literal["hammerhead", "garmin"]
 MAX_HH_SCAN_PAGES = 25
@@ -84,7 +85,12 @@ def _hh_total(payload: dict[str, Any], per_page: int, total_pages: int) -> int:
     return len(payload.get("data") or [])
 
 
-def _matches_filters(row: ActivityBrowseRow, filters: ActivityFilters) -> bool:
+def _matches_filters(
+    row: ActivityBrowseRow,
+    filters: ActivityFilters,
+    *,
+    display_tz: str,
+) -> bool:
     if filters.q.strip():
         if filters.q.strip().lower() not in row.name.lower():
             return False
@@ -96,13 +102,17 @@ def _matches_filters(row: ActivityBrowseRow, filters: ActivityFilters) -> bool:
         hay = (row.activity_type or "").lower()
         if needle not in hay:
             return False
-    dt = _parse_iso(row.activity_date) if row.activity_date else None
+    dt = (
+        _parse_iso(row.activity_date, tz=display_tz)
+        if row.activity_date
+        else None
+    )
     if filters.date_from.strip():
-        start = parse_date_only(filters.date_from.strip())
+        start = parse_date_only(filters.date_from.strip(), tz=display_tz)
         if start and (dt is None or dt.date() < start.date()):
             return False
     if filters.date_to.strip():
-        end = parse_date_only(filters.date_to.strip())
+        end = parse_date_only(filters.date_to.strip(), tz=display_tz)
         if end and (dt is None or dt.date() > end.date()):
             return False
     return True
@@ -140,10 +150,12 @@ async def fetch_activities_page(
     filters: ActivityFilters | None = None,
     ctx: UserContext | None = None,
     store: Store | None = None,
+    display_tz: str | None = None,
 ) -> ActivityBrowsePage:
     user_ctx = as_context(ctx)
     store = store or Store(user_ctx.db_path)
     filters = filters or ActivityFilters()
+    tz = normalize_timezone(display_tz or DEFAULT_TIMEZONE)
     page = max(1, page)
     per_page = min(max(10, per_page), 100)
 
@@ -161,7 +173,9 @@ async def fetch_activities_page(
             return ActivityBrowsePage(
                 source, [], page, per_page, 0, 1, filters, error=str(exc)
             )
-        filtered = [row for row in rows if _matches_filters(row, filters)]
+        filtered = [
+            row for row in rows if _matches_filters(row, filters, display_tz=tz)
+        ]
         return _paginate(source, filtered, page=page, per_page=per_page, filters=filters)
 
     index = store.build_sync_index(user_ctx.user_id)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import Request
 
+from fit_sinc.users.timezones import DEFAULT_TIMEZONE
 from fit_sinc.web.auth import user_row_from_session
 from fit_sinc.web.templating import render_template
 
@@ -36,10 +37,13 @@ def _normalize_active(active: str, prefix: str) -> str:
 
 def cabinet_context(request: Request, *, active: str, wide: bool = False) -> dict:
     user = user_row_from_session(request)
+    display_tz = user.timezone if user else DEFAULT_TIMEZONE
     return {
         "active_nav": _normalize_active(active, APP_PREFIX),
         "nav_items": nav_items_for(user),
         "current_user": user,
+        "user_timezone": display_tz,
+        "display_timezone": display_tz,
         "prefix": APP_PREFIX,
         "admin_prefix": ADMIN_PREFIX,
         "wide": wide,
@@ -54,8 +58,10 @@ def render_cabinet(
     wide: bool = False,
     **context: object,
 ) -> str:
+    ctx = cabinet_context(request, active=active, wide=wide)
     return render_template(
         template,
-        **cabinet_context(request, active=active, wide=wide),
+        display_timezone=ctx["display_timezone"],
+        **ctx,
         **context,
     )

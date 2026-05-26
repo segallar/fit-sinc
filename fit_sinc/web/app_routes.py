@@ -182,7 +182,6 @@ async def app_logout(request: Request) -> RedirectResponse:
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def dashboard(request: Request) -> str:
     ctx = _ctx(request)
-    user = _store().get_user(ctx.user_id)
     hh = HammerheadClient(ctx).status()
     gm = garmin_status(ctx)
     store = _store()
@@ -255,7 +254,6 @@ async def dashboard(request: Request) -> str:
         gm_label=gm_label,
         gm_ok=gm_ok,
         activities=activity_rows,
-        user_timezone=user.timezone if user else "—",
     )
 
 
@@ -273,6 +271,8 @@ async def activities_browser(
     date_to: str = Query(""),
 ) -> str:
     ctx = _ctx(request)
+    user = _store().get_user(ctx.user_id)
+    display_tz = user.timezone if user else None
     filters = ActivityFilters(
         q=q.strip(),
         status=status.strip(),
@@ -296,6 +296,7 @@ async def activities_browser(
         per_page=per_page,
         filters=filters,
         ctx=ctx,
+        display_tz=display_tz,
     )
     query_params["page"] = result.page
     list_return = _activities_return_url(
