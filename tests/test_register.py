@@ -95,9 +95,9 @@ class TestRegisterRoutes(unittest.TestCase):
                 client = TestClient(app)
                 r = _post_register(client)
                 self.assertEqual(r.status_code, 303)
-                self.assertEqual(r.headers.get("location"), "/app/")
+                self.assertEqual(r.headers.get("location"), "/app/activities")
 
-                dash = client.get("/app/", follow_redirects=False)
+                dash = client.get("/app/activities", follow_redirects=False)
                 self.assertEqual(dash.status_code, 200)
                 self.assertIn("newuser@test.local", dash.text)
 
@@ -236,7 +236,7 @@ class TestRegisterRoutes(unittest.TestCase):
                 _post_register(client, email="member@test.local")
                 r = client.get("/register", follow_redirects=False)
                 self.assertEqual(r.status_code, 303)
-                self.assertEqual(r.headers.get("location"), "/app/")
+                self.assertEqual(r.headers.get("location"), "/app/activities")
 
     def test_home_and_login_signup_link_when_open(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

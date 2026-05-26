@@ -48,8 +48,8 @@ class TestSettings(unittest.TestCase):
                 self.assertIn("Settings", page.text)
                 self.assertIn("/app/settings", page.text)
 
-                dash = client.get("/app/")
-                self.assertIn("Settings", dash.text)
+                home = client.get("/app/", follow_redirects=True)
+                self.assertIn("Activities", home.text)
 
                 r = client.post(
                     "/app/settings/profile",

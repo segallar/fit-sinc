@@ -357,7 +357,7 @@ async def app_login_submit(
     if not user:
         return RedirectResponse(f"{P}/login?error=1", status_code=303)
     login_user(request, user.id)
-    return RedirectResponse(f"{P}/", status_code=303)
+    return RedirectResponse(f"{P}/activities", status_code=303)
 
 
 @router.get("/logout", include_in_schema=False)
@@ -440,6 +440,32 @@ async def ui_preview_page(request: Request, page_name: str) -> str:
     return _render_ui_preview(request, template, active=active, **extra)
 
 
+def _sync_summary_context(store: Store, user_id: str) -> dict[str, object]:
+    status_counts = store.count_activities_by_status(user_id, source="hammerhead")
+    catalog_total = store.count_catalog(user_id)
+    error_n = status_counts.get("error", 0)
+    sync_bits = []
+    for label, key in (
+        ("synced", "synced"),
+        ("error", "error"),
+        ("pending", "pending"),
+        ("not synced", "not synced"),
+    ):
+        n = status_counts.get(key, 0)
+        if n:
+            sync_bits.append(f"{label}: {n}")
+    sync_summary = ", ".join(sync_bits) if sync_bits else "no activities in DB yet"
+    errors_url = None
+    if error_n:
+        errors_url = f"{P}/activities?{H.query_string({'status': 'error'})}"
+    return {
+        "sync_summary": sync_summary,
+        "catalog_total": catalog_total,
+        "error_count": error_n,
+        "errors_url": errors_url,
+    }
+
+
 def _sync_log_context(store: Store, user_id: str, log_page: int) -> dict[str, object]:
     per_page = 50
     total = store.count_events(user_id=user_id)
@@ -457,53 +483,17 @@ def _sync_log_context(store: Store, user_id: str, log_page: int) -> dict[str, ob
     }
 
 
-@router.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def dashboard(
-    request: Request,
-    log_page: int = Query(1, ge=1),
-) -> str:
-    ctx = _ctx(request)
-    user = _store().get_user(ctx.user_id)
-    store = _store()
-    status_counts = store.count_activities_by_status(ctx.user_id, source="hammerhead")
-    catalog_total = store.count_catalog(ctx.user_id)
-    error_n = status_counts.get("error", 0)
-    dash_return = f"{P}/"
-
-    sync_bits = []
-    for label, key in (
-        ("synced", "synced"),
-        ("error", "error"),
-        ("pending", "pending"),
-        ("not synced", "not synced"),
-    ):
-        n = status_counts.get(key, 0)
-        if n:
-            sync_bits.append(f"{label}: {n}")
-    sync_summary = ", ".join(sync_bits) if sync_bits else "no activities in DB yet"
-
-    errors_url = None
-    if error_n:
-        errors_url = f"{P}/activities?{H.query_string({'status': 'error'})}"
-
-    return render_cabinet(
-        request,
-        "pages/app/dashboard.html",
-        active="/",
-        sync_summary=sync_summary,
-        catalog_total=catalog_total,
-        error_count=error_n,
-        dash_return=dash_return,
-        errors_url=errors_url,
-        activities_url=f"{P}/activities",
-        **_sync_log_context(store, ctx.user_id, log_page),
-    )
+@router.get("/", include_in_schema=False)
+async def app_home() -> RedirectResponse:
+    """Legacy home URL — Activities is the main screen."""
+    return RedirectResponse(f"{P}/activities", status_code=303)
 
 
 @router.get("/activities", response_class=HTMLResponse, include_in_schema=False)
 async def activities_browser(
     request: Request,
     view: str = Query("list", pattern="^(list|calendar)$"),
+    log_page: int = Query(1, ge=1),
     source: str = Query("", pattern="^(|hammerhead|garmin)$"),
     queued: str = Query(""),
     page: int = Query(1, ge=1),
@@ -577,6 +567,13 @@ async def activities_browser(
             today=today,
         ),
     )
+
+    def _sync_panel_context(return_url: str) -> dict[str, object]:
+        return {
+            **_sync_summary_context(store, ctx.user_id),
+            **_sync_log_context(store, ctx.user_id, log_page),
+            "activities_return_url": return_url,
+        }
 
     if view == "calendar":
         src = filters.source or None
@@ -654,6 +651,7 @@ async def activities_browser(
             app_main_class="getsync-app-main--activities",
             flash=flash,
             calendar=calendar,
+            **_sync_panel_context(cal_return),
             **common,
         )
 
@@ -723,6 +721,7 @@ async def activities_browser(
             f"list cached {BROWSE_CACHE_TTL_SEC // 60} min"
         ),
         activities_tab_query=_activities_tab_query_factory(tab_base),
+        **_sync_panel_context(list_return),
         **{k: v for k, v in common.items() if k != "activities_tab_query"},
     )
 
@@ -792,9 +791,12 @@ async def activities_rows_fragment(
 
 @router.get("/log", include_in_schema=False)
 async def sync_log_redirect(request: Request, page: int = Query(1, ge=1)) -> RedirectResponse:
-    """Legacy URL — sync log lives on the dashboard."""
+    """Legacy URL — sync log on Activities."""
     _ctx(request)
-    return RedirectResponse(f"{P}/?log_page={page}#sync-log", status_code=303)
+    dest = f"{P}/activities"
+    if page > 1:
+        dest = f"{dest}?{H.query_string({'log_page': page})}"
+    return RedirectResponse(f"{dest}#sync-log", status_code=303)
 
 
 @router.get("/session", include_in_schema=False)

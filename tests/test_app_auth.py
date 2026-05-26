@@ -34,12 +34,15 @@ class TestAppLogin(unittest.TestCase):
                     follow_redirects=False,
                 )
                 self.assertEqual(r.status_code, 303)
-                self.assertEqual(r.headers.get("location"), "/app/")
+                self.assertEqual(r.headers.get("location"), "/app/activities")
 
-                dash = client.get("/app/", follow_redirects=False)
+                home = client.get("/app/", follow_redirects=False)
+                self.assertEqual(home.status_code, 303)
+                self.assertEqual(home.headers.get("location"), "/app/activities")
+
+                dash = client.get("/app/activities", follow_redirects=False)
                 self.assertEqual(dash.status_code, 200)
-                self.assertIn("Open activities", dash.text)
-                self.assertIn("/app/activities", dash.text)
+                self.assertIn("Sync log", dash.text)
                 self.assertIn("getsync-app-topbar", dash.text)
                 self.assertIn("owner@test.local", dash.text)
                 self.assertIn("/app/logout", dash.text)
@@ -83,7 +86,7 @@ class TestAppLogin(unittest.TestCase):
 
                 client = TestClient(app)
                 client.cookies.set("fit_sinc_session", legacy)
-                dash = client.get("/app/", follow_redirects=False)
+                dash = client.get("/app/activities", follow_redirects=False)
                 self.assertEqual(dash.status_code, 200)
                 self.assertIn("owner@test.local", dash.text)
 

@@ -69,7 +69,7 @@ class TestImports(unittest.TestCase):
                 )
                 r = client.get("/", follow_redirects=False)
                 self.assertEqual(r.status_code, 303)
-                self.assertEqual(r.headers.get("location"), "/app/")
+                self.assertEqual(r.headers.get("location"), "/app/activities")
 
     def test_token_set_roundtrip(self) -> None:
         ts = TokenSet("a", "r", 3600, "u1", 1000.0)

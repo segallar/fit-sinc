@@ -111,7 +111,7 @@ async def register_form(
     lang: str | None = Query(None),
 ):
     if user_context_from_session(request):
-        return RedirectResponse("/app/", status_code=303)
+        return RedirectResponse("/app/activities", status_code=303)
     resolved = lang_from_request(request, lang)
     if not registration_is_open():
         return _page_response(_render_closed(resolved), status_code=403)
@@ -128,7 +128,7 @@ async def register_submit(
     password_confirm: str = Form(""),
 ):
     if user_context_from_session(request):
-        return RedirectResponse("/app/", status_code=303)
+        return RedirectResponse("/app/activities", status_code=303)
 
     lang = lang_from_request(request, None)
     t = register_strings(lang)
@@ -227,4 +227,4 @@ async def register_submit(
 
     login_user(request, user.id)
     logger.info("registered user id=%s slug=%s email=%s", user.id, user.slug, user.email)
-    return RedirectResponse("/app/", status_code=303)
+    return RedirectResponse("/app/activities", status_code=303)

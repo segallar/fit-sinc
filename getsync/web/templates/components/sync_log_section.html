@@ -34,13 +34,13 @@
     <ul class="pagination pagination-sm mb-0">
       {% if log_prev_page %}
       <li class="page-item">
-        <a class="page-link" href="{{ prefix }}/?log_page={{ log_prev_page }}#sync-log">← Prev</a>
+        <a class="page-link" href="{{ prefix }}/activities?log_page={{ log_prev_page }}#sync-log">← Prev</a>
       </li>
       {% endif %}
       <li class="page-item disabled"><span class="page-link">Page {{ log_page }}</span></li>
       {% if log_next_page %}
       <li class="page-item">
-        <a class="page-link" href="{{ prefix }}/?log_page={{ log_next_page }}#sync-log">Next →</a>
+        <a class="page-link" href="{{ prefix }}/activities?log_page={{ log_next_page }}#sync-log">Next →</a>
       </li>
       {% endif %}
     </ul>

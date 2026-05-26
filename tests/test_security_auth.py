@@ -309,9 +309,9 @@ class TestTenantIsolation(unittest.TestCase):
                 store.upsert_activity("default", "admin-act", name="Admin secret ride")
 
                 _login(client, "alice@test.local", "alice-pass")
-                r = client.get("/app/", follow_redirects=False)
+                r = client.get("/app/activities", follow_redirects=False)
                 self.assertEqual(r.status_code, 200)
-                self.assertIn("1 activities in catalog", r.text)
+                self.assertIn("1 in catalog", r.text)
                 self.assertNotIn("Admin secret ride", r.text)
 
 

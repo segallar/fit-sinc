@@ -44,7 +44,7 @@ async def site_home(
     lang: str | None = Query(None),
 ) -> HTMLResponse | RedirectResponse:
     if user_context_from_session(request):
-        return RedirectResponse(f"{APP_PREFIX}/", status_code=303)
+        return RedirectResponse(f"{APP_PREFIX}/activities", status_code=303)
 
     resolved = lang_from_request(request, lang)
     response = HTMLResponse(

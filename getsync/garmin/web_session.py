@@ -231,7 +231,7 @@ def _widget_login(email: str, password: str) -> dict[str, str]:
         raise RuntimeError("Garmin web login: missing service ticket")
 
     sess.get(
-        f"{connect}/app/",
+        f"{connect}/app/activities",
         params={"ticket": ticket_match.group(1)},
         allow_redirects=True,
     )

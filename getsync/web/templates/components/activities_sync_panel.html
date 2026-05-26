@@ -1,0 +1,22 @@
+{# sync_summary, catalog_total, error_count, errors_url, activities_return_url, log_* #}
+<section class="getsync-activities-sync-panel mt-3 pt-3 border-top flex-shrink-0">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+    <div class="small text-muted">
+      <span class="fw-semibold text-body">Sync</span> · {{ sync_summary }}
+      · {{ catalog_total }} in catalog
+      {% if errors_url %}
+      · <a href="{{ errors_url }}">errors</a>
+      {% endif %}
+    </div>
+    {% if error_count %}
+    <form class="m-0" method="post" action="{{ prefix }}/activities/retry-errors"
+          onsubmit="return confirm('Re-sync all activities with error status?');">
+      <input type="hidden" name="next" value="{{ activities_return_url }}">
+      <button type="submit" class="btn btn-outline-secondary btn-sm py-0">
+        Re-sync all errors ({{ error_count }})
+      </button>
+    </form>
+    {% endif %}
+  </div>
+  {% include "components/sync_log_section.html" %}
+</section>

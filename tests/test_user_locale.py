@@ -72,5 +72,5 @@ class TestUserLocale(unittest.TestCase):
                 self.assertIn("Настройки", page.text)
                 self.assertIn("Язык интерфейса", page.text)
 
-                dash = client.get("/app/")
-                self.assertIn("Дашборд", dash.text)
+                dash = client.get("/app/activities")
+                self.assertIn("Активности", dash.text)
