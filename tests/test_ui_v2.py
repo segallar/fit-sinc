@@ -26,6 +26,19 @@ class TestTemplates(unittest.TestCase):
         self.assertIn("/static/app.css", r.text)
         self.assertIn("Sign in", r.text)
 
+    def test_home_page_bootstrap_sri(self) -> None:
+        from getsync.web.app import app
+
+        client = TestClient(app)
+        r = client.get("/")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("bootstrap@5.3.3/dist/css/bootstrap.min.css", r.text)
+        # Must match jsdelivr file (wrong SRI → browser blocks all Bootstrap styles)
+        self.assertIn(
+            'integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"',
+            r.text,
+        )
+
     def test_timezone_select_template(self) -> None:
         from getsync.web.templating import render_template
 
