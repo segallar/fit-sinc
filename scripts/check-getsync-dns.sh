@@ -20,9 +20,32 @@ elif [[ -n "${1:-}" ]]; then
 fi
 
 ENV_FILE="${GETSYNC_DNS_ENV_FILE:-$HOME/.config/getsync/dns-notify.env}"
+
+# Load KEY=VALUE safely (passwords with spaces must be quoted in the env file).
+load_env_file() {
+  local file="$1" line key val
+  [[ -f "$file" ]] || return 0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    if [[ ! "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+      echo "Skip invalid line in $file: $line" >&2
+      continue
+    fi
+    key="${BASH_REMATCH[1]}"
+    val="${BASH_REMATCH[2]}"
+    if [[ "$val" =~ ^\'(.*)\'$ ]]; then
+      val="${BASH_REMATCH[1]}"
+    elif [[ "$val" =~ ^\"(.*)\"$ ]]; then
+      val="${BASH_REMATCH[1]}"
+    fi
+    export "$key=$val"
+  done <"$file"
+}
+
 if [[ -f "$ENV_FILE" ]]; then
-  # shellcheck disable=SC1090
-  set -a && source "$ENV_FILE" && set +a
+  load_env_file "$ENV_FILE"
 fi
 
 DOMAIN="${GETSYNC_DNS_DOMAIN:-getsync.me}"
@@ -75,11 +98,23 @@ if use_ssl:
     smtp = smtplib.SMTP_SSL(host, port, timeout=30)
 else:
     smtp = smtplib.SMTP(host, port, timeout=30)
-with smtp:
-    if use_tls:
-        smtp.starttls()
-    smtp.login(user, password)
-    smtp.send_message(msg)
+try:
+    with smtp:
+        if use_tls:
+            smtp.starttls()
+        smtp.login(user, password)
+        smtp.send_message(msg)
+except smtplib.SMTPAuthenticationError as e:
+    hint = ""
+    if "Application-specific password" in str(e) or e.smtp_code == 534:
+        hint = (
+            "\nGmail: use an App Password, not your normal password.\n"
+            "  https://myaccount.google.com/apppasswords\n"
+            "  (2-Step Verification must be enabled on the Google account.)\n"
+            "Put the 16-character password in GETSYNC_DNS_SMTP_PASS in dns-notify.env"
+        )
+    print(f"SMTP login failed: {e}{hint}", file=sys.stderr)
+    sys.exit(1)
 PY
 }
 
