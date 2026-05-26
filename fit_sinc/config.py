@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     hammerhead_client_secret: str = ""
     hammerhead_webhook_secret: str = ""
     hammerhead_redirect_uri: str = "http://127.0.0.1:8765/callback"
+    hammerhead_web_redirect_uri: str = ""
     hammerhead_scope: str = "activity:read"
 
     garmin_email: str = ""

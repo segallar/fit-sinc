@@ -15,6 +15,7 @@ CABINET_NAV = (
     (f"{APP_PREFIX}/activities", "Activities"),
     (f"{APP_PREFIX}/log", "Sync log"),
     (f"{APP_PREFIX}/session", "Garmin session"),
+    (f"{APP_PREFIX}/settings", "Settings"),
 )
 
 

@@ -21,6 +21,7 @@ APP_GET_PATHS = (
     "/app/activities",
     "/app/log",
     "/app/session",
+    "/app/settings",
 )
 
 ADMIN_GET_PATHS = (

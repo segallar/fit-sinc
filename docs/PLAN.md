@@ -1,6 +1,6 @@
 # Roadmap fit_sinc
 
-> **Статус (2026-05-25):** MVP (фазы 0–5) в production; **5b** в работе (5b.0–5b.1 ✅, UI ✅); **Security-тесты** — 📋.
+> **Статус (2026-05-26):** MVP (фазы 0–5) в production; **5b** — **1.2**/**1.3** в коде; **1.1** security tests ✅; **1.4** Basic Auth — открыто.
 
 **Текущее состояние:** [README](../README.md) · [ARCHITECTURE.md](ARCHITECTURE.md)  
 **Операции:** [CI-CD.md](CI-CD.md) · [API Hammerhead](API_HAMMERHEAD.md) · [API Garmin](API_GARMIN.md)
@@ -20,21 +20,145 @@
 | 3 Garmin upload (web JWT, browser, fallback) | ✅ код / ⚠️ ops на сервере |
 | 4 CI (GitHub Actions test + deploy main) | ✅ |
 | 5 Мультипользовательность (tenants, `/admin`, `/app`) | ✅ MVP |
-| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | 🔄 5b.0–5b.1 ✅ · UI ✅ · 5b.2 ⏳ Settings в nav |
+| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | 🔄 **1.2–1.3** ✅ · 🔴 **1.4** · 🟡 **2.1** |
 | **UI** Новый интерфейс приложения (Jinja2 + Tailwind) | ✅ |
-| **Security** Тесты доступа (session auth, страницы и API) | 📋 частично |
-| 6 UI v2 (календарь, поиск, баннер, failed) | 📋 план |
-| 6.1 Алерты (Telegram / email) | 📋 план |
-| 6.2 Локализация (i18n: ru, en, …) | 📋 план |
-| — Ops: README + тесты CI | ✅ README / 📋 расширить тесты |
-| 7 Синхронизация из нескольких источников | 📋 план |
-| 8 Маршруты (routes) | 📋 план / исследование |
+| **Design** Проектирование и улучшение UI/UX (дизайн-система) | 📋 · **2.10** |
+| **Site** Главная страница [romansegalla.online](https://romansegalla.online) | MVP ✅ · полировка **2.11** |
+| **Security** Тесты доступа (session auth, страницы и API) | ✅ **1.1** (`test_security_auth.py`) |
+| 6 UI v2 (календарь, поиск, баннер, failed) | 📋 · **2.3** (+ **1.8**) |
+| 6.1 Алерты (Telegram / email) | 📋 · **2.4** |
+| 6.2 Локализация (i18n: ru, en, …) | 📋 · **2.5** · **3.6** |
+| — Ops: README + тесты CI | ✅ README / 📋 **1.7** · deploy CSS ✅ |
+| 7 Хаб активностей: источники → правила → приёмники | 📋 · **2.8–2.9** · **3.1**, **3.5** |
+| **Modularity** Модули и интерфейсы между ними | 📋 · **3.9** |
+| 8 Маршруты (routes) | 📋 · **3.2** |
+| **9** Переименование приложения (бренд, пакет, домен) | 📋 · **1.5** |
+| **10** Внешняя авторизация (OAuth/OIDC) | 📋 · **3.4** |
+| **11** Хранение активностей (объектное хранилище, S3) | 📋 · **3.3** |
+
+**Горизонты:** [🔴 1.x](#-горизонт-1--срочно-важно-небольшие) · [🟡 2.x](#-горизонт-2--средняя-срочность-и-объём) · [🔵 3.x](#-горизонт-3--далёкое-будущее) · [Реестр](#реестр-задач)
+
+**Нумерация:** `{горизонт}.{порядок}` — **1.1**…**1.8** (срочно) · **2.1**…**2.11** (средний) · **3.1**…**3.9** (далеко). Старые метки фаз (5b.4, 7.0) сохранены в скобках.
+
+---
+
+## Приоритеты: три горизонта
+
+> Сводка всего открытого roadmap. Детали фаз — ниже по документу; чеклисты — в [TODO](#todo). ID задачи = колонка **ID** в таблицах ниже.
+
+### Реестр задач
+
+| ID | Фаза (справка) | Кратко |
+|----|----------------|--------|
+| **1.1** | Security | Тесты session auth, tenant, webhook HMAC |
+| **1.2** | 5b.4 | `/app/settings` — профиль, пароль, HH/Garmin |
+| **1.3** | 5b.2 | Пункт Settings в nav |
+| **1.4** | 5b.5 | Снять nginx Basic Auth |
+| **1.5** | 9 | Переименование приложения — [1.5-RENAME.md](1.5-RENAME.md) |
+| **1.6** | Docs | ARCHITECTURE: `data/users/{id}/` |
+| **1.7** | Ops | Даты в UI по `users.timezone` |
+| **1.8** | 6 мин | Баннер HH + Garmin на дашборде |
+| **2.1** | 5b.3 | `/register` + `REGISTRATION_OPEN` |
+| **2.2** | 5b.6 | Тесты register / settings / admin |
+| **2.3** | 6 | Календарь, поиск, failed, sync log |
+| **2.4** | 6.1 | Telegram-алерты |
+| **2.5** | 6.2 | i18n ru/en, `users.locale` |
+| **2.6** | 5b.3+ | Email confirm, invite, captcha |
+| **2.7** | 5b.4+ | Settings: источники / приёмники / правила |
+| **2.8** | 7.0 | Spike ActivityRecord, Source/Sink |
+| **2.9** | 7.3 | Manual FIT upload |
+| **2.10** | Design | Проектирование и улучшение UI/UX, дизайн-система |
+| **2.11** | Site | Главная страница romansegalla.online (лендинг) |
+| **3.1** | 7.1–7.2 | Rule engine, реестр в БД |
+| **3.2** | 7.4, 8 | Маршруты, Garmin courses spike |
+| **3.3** | 11 | S3 / StorageBackend |
+| **3.4** | 10 | OAuth/OIDC (Google, …) |
+| **3.5** | 7 | Полный хаб (Strava, архив, …) |
+| **3.6** | 6.2+ | Доп. языки, перевод docs/CLI |
+| **3.7** | 10+ | SAML/LDAP enterprise |
+| **3.8** | Ops | Email-алерты, очередь Playwright |
+| **3.9** | Modularity | Модули системы, контракты интерфейсов, границы слоёв |
+
+### 🔴 Горизонт 1 — срочно, важно, небольшие
+
+**Зачем:** можно нормально пользоваться prod без CLI и без двойного входа; не сломать безопасность при снятии nginx Basic Auth.
+
+**Критерий:** до ~2 вечеров на пункт (**1.5** — до 2 дней, только после утверждения имени); блокирует эксплуатацию, деплой или публичный запуск.
+
+| ID | Задача | Оценка | Зависимости |
+|----|--------|--------|-------------|
+| **1.1** | **[Security](#security-тесты-доступа-session-auth):** тесты session auth, tenant isolation, webhook HMAC | ✅ | 5b.1 ✅ |
+| **1.2** | **5b.4:** `/app/settings` — профиль, смена пароля, Hammerhead OAuth, Garmin connect/status | 2 вечера | UI ✅ |
+| **1.3** | **5b.2:** пункт **Settings** в nav → `/app/settings` | ✅ | UI ✅ |
+| **1.4** | **5b.5:** снять nginx Basic Auth; `SESSION_SECRET`, `https_only` cookie | ½ дня | **1.1** |
+| **1.5** | **9:** переименование — бренд, пакет, домен ([план](1.5-RENAME.md)) | 1–2 дня | **1.4**; имя **R1** |
+| **1.6** | **Docs:** ARCHITECTURE — `data/users/{id}/`, без глобального `garmin_web` | 1–2 ч | — |
+| **1.7** | **Ops:** даты в UI в `users.timezone` (убрать хардкод MSK в подписях) | ½ вечера | **1.2** |
+| **1.8** | **6 (мин):** баннер HH + Garmin `upload_ready` / TTL JWT на дашборде | ½ вечера | **1.2** |
+
+**Порядок выполнения:** **1.1** → **1.2**+**1.3** → **1.4** → **1.5** (сразу, если имя готово) → **1.7**–**1.8** параллельно → **1.6**.
+
+**MVP «можно жить» после горизонта 1:** **1.1**–**1.4** + **1.2**/**1.3**; **1.5** — до публичного **2.1** / **3.4**, если меняется домен.
+
+---
+
+### 🟡 Горизонт 2 — средняя срочность и объём
+
+**Зачем:** удобство кабинета, онбординг пользователей, наблюдаемость; подготовка к архитектуре хаба без полного рефакторинга.
+
+**Критерий:** от ~1 вечера до ~1–2 недель; не блокирует sync, но заметно улучшает продукт.
+
+| ID | Задача | Оценка |
+|----|--------|--------|
+| **2.1** | **5b.3:** `/register` + `REGISTRATION_OPEN`, rate limit, auto-login | 1 вечер |
+| **2.2** | **5b.6:** функциональные тесты register / settings / admin forms | 1 вечер |
+| **2.3** | **6:** календарь + поиск на `/app/activities`; failed-очередь; понятный sync log | 2–3 дня |
+| **2.4** | **6.1:** Telegram-алерты при ошибках sync | 0.5–1 день |
+| **2.5** | **6.2:** i18n `ru`/`en`, `users.locale`, выбор в settings | 2–3 вечера |
+| **2.6** | **5b.3+:** email confirm, invite-токены, captcha, политика пароля, onboarding | 1–2 вечера |
+| **2.7** | **5b.4+:** settings — заглушки «Источники / Приёмники / Правила» (под **3.1**) | 1–2 вечера |
+| **2.8** | **7.0:** spike `ActivityRecord`, интерфейсы Source/Sink; HH→Garmin без смены UX | 2–3 дня |
+| **2.9** | **7.3:** manual FIT upload в общем списке | 1 вечер |
+| **2.10** | **[Design](#дизайн-uiux-210):** аудит UX, дизайн-система, визуал, вёрстка ключевых экранов | 1–2 недели |
+| **2.11** | **[Site](#главная-romansegallaonline-211):** лендинг romansegalla.online — структура, контент, дизайн, SEO | 1–2 недели |
+
+**Порядок (рекомендация):** **2.1** → **2.2** → **2.10.0–2.10.1** → **2.11** (после **1.5**, параллельно **2.10.2**) → **2.3** → **2.5** → **2.4** → **2.6**–**2.7** → **2.8** → **2.9**.
+
+---
+
+### 🔵 Горизонт 3 — далёкое будущее
+
+**Зачем:** новая архитектура продукта, новые интеграции и масштаб; делать после стабильного кабинета (**горизонты 1–2**).
+
+**Критерий:** крупный рефакторинг, исследования API, зависимость от spike.
+
+| ID | Задача | Оценка |
+|----|--------|--------|
+| **3.1** | **7.1–7.2:** реестр источников/приёмников, rule engine, лог доставки | ~1 неделя |
+| **3.2** | **7.4 + 8:** маршруты в хабе; spike Garmin courses; HH `route:write` | 1–2 недели |
+| **3.3** | **11:** хранилище S3 (`StorageBackend`, миграция FIT, signed URL) | 3–5 дней |
+| **3.4** | **10:** внешняя авторизация OAuth/OIDC (Google, Apple, GitHub) | 2–3 вечера |
+| **3.5** | **7:** полный хаб — Strava/Wahoo, импорт архива, сложные правила | 2–3 недели |
+| **3.6** | **6.2+:** языки `de`, `fr`, …; полный перевод docs/CLI | по запросу |
+| **3.7** | **10+:** SAML/LDAP, enterprise | вне scope |
+| **3.8** | **Ops:** email-алерты, очередь Playwright при многих tenants | post-5b |
+| **3.9** | **[Modularity](#модульная-архитектура-39):** разбить на модули, описать интерфейсы, правила зависимостей | 1–2 недели |
+
+**Порядок (рекомендация):** **2.8** → **3.9** (схема модулей и контракты) → **3.1** → **3.3** (параллельно) → **3.2** → **3.5**; **3.4** после **1.5**; **3.6**–**3.8** по запросу.
+
+```mermaid
+flowchart LR
+    H1["🔴 1.1–1.8\nSecurity + Settings + rename"]
+    H2["🟡 2.1–2.11\nRegister + Design + Site + UI"]
+    H3["🔵 3.1–3.9\nModules + Хаб + S3 + OAuth"]
+    H1 --> H2 --> H3
+```
 
 ---
 
 ## Roadmap v2
 
-Порядок работ: **5 (MVP) ✅ → UI ✅ → 5b → Security-тесты (до 5b.5) → 6 → 6.2 (i18n) → 7/8**. Routes — в конце (исследование Garmin).
+**Актуальный порядок:** см. [три горизонта](#приоритеты-три-горизонта) и [реестр](#реестр-задач). Кратко: **1.1**–**1.8** → **2.1**–**2.11** → **3.1**–**3.9** (сначала **3.9**, затем хаб **3.1**+).
 
 ```mermaid
 flowchart TB
@@ -59,13 +183,23 @@ flowchart TB
         I18N[локализация ru / en / …]
         UI2 --> I18N
     end
-    subgraph p7 [Фаза 7]
-        SRC[источники: HH, файл, …]
+    subgraph p7 [Фаза 7 — хаб]
+        SRC[источники per user]
+        RULE[правила маршрутизации]
+        SNK[приёмники: Garmin, S3, …]
+        SRC --> RULE --> SNK
     end
-    subgraph p8 [Фаза 8]
-        RTE[routes HH ↔ Garmin courses]
+    subgraph p9_11 [После 7]
+        REN[9: переименование]
+        OAUTH[10: OAuth/OIDC]
+        S3[11: хранилище S3]
     end
-    done --> p5b --> UI2 --> p7 --> p8
+    subgraph p8 [Фаза 8 — spike]
+        RTE[routes → в 7]
+    end
+    done --> p5b --> UI2 --> p7
+    p7 --> p9_11
+    p8 -.-> p7
 ```
 
 ### Фаза 5: Мультипользовательность (MVP) — ✅
@@ -74,9 +208,9 @@ flowchart TB
 
 **Ограничения MVP (ещё открыты в 5b):**
 
-- nginx **Basic Auth** на весь UI (двойной вход) — снять в **5b.5**
-- Нет `/register` — **5b.3**
-- Нет `/app/settings` — профиль и HH/Garmin только через админку / CLI — **5b.4**
+- nginx **Basic Auth** на весь UI (двойной вход) — снять в **1.4** (5b.5)
+- Нет `/register` — **2.1** (5b.3)
+- Нет `/app/settings` — профиль и HH/Garmin только через админку / CLI — **1.2** (5b.4)
 - Даты в таблицах пока в MSK ([`timeutil.py`](../fit_sinc/timeutil.py)); поле `users.timezone` есть, форматирование в TZ пользователя — вместе с **6** / settings
 
 **Уже сделано в 5b.1:** один логин; админка `/app/admin/*` по `users.is_admin`; legacy `/admin/*` → 301; `ADMIN_PASSWORD` убран.
@@ -220,10 +354,102 @@ fit_sinc --user roman sync --since 2025-01-01
 
 | Элемент | Фаза |
 |---------|------|
-| Пункт **Settings** в nav → `/app/settings` | 5b.4 |
-| Полировка UX (календарь, баннер, failed-очередь) | 6 |
+| Пункт **Settings** в nav → `/app/settings` | **1.3** |
+| Полировка UX (календарь, баннер, failed-очередь) | **2.3**, **1.8** |
+| Дизайн-система, визуал, UX-потоки | **[2.10](#дизайн-uiux-210)** |
 
 **Документация:** [UI.md](UI.md) · коммит `feat(web): мигрировать UI на Jinja2 и Tailwind`.
+
+---
+
+### Дизайн UI/UX (2.10)
+
+> **Крупная задача** (🟡 горизонт 2). Базовая вёрстка есть ([UI](#ui-новый-интерфейс-приложения) ✅); цель — осмысленный продуктовый дизайн, а не только «Tailwind по умолчанию».
+
+**Зачем:** единый визуальный язык, понятные сценарии (login → settings → sync), доверие к продукту; подготовка к **1.5** (бренд) и публичному **2.1**.
+
+**Сейчас:** функциональный кабинет на Jinja2 + Tailwind; [`assets/logo.svg`](../assets/logo.svg); токены цветов/отступов не формализованы; mobile — best-effort.
+
+**Целевые артефакты:**
+
+| Артефакт | Содержание |
+|----------|------------|
+| **UX-аудит** | Карта экранов `/app`, `/app/admin`, auth; боли (двойной вход до **1.4**, статусы sync, settings) |
+| **Дизайн-система** | Цвета, типографика, spacing, радиусы, тени; статусы synced/error/pending; тёмная тема — опционально v2 |
+| **Компоненты** | Кнопки, формы, таблицы, баннеры, badges, nav — в `frontend/` → `app.css` |
+| **Макеты ключевых экранов** | Login/register, dashboard, activities (+ календарь **2.3**), settings (**1.2**), admin users; лендинг — **[2.11](#главная-romansegallaonline-211)** |
+| **Бренд** | Лого, favicon, OG; согласовать с **1.5** (имя и палитра) |
+| **Доступность** | Контраст, focus, labels, `lang` — вместе с **2.5** |
+
+**Подзадачи:**
+
+| ID | Содержание | Оценка |
+|----|------------|--------|
+| **2.10.0** | Аудит + user flows (Miro/Figma или markdown в `docs/design/`) | 1–2 вечера |
+| **2.10.1** | Design tokens + Tailwind config; обновить `layouts/`, компоненты | 2–3 вечера |
+| **2.10.2** | Редизайн auth, dashboard, activities, settings (вёрстка) | 3–5 вечеров |
+| **2.10.3** | Admin, мобильная ширина, полировка анимаций/состояний | 2 вечера |
+
+**Зависимости:** [UI](#ui-новый-интерфейс-приложения) ✅; желательно **1.2** (settings) и **1.5** (финальный бренд) до **2.10.2**; **2.3** (календарь) — лучше после **2.10.1**.
+
+**Не в scope v1:** нативное приложение; полный rebrand без **1.5**; иллюстрации/3D.
+
+**Документация:** расширить [UI.md](UI.md) разделом Design tokens; опционально `docs/design/README.md`.
+
+Лендинг корневого домена — отдельно: **[2.11](#главная-romansegallaonline-211)**.
+
+---
+
+### Главная romansegalla.online (2.11)
+
+> **Крупная задача** (🟡 горизонт 2). Публичная «витрина» на **https://romansegalla.online/** — не путать с кабинетом `/app` (сейчас тот же uvicorn, разные `server_name` в nginx).
+
+**Зачем:** понятная точка входа для гостей и пользователей продукта (fit_sinc); SEO и доверие; единый домен с формой входа вместо заглушки; опционально блок «обо мне» / другие проекты на romansegalla.online.
+
+**Сейчас (MVP):**
+
+| Элемент | Статус |
+|---------|--------|
+| `GET /` — [`site_routes.py`](../fit_sinc/web/site_routes.py), [`home.html`](../fit_sinc/web/templates/pages/site/home.html) | ✅ краткий текст + login |
+| nginx proxy — [`deploy/nginx/romansegalla.conf`](../deploy/nginx/romansegalla.conf) | ✅ |
+| Статический fallback — [`deploy/www/index.html`](../deploy/www/index.html) | ✅ |
+| Сессия: залогиненный user → redirect `/app/` | ✅ |
+
+**Целевая страница (структура):**
+
+| Секция | Содержание |
+|--------|------------|
+| **Hero** | Заголовок продукта (после **1.5** — финальное имя), value proposition, CTA «Войти» / «Регистрация» (**2.1**) |
+| **Как это работает** | Hammerhead webhook → FIT → Garmin; 3–4 шага с иконками |
+| **Возможности** | Sync, дедуп, кабинет, мультиаккаунт (кратко) |
+| **Для кого** | Велосипедисты с Karoo + Garmin Connect |
+| **Вход** | Форма login (как сейчас) или ссылка на `/app/login`; cookie на домене — см. [CI-CD.md](CI-CD.md) |
+| **Футер** | Health, GitHub, контакт, `fit.romansegalla.online` (поддомен app — по решению **1.5**) |
+| **SEO** | `title`, `description`, Open Graph, `canonical`, `lang`; sitemap опционально |
+
+**Архитектура доменов (целевая):**
+
+```text
+romansegalla.online     → лендинг (2.11), публичный /
+fit.romansegalla.online → app: /app/*, /webhooks/*, /health (как сейчас)
+```
+
+Вариант v1: оба `server_name` → один uvicorn; различие только в nginx и опционально `Host`-aware шаблон. Вариант v2: лендинг — статика в `deploy/www/` или отдельный сервис — только если нужна изоляция.
+
+**Подзадачи:**
+
+| ID | Содержание | Оценка |
+|----|------------|--------|
+| **2.11.0** | Контент и IA: тексты, блоки, CTA; согласовать с **1.5** / **2.10** | 1 вечер |
+| **2.11.1** | Макет лендинга (Figma или HTML-prototype); mobile-first | 1–2 вечера |
+| **2.11.2** | Вёрстка: `layouts/site.html`, страницы в `templates/pages/site/`; отделить от `auth.html` кабинета | 2–4 вечера |
+| **2.11.3** | SEO, OG-image, favicon; тесты `GET /`; обновить [CI-CD.md](CI-CD.md) smoke `curl romansegalla.online` | ½–1 вечера |
+
+**Зависимости:** **2.10.1** (tokens) и **1.5** (бренд) — до **2.11.2**; **2.1** — ссылка «Регистрация»; **1.4** — лендинг без Basic Auth (уже так на romansegalla.online).
+
+**Связь с 2.10:** дизайн-система общая; лендинг может использовать отдельный layout `site.html` (маркетинг) vs `cabinet.html` (приложение).
+
+**Не в scope v1:** блог, CMS, мультиязычный лендинг (только **2.5** в app); личный портфолио на все подстраницы — отдельно по запросу.
 
 ---
 
@@ -256,7 +482,7 @@ fit_sinc --user roman sync --since 2025-01-01
 
 | Область | Проверки |
 |---------|----------|
-| **Страницы `/app/*`** | GET без cookie → 303 `/app/login`: `/`, activities, log, session; после **5b.4** — `/app/settings` |
+| **Страницы `/app/*`** | GET без cookie → 303 `/app/login`: `/`, activities, log, session; после **1.2** — `/app/settings` |
 | **POST `/app/*`** | `session/refresh`, `activities/.../retry`, `retry-errors` — без сессии → redirect; с сессией → ok |
 | **Скачивание FIT** | `GET /app/activities/{id}/fit` без сессии → redirect |
 | **Admin** | все GET/POST `/app/admin/*` (users, new, edit) — без сессии → login; с обычным user → 403 |
@@ -267,7 +493,7 @@ fit_sinc --user roman sync --since 2025-01-01
 
 **Реализация:** `tests/test_security_auth.py` — table-driven список `(method, path, expect_status|redirect)`; общий helper login/logout.
 
-**Когда:** параллельно **5b.4**; **блокер для 5b.5** (снятие nginx Basic Auth).
+**Когда:** параллельно **1.2**; **блокер для 1.4** (снятие nginx Basic Auth).
 
 **Оценка:** 1 вечер.
 
@@ -311,21 +537,23 @@ flowchart TB
 |---------|------------|--------|
 | **5b.0** | Решения: открытая регистрация / invite-only; bootstrap первого admin (`BOOTSTRAP_ADMIN_EMAIL` или CLI `user promote-admin`) | ✅ [5b-DECISIONS.md](5b-DECISIONS.md) |
 | **5b.1** | `users.is_admin`; один логин; убрать `SESSION_ADMIN_KEY` + `/admin/login`; guard `/app/admin/*`; legacy `/admin` → 301 | ✅ |
-| **5b.2** | Остаток layout: пункт **Settings** в nav → `/app/settings` (основной UI — см. раздел **UI** выше) | ⏳ 5b.4 |
-| **5b.3** | `/register`: slug/email/password/timezone, rate limit, auto-login → `/app/settings` | 1 вечер |
-| **5b.4** | `/app/settings`: профиль + пароль; HH OAuth callback с привязкой к сессии; Garmin connect/status; admin edit — disable, promote, сброс | 2 вечера |
-| **5b.5** | nginx: снять Basic Auth; `SESSION_SECRET` + `https_only`; обновить [CI-CD.md](CI-CD.md), README | ½ дня |
-| **5b.6** | Функциональные тесты: register, settings, формы admin | 1 вечер |
+| **5b.2** → **1.3** | Пункт **Settings** в nav → `/app/settings` | ⏳ с **1.2** |
+| **5b.3** → **2.1** | `/register`: slug/email/password/timezone, rate limit, auto-login | 1 вечер |
+| **5b.3+** → **2.6** | Доработка регистрации: email, invite, captcha, onboarding | 1–2 вечера |
+| **5b.4** → **1.2** | `/app/settings`: профиль + пароль; HH/Garmin OAuth | 2 вечера |
+| **5b.4+** → **2.7** | Settings: источники / правила / приёмники (заглушки → **3.1**) | 1–2 вечера |
+| **5b.5** → **1.4** | nginx: снять Basic Auth; `https_only` | ½ дня |
+| **5b.6** → **2.2** | Функциональные тесты: register, settings, admin | 1 вечер |
 
-**Порядок (актуальный):** `5b.1` ✅ → **UI** ✅ → **`5b.4`** → **[Security-тесты](#security-тесты-доступа-session-auth)** → **`5b.5`** (nginx) → **`5b.3`** (register) → **5b.6**.
+**Порядок (актуальный):** [🔴 1.x](#-горизонт-1--срочно-важно-небольшие) → [🟡 2.x](#-горизонт-2--средняя-срочность-и-объём) → [🔵 3.x](#-горизонт-3--далёкое-будущее).
 
-**MVP «можно пользоваться»:** 5b.1 ✅ + **UI** ✅ + **5b.4** + **Security-тесты** + **5b.5** + **5b.3**.
+**MVP «можно пользоваться»:** 5b.1 ✅ + **UI** ✅ + задачи **1.1**–**1.4** (минимум **1.1**–**1.3**).
 
 #### 5b.2 — остаток (Settings в nav)
 
 | Элемент | Статус |
 |---------|--------|
-| Пункт **Settings** в nav → `/app/settings` | ⏳ ждёт 5b.4 |
+| Пункт **Settings** в nav → `/app/settings` | ⏳ **1.3** (с **1.2**) |
 
 > User bar, формы, Jinja layout, Tailwind — перенесены в раздел **[UI: Новый интерфейс приложения](#ui-новый-интерфейс-приложения)** ✅.
 
@@ -338,7 +566,7 @@ flowchart TB
 | JWT общий? | **Нет** — свой на `user_id`; фоновый цикл в `app.py` обновляет по списку пользователей |
 | N виртуальных браузеров? | **Нет** — headless Chromium **по операции** (refresh/upload), затем `browser.close()` |
 | Refresh JWT | Сначала HTTP (`curl_cffi` + cookie `session`), Playwright — fallback |
-| Первичная привязка | На пользователя: `fit_sinc --user <slug> garmin login` или import cookies (до **5b.4** — только CLI) |
+| Первичная привязка | На пользователя: `fit_sinc --user <slug> garmin login` или import cookies (до **1.2** — только CLI) |
 
 **Чеклист нового пользователя (ops, до Settings UI):**
 
@@ -348,7 +576,7 @@ flowchart TB
 4. `fit_sinc --user <slug> garmin login` (или import-web-cookies)
 5. `fit_sinc --user <slug> garmin status` → `upload_ready`
 
-**Техдолг:** глобальные `GARMIN_EMAIL` / `GARMIN_PASSWORD` в `.env` используются как fallback при отсутствии сессии — для нескольких разных Garmin-аккаунтов **не подходит**; убрать из prod-сценария после **5b.4** (логин только в контексте сессии пользователя).
+**Техдолг:** глобальные `GARMIN_EMAIL` / `GARMIN_PASSWORD` в `.env` используются как fallback при отсутствии сессии — для нескольких разных Garmin-аккаунтов **не подходит**; убрать из prod-сценария после **1.2** (логин только в контексте сессии пользователя).
 
 #### `/app/settings` (детально)
 
@@ -361,28 +589,49 @@ flowchart TB
 
 **Техника OAuth Hammerhead:** callback с `state` (подписанный `user_id`); redirect URI production; не писать в глобальный `data/`.
 
+#### 5b.3+ — доработка регистрации (после базового `/register`)
+
+| Элемент | Содержание |
+|---------|------------|
+| **Подтверждение email** | Токен в письме; аккаунт `pending` до клика (опционально на prod) |
+| **Invite-only** | Регистрация только с `invite_token` при `REGISTRATION_OPEN=false` |
+| **Защита от спама** | Rate limit (есть в 5b.3), captcha (hCaptcha/Turnstile) |
+| **Пароль** | Минимальная длина, zxcvbn или простые правила |
+| **Onboarding** | После регистрации → `/app/settings` с чеклистом «подключите HH / Garmin» |
+| **Связь с 10** | Поле email обязательно для link OAuth позже |
+
+#### 5b.4+ — доработка settings (после профиля и HH/Garmin)
+
+| Секция | Содержание |
+|--------|------------|
+| **Источники** | Список доступных адаптеров; вкл/выкл; статус OAuth; ссылка «Подключить» |
+| **Приёмники** | Garmin, S3, … — статус и «Проверить» |
+| **Правила** | Простой UI: «из Hammerhead → Garmin + архив» (полный rule engine — **7.2**) |
+| **Безопасность** | Смена email (подтверждение), привязка OAuth (**10**), активные сессии (post-MVP) |
+| **Локаль** | `locale` + timezone (**6.2**) |
+
 #### Риски 5b
 
 | Риск | Mitigation |
 |------|------------|
 | Спам-регистрации | `REGISTRATION_OPEN=false` по умолчанию на prod; rate limit; позже captcha |
-| Снятие Basic Auth до готового login | 5b.5 после 5b.1 ✅ и желательно после 5b.4 (Settings) |
-| Несколько Garmin-аккаунтов | Не использовать общий `GARMIN_*` в `.env`; per-user cookies в **5b.4** |
+| Снятие Basic Auth до готового login | **1.4** после **1.1** ✅ и желательно после **1.2** (Settings) |
+| Несколько Garmin-аккаунтов | Не использовать общий `GARMIN_*` в `.env`; per-user cookies в **1.2** |
 | Много пользователей + частый Playwright refresh | Последовательный цикл refresh; при росте — очередь/лимиты (post-5b) |
 | Смена email | UNIQUE + понятная ошибка |
 | HH OAuth без привязки к сессии | signed `state` в callback |
 
 **Не переписывать:** `user_id` в store/sync, `data/users/{id}/`, webhook routing, per-user JWT refresh (HTTP → Playwright fallback).
 
-**Документация:** детали upload/JWT — [API_GARMIN.md](API_GARMIN.md); runtime — [ARCHITECTURE.md](ARCHITECTURE.md) (обновить схему `data/users/{id}/` при 5b.4).
+**Документация:** детали upload/JWT — [API_GARMIN.md](API_GARMIN.md); runtime — [ARCHITECTURE.md](ARCHITECTURE.md) (обновить схему `data/users/{id}/` при **1.2** / **1.6**).
 
 См. **[UI: Новый интерфейс приложения](#ui-новый-интерфейс-приложения)** и [UI.md](UI.md).
 
 ---
 
-### Фаза 6: UI v2 (в кабинете пользователя)
+### Фаза 6: UI v2 (в кабинете пользователя) → **2.3**
 
-После Phase 5 — UI в контексте `user_id` (`/app/...`), timezone пользователя.
+После Phase 5 — UI в контексте `user_id` (`/app/...`), timezone пользователя. Визуал календаря и таблицы — в рамках **[2.10](#дизайн-uiux-210)** (желательно **2.10.1** до вёрстки **2.3**).
 
 #### Календарь + поиск (главный экран активностей)
 
@@ -496,11 +745,11 @@ fit_sinc/web/i18n.py   # t("nav.dashboard", locale=...) → str
 | **6.2.2** | Выбор языка в settings + cookie для гостя; `lang` в `<html>` | ½ вечера |
 | **6.2.3** | Тесты: `t()` fallback, страница login с `Accept-Language: en` | ½ вечера |
 
-**Порядок:** **[UI](#ui-новый-интерфейс-приложения)** ✅ → **6.2.0–6.2.1** (можно параллельно с календарём **6**) → **6.2.2** вместе с **5b.4** settings.
+**Порядок:** **[UI](#ui-новый-интерфейс-приложения)** ✅ → **2.5** (можно параллельно с **2.3**) → выбор языка в settings вместе с **1.2** / **2.7**.
 
 #### UX
 
-- Переключатель языка в шапке (рядом с user bar) **или** только в Settings — решить в **5b.4** / **6.2** (не дублировать везде).
+- Переключатель языка в шапке (рядом с user bar) **или** только в Settings — решить в **1.2** / **2.5** (не дублировать везде).
 - Непереведённый ключ → показывать ключ в dev, fallback на `ru` в prod + лог warning.
 
 #### Вне scope
@@ -520,7 +769,7 @@ fit_sinc/web/i18n.py   # t("nav.dashboard", locale=...) → str
 | Smoke-тесты в CI (`compileall`, unittest) | 4 | ✅ | — |
 | README на GitHub | ops | ✅ | — |
 | Тесты: webhook HMAC endpoint, `sync_activity` с моками HH/Garmin | ops | ✅ | webhook, tenant, /app login, sync skip |
-| **Security-тесты:** session auth на все `/app/*`, `/app/admin/*`, webhook HMAC | **Security** | 📋 | 5b.1 ✅; блокер **5b.5** |
+| **Security-тесты:** session auth на все `/app/*`, `/app/admin/*`, webhook HMAC | **1.1** | 📋 | 5b.1 ✅; блокер **1.4** |
 | **Баннер статуса** на дашборде | 6 | 📋 | лучше после 5 (`/app`) |
 | **Очередь failed** — фильтр `status=error`, retry | 6 | 📋 | retry уже в коде |
 | Понятный sync log (`duplicate` ≠ error) | 6 | 📋 | — |
@@ -531,27 +780,84 @@ fit_sinc/web/i18n.py   # t("nav.dashboard", locale=...) → str
 
 ---
 
-### Фаза 7: Несколько источников (activities)
+### Фаза 7: Хаб активностей (источники → правила → приёмники)
 
-Абстракция, чтобы не плодить `if hammerhead` в `sync/service.py`:
+> **Крупный рефакторинг.** Цель — не «ещё один if hammerhead», а единая модель: в приложении **список активностей** (и **маршрутов**) из настраиваемых **источников**; доставка в **приёмники** по **правилам** пользователя (Garmin, файловое хранилище, другие API).
+
+**Сейчас:** жёсткая цепочка Hammerhead webhook → download FIT → upload Garmin; метаданные в SQLite `activities`.
+
+**Целевая архитектура:**
+
+```mermaid
+flowchart LR
+    subgraph sources [Источники per user]
+        HH[Hammerhead]
+        MAN[Manual FIT/GPX]
+        STR[Strava / Wahoo / …]
+    end
+    subgraph core [Ядро]
+        ING[Ingest + normalize ActivityRecord]
+        DB[(Каталог активностей)]
+        ENG[Rule engine]
+    end
+    subgraph sinks [Приёмники]
+        GM[Garmin Connect]
+        OBJ[S3 / cold storage]
+        HHw[Hammerhead routes]
+        EXT[Другие API]
+    end
+    sources --> ING --> DB
+    DB --> ENG
+    ENG --> sinks
+```
 
 ```text
-Source (download ActivityPayload + external_id)
-  → Sink Garmin (upload FIT)
-  → Store (dedup по user_id + source + external_id)
+ActivityRecord { user_id, source, external_id, type: activity|route, … }
+  ← SourceAdapter.pull / webhook / upload
+  → Rule { when: …, then: sink_ids[] }
+  → SinkAdapter.push (FIT upload, GPX route, put object, …)
+  → Store (dedup, статусы, audit log)
 ```
+
+| Слой | Содержание |
+|------|------------|
+| **Источники** | Реестр адаптеров; включение и credentials **в `/app/settings` → Источники** (см. **2.7**) |
+| **Каталог** | Единый список в UI `/app/activities` — все типы и источники; фильтры по source/type/status |
+| **Правила** | Per user: «если source=HH и type=ride → Garmin + S3»; порядок, stop-on-error, retry |
+| **Приёмники** | Garmin upload, object storage (**11**), route push (HH `route:write`), будущие API |
+| **Маршруты** | Тот же pipeline, `type=route`; spike Garmin courses — **8**, затем в **7** |
 
 | Источник | Приоритет | Триггер | Формат |
 |----------|-----------|---------|--------|
 | Hammerhead | ✅ есть | webhook + backfill | FIT API |
-| Manual upload | средний | UI/CLI | `.fit` файл |
-| Wahoo / Strava / … | низкий | исследование API | TBD |
+| Manual upload | высокий | UI/CLI | `.fit` / GPX |
+| Wahoo / Strava / … | средний | OAuth + poll/webhook | TBD |
+| Импорт архива | низкий | zip из облака | FIT/GPX |
 
-Каждый источник настраивается **per user** в кабинете; в админке — только вкл/выкл и диагностика.
+| Приёмник | Приоритет | Примечание |
+|----------|-----------|------------|
+| Garmin Connect | ✅ есть | FIT activity upload |
+| Object storage (S3) | высокий | см. **Фаза 11** |
+| Hammerhead routes | средний | GPX/FIT → Karoo |
+| Strava / … | низкий | исследование |
+
+**Подфазы (черновик):**
+
+| Подфаза | Содержание | Оценка |
+|---------|------------|--------|
+| **7.0** → **2.8** | Spike: `ActivityRecord`, `Source` / `Sink` / `Rule`; миграция HH→Garmin | 2–3 дня |
+| **7.1** → **3.1** | Реестр в БД; settings UI (**2.7**); вкл/выкл per user | 2 вечера |
+| **7.2** → **3.1** | Rule engine; лог доставки в sync_events | 2–3 дня |
+| **7.3** → **2.9** | Manual FIT upload в общем списке | 1 вечер |
+| **7.4** → **3.2** | Маршруты в каталоге; интеграция spike **8** | 1–2 недели |
+
+**Не переписывать сразу:** webhook HMAC, `user_id` tenant, per-user `data/users/{id}/` для секретов — остаются; меняется только `sync/service.py` → оркестратор над адаптерами.
+
+**Зависимости:** **2.7** (settings), **2.3** (единый UI списка), желательно **3.3** (контракт хранения) параллельно с **3.1**.
 
 ---
 
-### Фаза 8: Маршруты (routes)
+### Фаза 8: Маршруты (routes) — spike, затем в 7
 
 **Hammerhead API** (OpenAPI):
 
@@ -567,7 +873,107 @@ Source (download ActivityPayload + external_id)
 2. **Hammerhead → Garmin** — список routes HH → дублировать в Garmin courses — сложнее (нет GET file в API, только upload в HH)
 3. **Двусторонняя** — позже
 
-Рекомендация: Phase 8.0 = spike Garmin courses + прототип GPX; Phase 8.1 = HH `route:write` из файла.
+Рекомендация: Phase 8.0 = spike Garmin courses + прототип GPX; Phase 8.1 = HH `route:write` из файла. После **7.0** код routes живёт в **7.4**, раздел **8** остаётся только для исследования.
+
+---
+
+### Фаза 9: Переименование приложения → **1.5**
+
+> **Детальный план:** [1.5-RENAME.md](1.5-RENAME.md) (решения R1–R10, уровни A/B/C, cutover).
+
+**Цель:** смена бренда (рабочее название сейчас *fit_sinc*) — имя продукта, домен, пакет Python, systemd/nginx, GitHub repo, документация, cookie/session prefix при необходимости.
+
+> **Приоритет:** [🔴 горизонт 1](#-горизонт-1--срочно-важно-небольшие), задача **1.5** — сразу после **1.4**, как только утверждено имя (до **2.1** регистрации и **3.4** OAuth).
+
+| Область | Задачи |
+|---------|--------|
+| **Продукт** | Новое имя, лого ([`assets/logo.svg`](../assets/logo.svg)), тексты в UI |
+| **Код** | `fit_sinc` → новый package name; CLI entrypoint; `SESSION_COOKIE` / env prefixes |
+| **Инфра** | `fit.romansegalla.online` → новый DNS; nginx `server_name`; systemd unit; GitHub Actions |
+| **Данные** | Миграция путей `data/` опционально; обратная совместимость cookie одна версия |
+| **Документация** | README, PLAN, CI-CD, ссылки |
+
+**Когда:** сразу после **1.4**, как только имя утверждено — **до** **2.1** и **3.4** (redirect URI). Задача **1.5**.
+
+**Оценка:** 1–2 дня (без смены домена) / +½ дня с DNS и prod cutover.
+
+**Риск:** простой при деплое — делать в maintenance window; редиректы 301 со старого домена.
+
+---
+
+### Фаза 10: Внешняя авторизация (OAuth / OIDC)
+
+**Цель:** вход и привязка аккаунта через внешние провайдеры (Google, Apple, GitHub, …) **в дополнение** к email+password (**5b**), не вместо tenant-модели.
+
+| Требование | Решение |
+|------------|---------|
+| Первый вход | OAuth → создать `users` (если `REGISTRATION_OPEN`) или отказ + «обратитесь к админу» |
+| Существующий user | «Привязать Google» в **Settings → Безопасность** после login по паролю |
+| Идентификация | Таблица `user_oauth_identities(provider, subject, user_id)` UNIQUE |
+| Сессия | Та же cookie-сессия, что после `/app/login` |
+| Admin | Те же правила `is_admin`; OAuth не даёт admin сам по себе |
+
+**Провайдеры (приоритет):**
+
+| Провайдер | Приоритет | Примечание |
+|-----------|-----------|------------|
+| Google | высокий | OIDC, типичный для спорт-приложений |
+| Apple | средний | Sign in with Apple — если будет iOS |
+| GitHub | низкий | для tech-audience |
+
+**Подфазы:**
+
+| Подфаза | Содержание | Оценка |
+|---------|------------|--------|
+| **10.0** → **3.4** | Схема БД + `authlib`/`httpx`; callback URLs | 1 вечер |
+| **10.1** → **3.4** | Login: кнопки «Войти через …» | ½ вечера |
+| **10.2** → **3.4** | Settings: link/unlink provider | 1 вечер |
+| **10.3** → **3.4** | Тесты + Security (CSRF `state`, nonce) | ½ вечера |
+
+**Зависимости:** **2.6** (регистрация), **1.4** (prod HTTPS), финальный домен после **1.5**. Задача **3.4**.
+
+**Вне scope v1:** SAML enterprise, LDAP.
+
+---
+
+### Фаза 11: Хранение активностей (объектное хранилище)
+
+> **Крупный рефакторинг**, тесно связан с **7** (приёмник «холодное хранилище»).
+
+**Цель:** надёжное хранение сырых и производных артефактов (FIT, GPX, превью polyline) вне локального `data/users/{id}/fits/` — с возможностью **S3-совместимого** бэкенда (MinIO, AWS S3, Yandex Object Storage).
+
+**Сейчас:** FIT на диске VPS; SQLite — метаданные и статусы sync.
+
+**Целевая модель:**
+
+```text
+activities (SQLite)     — индекс, статусы, ссылки на объекты
+activity_objects        — user_id, activity_id, kind (fit|gpx|preview), storage_key, size, etag
+StorageBackend          — LocalFS | S3 (boto3)
+```
+
+| Вопрос | Решение |
+|--------|---------|
+| Что кладём в S3 | FIT после download; опционально GPX маршрутов; не секреты OAuth |
+| Локальный кэш | Опционально LRU на VPS для частых re-upload |
+| Dedup | `storage_key` = `{user_id}/{source}/{external_id}.fit` |
+| Backup | Lifecycle policy (IA/Glacier) — ops |
+| Multi-tenant | Префикс bucket per env; ключи с `user_id` |
+
+**Подфазы:**
+
+| Подфаза | Содержание | Оценка |
+|---------|------------|--------|
+| **11.0** → **3.3** | Интерфейс `StorageBackend`; `STORAGE_BACKEND=local|s3` | 1 день |
+| **11.1** → **3.3** | S3 adapter; upload после ingest | 1–2 дня |
+| **11.2** → **3.3** | Миграция FIT → S3; CLI `storage migrate` | 1 вечер |
+| **11.3** → **3.3** | UI: signed URL «скачать» | 1 вечер |
+
+**Правила в 7:** sink `storage_s3` — «всегда сохранять копию» или «только при ошибке Garmin».
+
+**Зависимости:** **7.0** (контракт `ActivityRecord` + sink); prod secrets в `.env`, не в git.
+
+**Риски:** egress cost; latency при re-sync — mitigated локальным кэшем.
 
 ---
 
@@ -577,13 +983,18 @@ Source (download ActivityPayload + external_id)
 |------|------------|--------|
 | 5 tenants + admin (MVP) | — | ✅ |
 | **UI** новый интерфейс (Jinja2 + Tailwind) | 5 | ✅ |
-| **Security** тесты session auth (страницы + POST + tenant) | 5b.1, UI | 1 вечер |
-| **5b** единый кабинет, регистрация, settings, nginx | 5, UI, Security | 2–4 вечера (5b.0–5b.1, UI ✅) |
-| 6 UI v2 (календарь, поиск, баннер, failed) | 5b, UI | 2–3 дня |
-| 6.1 алерты Telegram | 5, 6 | 0.5–1 день |
-| **6.2** локализация (ru/en + `users.locale`) | UI, 6 | 2–3 вечера |
-| 7 multi-source | 5 | 2–4 дня на источник |
-| 8 routes | 5, spike Garmin | 1–2 недели с исследованием |
+| **1.1** Security-тесты | 5b.1, UI | 1 вечер |
+| **1.2–1.4** 5b settings + nginx | 5, UI, **1.1** | 2–4 вечера |
+| **2.10** дизайн UI/UX | UI ✅, **1.5** желательно | 1–2 недели |
+| **2.11** лендинг romansegalla.online | **2.10.1**, **1.5** | 1–2 недели |
+| **2.3** UI v2 (календарь, поиск, failed) | **1.2**, UI, **2.10.1** | 2–3 дня |
+| **2.4** алерты Telegram | 5, **2.3** | 0.5–1 день |
+| **2.5** локализация ru/en | UI, **2.3** | 2–3 вечера |
+| **2.8–3.5** хаб активностей | **2.7**, **2.3** | 2–3 недели |
+| **3.2** routes spike | 5, **2.8** | 1–2 недели |
+| **1.5** переименование | **1.4**, имя | 1–2 дня |
+| **3.4** OAuth/OIDC | **2.6**, **1.4**, **1.5** | 2–3 вечера |
+| **3.3** хранилище S3 | **2.8** | 3–5 дней |
 
 ---
 
@@ -625,25 +1036,45 @@ Source (download ActivityPayload + external_id)
 - [x] Push в `main` → https://github.com/segallar/fit-sinc
 - [x] UI: re-sync в кабинете (Re-sync, force + confirm, retry all errors, redirect `next`)
 
-### Roadmap v2 (план)
+### 🔴 Горизонт 1 — срочно (TODO)
 
-- [x] Фаза 5: tenants, `user_id` в БД, webhook → user, `data/users/{id}/`
-- [x] Фаза 5: CRUD users (email, telegram, timezone, password, HH id) — сейчас `/app/admin`
-- [x] Фаза 5: `/app` — login email+password, сессия, UI в TZ пользователя
-- [x] **Фаза 5b.0:** `is_admin`, bootstrap, `REGISTRATION_OPEN`, CLI `promote-admin` — [5b-DECISIONS.md](5b-DECISIONS.md)
-- [x] **Фаза 5b.1:** один логин, `/app/admin/*`, убрать `/admin/login` + `ADMIN_PASSWORD`
-- [ ] **Security:** тесты доступа — session auth на страницы и POST `/app/*`, admin 403, tenant isolation, webhook HMAC
-- [ ] **Фаза 5b.2:** пункт **Settings** в nav (страница — 5b.4)
-- [ ] **Фаза 5b.3:** `/register` + `REGISTRATION_OPEN`
-- [ ] **Фаза 5b.4:** `/app/settings` — профиль, пароль, Hammerhead/Garmin (приоритет)
-- [ ] **Фаза 5b.5:** nginx без Basic Auth; `https_only` cookie (после Security-тестов)
-- [ ] **Фаза 5b.6:** функциональные тесты register/settings/admin forms
-- [ ] Docs: ARCHITECTURE — multi-tenant `data/users/{id}/`, без глобального `data/garmin_web`
-- [ ] Фаза 6: календарь + поиск на `/app/activities`, баннер, failed, лог
-- [ ] Фаза 6.1: Telegram-алерты при ошибках sync
-- [ ] **Фаза 6.2.0:** `users.locale`, каталоги `ru` / `en`, функция `t()`
-- [ ] **Фаза 6.2.1:** перевести `/app` и `/app/admin` (Jinja + html.py)
-- [ ] **Фаза 6.2.2:** выбор языка в settings, cookie / Accept-Language для гостя
-- [x] Ops: расширить smoke (webhook endpoint, tenant routing, /app login, sync skip)
-- [ ] Фаза 7: абстракция Source/Sink, manual FIT
-- [ ] Фаза 8: spike routes / Garmin courses
+- [x] **1.1** Security — session auth, POST `/app/*`, admin 403, tenant isolation, webhook HMAC
+- [x] **1.2** 5b.4 — `/app/settings`: профиль, пароль, Hammerhead/Garmin
+- [x] **1.3** 5b.2 — пункт **Settings** в nav
+- [ ] **1.4** 5b.5 — nginx без Basic Auth; `https_only` cookie (после **1.1**)
+- [ ] **1.5** 9 — переименование — [1.5-RENAME.md](1.5-RENAME.md) (бренд R1; после **1.4**)
+- [x] **1.6** Docs — ARCHITECTURE: `data/users/{id}/`
+- [ ] **1.7** Ops — даты в UI по `users.timezone`
+- [ ] **1.8** 6 мин — баннер HH + Garmin на дашборде
+
+### 🟡 Горизонт 2 — средний срок (TODO)
+
+- [ ] **2.1** 5b.3 — `/register` + `REGISTRATION_OPEN`
+- [ ] **2.2** 5b.6 — тесты register / settings / admin forms
+- [ ] **2.3** 6 — календарь, поиск, failed, sync log
+- [ ] **2.4** 6.1 — Telegram-алерты
+- [ ] **2.5** 6.2 — i18n ru/en, `users.locale`
+- [ ] **2.6** 5b.3+ — email confirm, invite, captcha, onboarding
+- [ ] **2.7** 5b.4+ — settings: источники / правила / приёмники
+- [ ] **2.8** 7.0 — ActivityRecord, Source/Sink spike
+- [ ] **2.9** 7.3 — manual FIT upload
+- [ ] **2.10** Design — аудит UX, дизайн-система, редизайн ключевых экранов (2.10.0–2.10.3)
+- [ ] **2.11** Site — главная romansegalla.online: контент, макет, вёрстка, SEO (2.11.0–2.11.3)
+
+### 🔵 Горизонт 3 — далёкое будущее (TODO)
+
+- [ ] **3.1** 7.1–7.2 — rule engine, реестр в БД
+- [ ] **3.2** 7.4 + 8 — маршруты, Garmin courses spike
+- [ ] **3.3** 11 — S3 / StorageBackend, миграция FIT
+- [ ] **3.4** 10 — OAuth/OIDC (Google, Apple, GitHub)
+- [ ] **3.5** 7 — полный хаб (Strava, архив, …)
+- [ ] **3.6** 6.2+ — доп. языки, docs/CLI
+- [ ] **3.7** 10+ — SAML/LDAP enterprise
+- [ ] **3.8** Ops — email-алерты, очередь Playwright
+
+### Выполнено (справка)
+
+- [x] Фаза 5: tenants, `/app`, admin CRUD, webhook → user, `data/users/{id}/`
+- [x] **5b.0–5b.1:** `is_admin`, bootstrap, единый логин — [5b-DECISIONS.md](5b-DECISIONS.md)
+- [x] **UI:** Jinja2 + Tailwind — [UI.md](UI.md)
+- [x] Ops: smoke (webhook, tenant, /app login, sync skip)

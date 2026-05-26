@@ -90,6 +90,8 @@ def install_auth_middleware(app: FastAPI) -> None:
             return await call_next(request)
 
         if path.startswith("/app"):
+            if path.startswith("/app/settings/hammerhead/callback"):
+                return await call_next(request)
             if path in ("/app/login",) or path.startswith("/app/login?"):
                 return await call_next(request)
             if not user_context_from_session(request):
