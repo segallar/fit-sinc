@@ -450,6 +450,20 @@ async def activities_browser(
     tab_query = _activities_tab_query_factory(base_params)
     flash = {"queued": queued} if queued else None
 
+    errors_quick_url = None
+    if filters.status != "error":
+        err_params: dict[str, object] = {
+            "status": "error",
+            "per_page": per_page,
+            "view": view,
+        }
+        if filters.source:
+            err_params["source"] = filters.source
+        if view == "calendar":
+            err_params["year"] = cal_year
+            err_params["month"] = cal_month
+        errors_quick_url = f"{P}/activities?{H.query_string(err_params)}"
+
     common = dict(
         activities_view=view,
         activities_tab_query=tab_query,
@@ -463,7 +477,7 @@ async def activities_browser(
             "source": filters.source,
         },
         filters_active=filters.is_active(),
-        errors_quick_url=None,
+        errors_quick_url=errors_quick_url,
     )
 
     if view == "calendar":
@@ -556,17 +570,6 @@ async def activities_browser(
     ):
         total_label = f"{from_idx}–{to_idx} loaded"
 
-    errors_quick_url = None
-    if filters.status != "error":
-        err_params: dict[str, object] = {
-            "status": "error",
-            "per_page": per_page,
-            "view": "list",
-        }
-        if filters.source:
-            err_params["source"] = filters.source
-        errors_quick_url = f"{P}/activities?{H.query_string(err_params)}"
-
     tab_base = _activities_query_params(
         per_page=per_page,
         filters=filters,
@@ -589,7 +592,6 @@ async def activities_browser(
         params=query_params,
         page=result.page,
         total_pages=result.total_pages,
-        errors_quick_url=errors_quick_url,
         activities_tab_query=_activities_tab_query_factory(tab_base),
         **{k: v for k, v in common.items() if k != "activities_tab_query"},
     )
