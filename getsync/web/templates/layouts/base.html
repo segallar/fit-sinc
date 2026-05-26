@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{% block html_lang %}en{% endblock %}" class="h-full">
+<html lang="{% block html_lang %}en{% endblock %}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,29 +7,34 @@
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXg0btuH9tYUpqlf/Ei" crossorigin="anonymous">
   <link rel="stylesheet" href="/static/app.css">
   <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
   {% block head_extra %}{% endblock %}
 </head>
-<body class="min-h-full bg-slate-50 text-slate-900 antialiased">
-  <div class="mx-auto flex min-h-full flex-col px-4 py-6 sm:px-6 lg:px-8 {% block container_class %}max-w-6xl{% endblock %}">
+<body class="bg-light d-flex flex-column min-vh-100">
+  <div class="{% block container_class %}container{% endblock %} py-4 flex-grow-1">
     {% block header %}
-    <header class="mb-6 flex items-center gap-3">
-      <img src="/static/icon.svg" alt="" width="48" height="48" class="rounded-xl shadow-sm">
+    <header class="d-flex align-items-center gap-3 mb-4">
+      <img src="/static/icon.svg" alt="" width="48" height="48" class="rounded-3 shadow-sm">
       <div>
-        <p class="text-sm font-medium text-teal-700">Hammerhead → Garmin</p>
-        <h1 class="text-2xl font-semibold tracking-tight">GetSync</h1>
+        <p class="getsync-brand-sub mb-0">Hammerhead → Garmin</p>
+        <h1 class="h3 mb-0 fw-semibold">GetSync</h1>
       </div>
     </header>
     {% endblock %}
     {% block header_extra %}{% endblock %}
-    <main class="flex-1">
+    <main>
       {% block content %}{% endblock %}
     </main>
-    <footer class="mt-10 border-t border-slate-200 pt-4 space-y-2 text-xs text-slate-500">
+    <footer class="getsync-footer text-muted small">
       {% block footer_extra %}{% endblock %}
       {% include "components/build_footer.html" %}
     </footer>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+          crossorigin="anonymous"></script>
 </body>
 </html>

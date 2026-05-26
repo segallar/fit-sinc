@@ -1,51 +1,45 @@
-# Web UI (Jinja2 + Tailwind)
+# Web UI (Jinja2 + Bootstrap 5)
 
 > Индекс: [docs/README.md](README.md) · архитектура маршрутов: [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Весь кабинет `/app` и админка `/app/admin` рендерятся через Jinja2-шаблоны и собранный `app.css`.
+Кабинет `/app`, админка `/app/admin` и публичные страницы — Jinja2 + **Bootstrap 5.3** (CDN) + HTMX.
 
 | Что | Где |
 |-----|-----|
 | Шаблоны | `getsync/web/templates/` |
-| Layout кабинета | `layouts/cabinet.html` (extends `base.html`) |
-| Layout входа | `layouts/auth.html` |
-| Роуты | `getsync/web/app_routes.py`, `admin_routes.py` |
-| Рендер | `getsync/web/cabinet.py` → `render_cabinet()` |
-| Форматтеры | `getsync/web/html.py` (`esc`, `fmt_*`, `query_string`) |
-| Jinja helpers | `getsync/web/templating.py` |
-| CSS | `frontend/` → `getsync/web/static/app.css` |
+| Layout | `layouts/base.html` — Bootstrap CSS/JS CDN |
+| Кабинет | `layouts/cabinet.html` (nav-pills) |
+| Вход / регистрация | `layouts/auth.html` (card) |
+| Лендинг | `layouts/site.html` (navbar) |
+| Тема (цвет primary) | `getsync/web/static/app.css` |
 | HTMX | CDN в `layouts/base.html` |
 
 ## Локальный запуск
 
 ```bash
 pip install -e .
-cd frontend && npm install && npm run build:css   # при изменении Tailwind-классов
 uvicorn getsync.web.app:app --reload --port 8080
 # http://127.0.0.1:8080/app/
 ```
 
-## Сборка Tailwind
+Node.js **не нужен** для UI (Bootstrap с jsDelivr).
 
-```bash
-cd frontend
-npm ci
-npm run build:css
-npm run watch:css    # при вёрстке
-```
+## Стили
 
-`app.css` коммитим в репозиторий — CI и деплой **не требуют** Node.js.
+- Основа: [Bootstrap 5.3](https://getbootstrap.com/) в `layouts/base.html`
+- Бренд teal: переменные в `static/app.css` (`--bs-primary`)
+- Классы: `btn`, `card`, `table`, `nav-pills`, `alert`, `badge`, `form-control`
 
 ## Компоненты
 
-- `components/user_bar.html` — полоса пользователя + logout
-- `components/status_badge.html` — статус синка
-- `components/pager.html`, `resync_form.html`, `timezone_select.html`, `flash.html`
-- `components/datetime_cell.html` — дата/время в таблицах
+- `components/user_bar.html` — карточка пользователя
+- `components/status_badge.html` — macro `status_badge`
+- `components/pager.html`, `resync_form.html`, `flash.html`
+- `components/timezone_select.html`, `locale_select.html`
+- `components/connections_banner.html`, `datetime_cell.html`
 
 ## Новая страница
 
-1. Добавить `templates/pages/...html`, extends `layouts/cabinet.html` или `auth.html`.
-2. В handler вызвать `render_cabinet(request, "pages/....html", active="/app/...", **context)`.
-3. Передавать структурированные данные (dict/dataclass), не HTML-строки.
-4. При новых Tailwind-классах — `npm run build:css` и закоммитить `static/app.css`.
+1. `templates/pages/...html` → extends `cabinet.html` / `auth.html` / `site.html`
+2. `render_cabinet(request, "pages/....html", active="/app/...", **context)`
+3. Разметка на Bootstrap; при смене primary — правка `app.css`

@@ -1,3 +1,3 @@
-<p class="text-xs text-slate-500">
-  GetSync v{{ app_version }}{% if git_commit != 'dev' %} · <span class="font-mono text-slate-600">{{ git_commit }}</span>{% endif %}{% if deploy_number %} · deploy #{{ deploy_number }}{% endif %}{% if deploy_time %} · {{ deploy_time }}{% endif %}
+<p class="small text-muted mb-0">
+  GetSync v{{ app_version }}{% if git_commit != 'dev' %} · <span class="font-monospace">{{ git_commit }}</span>{% endif %}{% if deploy_number %} · deploy #{{ deploy_number }}{% endif %}{% if deploy_time %} · {{ deploy_time }}{% endif %}
 </p>

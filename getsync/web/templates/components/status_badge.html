@@ -1,13 +1,11 @@
 {% macro status_badge(status, detail=None) %}
-{% set styles = {
-  "synced": "bg-emerald-50 text-emerald-800 ring-emerald-200",
-  "error": "bg-red-50 text-red-800 ring-red-200",
-  "pending": "bg-amber-50 text-amber-900 ring-amber-200",
-  "not synced": "bg-slate-100 text-slate-600 ring-slate-200",
-  "skipped": "bg-slate-100 text-slate-500 ring-slate-200",
+{% set classes = {
+  "synced": "bg-success",
+  "error": "bg-danger",
+  "pending": "bg-warning text-dark",
+  "not synced": "bg-secondary",
+  "skipped": "bg-secondary",
 } %}
-<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {{ styles.get(status, 'bg-slate-100 text-slate-600 ring-slate-200') }}"
-      {% if detail %}title="{{ detail }}"{% endif %}>
-  {{ status }}
-</span>
+<span class="badge {{ classes.get(status, 'bg-secondary') }}"
+      {% if detail %}title="{{ detail }}"{% endif %}>{{ status }}</span>
 {% endmacro %}

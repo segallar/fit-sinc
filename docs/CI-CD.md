@@ -125,7 +125,7 @@ sudo -u getsync /opt/getsync/.venv/bin/playwright install chromium
 
 ### 1. Код приложения
 
-Перед rsync собирается Tailwind: [`scripts/ci/build-frontend-css.sh`](../scripts/ci/build-frontend-css.sh) → `getsync/web/static/app.css`. Нужны Node.js и `npm` на машине, с которой деплоите (или в GitHub Actions).
+UI: Bootstrap 5 с CDN в шаблонах; [`getsync/web/static/app.css`](../getsync/web/static/app.css) — только переопределение темы (коммитится). Node.js для деплоя **не нужен**. Скрипт [`scripts/ci/build-frontend-css.sh`](../scripts/ci/build-frontend-css.sh) — заглушка для совместимости.
 
 ```bash
 cd /path/to/getsync

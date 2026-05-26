@@ -1,7 +1,6 @@
-<label class="flex flex-col gap-1 text-sm text-slate-600">
-  <span>{{ label or 'Timezone' }}</span>
-  <select name="{{ select_name }}"
-          class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
+<div class="mb-3">
+  <label class="form-label">{{ label or 'Timezone' }}</label>
+  <select name="{{ select_name }}" class="form-select">
     {% set ns = namespace(current_group=None) %}
     {% for opt in timezone_options(selected) %}
     {% if opt.group != ns.current_group %}
@@ -15,4 +14,4 @@
     {% endfor %}
     {% if ns.current_group %}</optgroup>{% endif %}
   </select>
-</label>
+</div>

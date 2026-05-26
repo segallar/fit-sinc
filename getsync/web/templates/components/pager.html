@@ -1,24 +1,27 @@
 {% if total_pages > 1 %}
-<nav class="pager mt-4 flex flex-wrap items-center gap-2" aria-label="Pagination">
-  <div class="pager-pages flex flex-wrap items-center gap-1.5">
+<nav class="pager mt-4 d-flex flex-wrap align-items-center gap-2" aria-label="Pagination">
+  <ul class="pagination pagination-sm mb-0 flex-wrap">
     {% if page > 1 %}
-    <a href="{{ base_path }}?{{ pager_query(params, page - 1) }}"
-       class="inline-flex min-w-[2rem] items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm text-slate-700 hover:bg-slate-50">←</a>
+    <li class="page-item">
+      <a class="page-link" href="{{ base_path }}?{{ pager_query(params, page - 1) }}">←</a>
+    </li>
     {% endif %}
     {% for item in pager_items(page, total_pages) %}
     {% if item == '…' %}
-    <span class="page-gap px-1 text-sm text-slate-400">…</span>
+    <li class="page-item disabled"><span class="page-link">…</span></li>
     {% elif item == page %}
-    <span class="page-current inline-flex min-w-[2rem] items-center justify-center rounded-lg bg-teal-700 px-2.5 py-1 text-sm font-semibold text-white">{{ page }}</span>
+    <li class="page-item active" aria-current="page"><span class="page-link">{{ page }}</span></li>
     {% else %}
-    <a href="{{ base_path }}?{{ pager_query(params, item) }}"
-       class="inline-flex min-w-[2rem] items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm text-slate-700 hover:bg-slate-50">{{ item }}</a>
+    <li class="page-item">
+      <a class="page-link" href="{{ base_path }}?{{ pager_query(params, item) }}">{{ item }}</a>
+    </li>
     {% endif %}
     {% endfor %}
     {% if page < total_pages %}
-    <a href="{{ base_path }}?{{ pager_query(params, page + 1) }}"
-       class="inline-flex min-w-[2rem] items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm text-slate-700 hover:bg-slate-50">→</a>
+    <li class="page-item">
+      <a class="page-link" href="{{ base_path }}?{{ pager_query(params, page + 1) }}">→</a>
+    </li>
     {% endif %}
-  </div>
+  </ul>
 </nav>
 {% endif %}

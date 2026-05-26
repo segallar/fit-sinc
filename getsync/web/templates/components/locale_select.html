@@ -1,9 +1,8 @@
-<label class="flex flex-col gap-1 text-sm text-slate-600">
-  <span>{{ label or 'Language' }}</span>
-  <select name="{{ select_name or 'locale' }}" required
-          class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
+<div class="mb-3">
+  <label class="form-label">{{ label or 'Language' }}</label>
+  <select name="{{ select_name or 'locale' }}" class="form-select" required>
     {% for label_text, value, is_sel in locale_options(selected) %}
     <option value="{{ value }}" {% if is_sel %}selected{% endif %}>{{ label_text }}</option>
     {% endfor %}
   </select>
-</label>
+</div>

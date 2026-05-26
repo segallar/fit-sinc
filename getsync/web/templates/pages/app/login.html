@@ -3,36 +3,28 @@
 {% block title %}Login — GetSync{% endblock %}
 
 {% block page_content %}
-<h2 class="mb-6 text-xl font-semibold text-slate-900">Sign in</h2>
+<h2 class="h4 mb-4">Sign in</h2>
 {% if error %}
-<p class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">Invalid email or password</p>
+<div class="alert alert-danger">Invalid email or password</div>
 {% endif %}
-<form method="post" action="{{ prefix }}/login" class="space-y-4">
-  <label class="block text-sm text-slate-600">
-    <span class="mb-1 block">Email</span>
-    <input type="email" name="email" required autocomplete="username"
-           class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
-  </label>
-  <label class="block text-sm text-slate-600">
-    <span class="mb-1 block">Password</span>
-    <input type="password" name="password" required autocomplete="current-password"
-           class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
-  </label>
-  <button type="submit"
-          class="w-full rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
-    Sign in
-  </button>
+<form method="post" action="{{ prefix }}/login">
+  <div class="mb-3">
+    <label class="form-label">Email</label>
+    <input type="email" name="email" class="form-control" required autocomplete="username">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Password</label>
+    <input type="password" name="password" class="form-control" required autocomplete="current-password">
+  </div>
+  <button type="submit" class="btn btn-primary w-100">Sign in</button>
 </form>
 {% if registration_open %}
-<p class="mt-4 text-center text-sm text-slate-600">
-  Нет аккаунта?
-  <a href="/register" class="font-medium text-teal-700 hover:underline">Sign up</a>
+<p class="mt-3 mb-0 text-center small text-muted">
+  Нет аккаунта? <a href="/register">Sign up</a>
 </p>
 {% endif %}
 {% endblock %}
 
 {% block footer_extra %}
-<p>
-  <a href="/" class="text-teal-700 hover:underline">Главная</a>
-</p>
+<p class="mb-0"><a href="/">Главная</a></p>
 {% endblock %}

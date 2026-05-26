@@ -14,7 +14,7 @@
 | [API_HAMMERHEAD.md](API_HAMMERHEAD.md) | Интеграции | OAuth, REST, webhook HMAC, Developer Portal |
 | [API_GARMIN.md](API_GARMIN.md) | Интеграции | Web JWT, Playwright upload, garth-ng, refresh |
 | [CI-CD.md](CI-CD.md) | Ops | VPS, nginx, certbot, rsync, GitHub Actions |
-| [UI.md](UI.md) | Frontend | Jinja2, Tailwind, сборка `app.css` |
+| [UI.md](UI.md) | Frontend | Jinja2, Bootstrap 5, `app.css` (тема) |
 | [PLAN.md](PLAN.md) | Roadmap | Фазы, горизонты 1.x–3.x, реестр задач |
 | [1.5-RENAME.md](1.5-RENAME.md) | Cutover | Бренд GetSync, DNS, cookie, SQLite |
 | [5b-DECISIONS.md](5b-DECISIONS.md) | Auth | Регистрация, bootstrap admin |
@@ -72,4 +72,4 @@ python -m unittest discover -s tests -p "test_*.py" -v
 getsync serve   # http://127.0.0.1:8080
 ```
 
-См. также [UI.md](UI.md) (Tailwind) и [CI-CD.md](CI-CD.md) (проверки как в CI).
+См. также [UI.md](UI.md) (Bootstrap) и [CI-CD.md](CI-CD.md) (проверки как в CI).

@@ -1,9 +1,9 @@
 {% set parts = fmt_datetime_safe(iso) %}
 {% if parts.date %}
-<time class="dt whitespace-nowrap tabular-nums"{% if iso %} datetime="{{ iso }}"{% endif %}>
-  <span class="dt-date block font-medium text-slate-900">{{ parts.date }}</span>
-  {% if parts.time %}<span class="dt-time block text-xs text-slate-500">{{ parts.time }}</span>{% endif %}
+<time class="dt"{% if iso %} datetime="{{ iso }}"{% endif %}>
+  <span class="d-block fw-medium">{{ parts.date }}</span>
+  {% if parts.time %}<span class="d-block small text-muted">{{ parts.time }}</span>{% endif %}
 </time>
 {% else %}
-<span class="text-slate-400">—</span>
+<span class="text-muted">—</span>
 {% endif %}

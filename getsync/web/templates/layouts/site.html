@@ -1,38 +1,32 @@
 {% extends "layouts/base.html" %}
-{% block container_class %}max-w-7xl{% endblock %}
+{% block container_class %}container-fluid px-3 px-lg-4{% endblock %}
 
 {% block header %}
-<header class="sticky top-0 z-50 -mx-4 mb-0 border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-  <div class="flex h-16 items-center justify-between gap-4">
-    <a href="/?lang={{ lang }}" class="flex shrink-0 items-center gap-2.5">
-      <img src="/static/icon.svg" alt="" width="36" height="36" class="rounded-lg shadow-sm">
-      <span class="text-lg font-semibold tracking-tight text-slate-900">GetSync</span>
+<header class="navbar navbar-expand-md navbar-light bg-white border-bottom sticky-top mb-0 px-0">
+  <div class="container-fluid">
+    <a href="/?lang={{ lang }}" class="navbar-brand d-flex align-items-center gap-2">
+      <img src="/static/icon.svg" alt="" width="36" height="36" class="rounded-2">
+      <span class="fw-semibold">GetSync</span>
     </a>
-    <nav class="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex" aria-label="Sections">
-      <a href="#benefits" class="transition hover:text-indigo-600">{{ t.nav_benefits }}</a>
-      <a href="#faq" class="transition hover:text-indigo-600">{{ t.nav_faq }}</a>
-    </nav>
-    <div class="flex shrink-0 items-center gap-1 sm:gap-2">
-      <div class="mr-1 flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs font-medium" role="group" aria-label="Language">
-        <a href="/?lang=en"
-           class="rounded-md px-2 py-1 transition {% if lang == 'en' %}bg-white text-indigo-700 shadow-sm{% else %}text-slate-600 hover:text-slate-900{% endif %}">
-          EN
-        </a>
-        <a href="/?lang=ru"
-           class="rounded-md px-2 py-1 transition {% if lang == 'ru' %}bg-white text-indigo-700 shadow-sm{% else %}text-slate-600 hover:text-slate-900{% endif %}">
-          RU
-        </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#siteNav"
+            aria-controls="siteNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="siteNav">
+      <ul class="navbar-nav me-auto mb-2 mb-md-0">
+        <li class="nav-item"><a class="nav-link" href="#benefits">{{ t.nav_benefits }}</a></li>
+        <li class="nav-item"><a class="nav-link" href="#faq">{{ t.nav_faq }}</a></li>
+      </ul>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Language">
+          <a href="/?lang=en" class="btn btn-outline-secondary {% if lang == 'en' %}active{% endif %}">EN</a>
+          <a href="/?lang=ru" class="btn btn-outline-secondary {% if lang == 'ru' %}active{% endif %}">RU</a>
+        </div>
+        <a href="/app/login" class="btn btn-link text-decoration-none d-none d-sm-inline">{{ t.nav_login }}</a>
+        {% if registration_open %}
+        <a href="/register" class="btn btn-primary">{{ t.nav_signup }}</a>
+        {% endif %}
       </div>
-      <a href="/app/login"
-         class="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-indigo-600 sm:inline">
-        {{ t.nav_login }}
-      </a>
-      {% if registration_open %}
-      <a href="/register"
-         class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 sm:px-4">
-        {{ t.nav_signup }}
-      </a>
-      {% endif %}
     </div>
   </div>
 </header>

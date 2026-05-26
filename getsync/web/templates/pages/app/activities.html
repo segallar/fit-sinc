@@ -4,131 +4,134 @@
 {% block title %}Activities — GetSync{% endblock %}
 
 {% block page_content %}
-<h2 class="text-lg font-semibold">Activities</h2>
-<p class="mb-4 text-sm text-slate-600">
+<h2 class="h5 mb-2">Activities</h2>
+<p class="text-muted small mb-3">
   Hammerhead / Garmin with GetSync sync status.
   {% if errors_quick_url %}
-  <a href="{{ errors_quick_url }}" class="ml-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">Show errors only</a>
+  <a href="{{ errors_quick_url }}" class="btn btn-outline-secondary btn-sm ms-1">Show errors only</a>
   {% endif %}
 </p>
 
-<div class="tabs mb-4 flex gap-2">
-  <a href="{{ prefix }}/activities?{{ query_string({'source': 'hammerhead', 'per_page': per_page}) }}"
-     class="rounded-full px-4 py-1.5 text-sm font-medium ring-1 ring-inset {% if source == 'hammerhead' %}bg-teal-700 text-white ring-teal-700{% else %}bg-white text-slate-700 ring-slate-200 hover:bg-slate-50{% endif %}">Hammerhead</a>
-  <a href="{{ prefix }}/activities?{{ query_string({'source': 'garmin', 'per_page': per_page}) }}"
-     class="rounded-full px-4 py-1.5 text-sm font-medium ring-1 ring-inset {% if source == 'garmin' %}bg-teal-700 text-white ring-teal-700{% else %}bg-white text-slate-700 ring-slate-200 hover:bg-slate-50{% endif %}">Garmin</a>
-</div>
+<ul class="nav nav-pills mb-3">
+  <li class="nav-item">
+    <a href="{{ prefix }}/activities?{{ query_string({'source': 'hammerhead', 'per_page': per_page}) }}"
+       class="nav-link {% if source == 'hammerhead' %}active{% endif %}">Hammerhead</a>
+  </li>
+  <li class="nav-item">
+    <a href="{{ prefix }}/activities?{{ query_string({'source': 'garmin', 'per_page': per_page}) }}"
+       class="nav-link {% if source == 'garmin' %}active{% endif %}">Garmin</a>
+  </li>
+</ul>
 
-<form class="filters mb-6 grid gap-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4 sm:grid-cols-2 lg:grid-cols-4" method="get" action="{{ prefix }}/activities">
+<form class="card card-body bg-light border mb-4" method="get" action="{{ prefix }}/activities">
   <input type="hidden" name="source" value="{{ source }}">
-  <label class="flex flex-col gap-1 text-sm text-slate-600">
-    <span>Name</span>
-    <input type="search" name="q" value="{{ filters.q }}" placeholder="Morning Ride"
-           class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm">
-  </label>
-  <label class="flex flex-col gap-1 text-sm text-slate-600">
-    <span>GetSync</span>
-    <select name="status" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm">
-      <option value="">all</option>
-      {% for st in ('synced', 'not synced', 'pending', 'error') %}
-      <option value="{{ st }}"{% if filters.status == st %} selected{% endif %}>{{ st }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <label class="flex flex-col gap-1 text-sm text-slate-600">
-    <span>Type</span>
-    <input type="text" name="activity_type" value="{{ filters.activity_type }}" placeholder="cycling"
-           class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm">
-  </label>
-  <label class="flex flex-col gap-1 text-sm text-slate-600">
-    <span>From</span>
-    <input type="date" name="date_from" value="{{ filters.date_from }}"
-           class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm">
-  </label>
-  <label class="flex flex-col gap-1 text-sm text-slate-600">
-    <span>To</span>
-    <input type="date" name="date_to" value="{{ filters.date_to }}"
-           class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm">
-  </label>
-  <label class="flex flex-col gap-1 text-sm text-slate-600">
-    <span>Per page</span>
-    <select name="per_page" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm">
-      {% for n in (25, 50, 100) %}
-      <option value="{{ n }}"{% if per_page == n %} selected{% endif %}>{{ n }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <div class="filters-actions flex items-end gap-2 sm:col-span-2">
-    <button type="submit" class="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">Filter</button>
-    <a href="{{ prefix }}/activities?{{ query_string({'source': source, 'per_page': per_page}) }}"
-       class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Reset</a>
+  <div class="row g-3">
+    <div class="col-md-6 col-lg-3">
+      <label class="form-label">Name</label>
+      <input type="search" name="q" value="{{ filters.q }}" class="form-control form-control-sm" placeholder="Morning Ride">
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <label class="form-label">GetSync</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value="">all</option>
+        {% for st in ('synced', 'not synced', 'pending', 'error') %}
+        <option value="{{ st }}"{% if filters.status == st %} selected{% endif %}>{{ st }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <label class="form-label">Type</label>
+      <input type="text" name="activity_type" value="{{ filters.activity_type }}" class="form-control form-control-sm" placeholder="cycling">
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <label class="form-label">From</label>
+      <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control form-control-sm">
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <label class="form-label">To</label>
+      <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control form-control-sm">
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <label class="form-label">Per page</label>
+      <select name="per_page" class="form-select form-select-sm">
+        {% for n in (25, 50, 100) %}
+        <option value="{{ n }}"{% if per_page == n %} selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 d-flex gap-2 align-items-end">
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      <a href="{{ prefix }}/activities?{{ query_string({'source': source, 'per_page': per_page}) }}"
+         class="btn btn-outline-secondary btn-sm">Reset</a>
+    </div>
   </div>
 </form>
 
-<p class="mb-3 text-sm text-slate-500">{{ total_label }}{% if filters_active %} · filters active{% endif %}</p>
+<p class="small text-muted mb-2">{{ total_label }}{% if filters_active %} · filters active{% endif %}</p>
 
-<div class="table-wrap overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-  <table class="min-w-full divide-y divide-slate-100 text-sm">
-    <thead class="bg-slate-50 text-left text-slate-500">
-      <tr>
-        <th class="px-4 py-3 font-medium">Date / time</th>
-        <th class="px-4 py-3 font-medium">Name</th>
-        <th class="px-4 py-3 font-medium">Type</th>
-        <th class="px-4 py-3 font-medium">Distance</th>
-        <th class="px-4 py-3 font-medium">Duration</th>
-        <th class="px-4 py-3 font-medium">GetSync</th>
-        <th class="px-4 py-3 font-medium">{{ cross_header }}</th>
-        <th class="px-4 py-3 font-medium">Actions</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-slate-100">
-      {% if browse_error %}
-      <tr><td colspan="8" class="px-4 py-3 text-red-700">{{ browse_error }}</td></tr>
-      {% elif rows %}
-      {% for row in rows %}
-      <tr class="hover:bg-slate-50/80">
-        <td class="px-4 py-3">{% set iso = row.activity_date %}{% include "components/datetime_cell.html" %}</td>
-        <td class="px-4 py-3">{{ row.name }}</td>
-        <td class="px-4 py-3">{{ row.activity_type }}</td>
-        <td class="px-4 py-3 tabular-nums">{{ fmt_km(row.distance) }}</td>
-        <td class="px-4 py-3 tabular-nums">{{ row.duration_fmt }}</td>
-        <td class="px-4 py-3">
-          {{ status_badge(row.sync_status, row.sync_detail if row.sync_status == 'error' else none) }}
-          {% if row.sync_detail and row.sync_status == 'synced' %}
-          <small class="text-slate-500">({{ row.sync_detail }})</small>
-          {% endif %}
-        </td>
-        <td class="px-4 py-3">
-          {% if row.cross_href %}
-          <a href="{{ row.cross_href }}" class="text-teal-700 hover:underline"{% if row.cross_external %} target="_blank" rel="noopener"{% endif %}>{{ row.cross_label }}</a>
-          {% else %}
-          <span class="text-slate-400">—</span>
-          {% endif %}
-        </td>
-        <td class="px-4 py-3 space-x-2 whitespace-nowrap">
-          {% if row.fit_url %}
-          <a href="{{ row.fit_url }}" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">.fit</a>
-          {% endif %}
-          {% if row.resync %}
-          {% with activity_id=row.resync.activity_id, return_url=row.resync.return_url, force_confirm=row.resync.force_confirm, label=row.resync.label %}
-          {% include "components/resync_form.html" %}
-          {% endwith %}
-          {% endif %}
-          {% if row.garmin_href %}
-          <a href="{{ row.garmin_href }}" target="_blank" rel="noopener"
-             class="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">Garmin</a>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-      {% else %}
-      <tr><td colspan="8" class="px-4 py-8 text-center text-slate-500">No activities match filters.</td></tr>
-      {% endif %}
-    </tbody>
-  </table>
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-sm mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Date / time</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Distance</th>
+          <th>Duration</th>
+          <th>GetSync</th>
+          <th>{{ cross_header }}</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if browse_error %}
+        <tr><td colspan="8" class="text-danger">{{ browse_error }}</td></tr>
+        {% elif rows %}
+        {% for row in rows %}
+        <tr>
+          <td>{% set iso = row.activity_date %}{% include "components/datetime_cell.html" %}</td>
+          <td>{{ row.name }}</td>
+          <td>{{ row.activity_type }}</td>
+          <td>{{ fmt_km(row.distance) }}</td>
+          <td>{{ row.duration_fmt }}</td>
+          <td>
+            {{ status_badge(row.sync_status, row.sync_detail if row.sync_status == 'error' else none) }}
+            {% if row.sync_detail and row.sync_status == 'synced' %}
+            <small class="text-muted">({{ row.sync_detail }})</small>
+            {% endif %}
+          </td>
+          <td>
+            {% if row.cross_href %}
+            <a href="{{ row.cross_href }}"{% if row.cross_external %} target="_blank" rel="noopener"{% endif %}>{{ row.cross_label }}</a>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td class="table-actions text-nowrap">
+            {% if row.fit_url %}
+            <a href="{{ row.fit_url }}" class="btn btn-outline-secondary btn-sm">.fit</a>
+            {% endif %}
+            {% if row.resync %}
+            {% with activity_id=row.resync.activity_id, return_url=row.resync.return_url, force_confirm=row.resync.force_confirm, label=row.resync.label %}
+            {% include "components/resync_form.html" %}
+            {% endwith %}
+            {% endif %}
+            {% if row.garmin_href %}
+            <a href="{{ row.garmin_href }}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm">Garmin</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr><td colspan="8" class="text-center text-muted py-4">No activities match filters.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 {% include "components/pager.html" %}
 
-<p class="mt-4 text-xs text-slate-500">Updated {{ fmt_now() }} · TZ {{ user_timezone }}</p>
+<p class="mt-3 small text-muted">Updated {{ fmt_now() }} · TZ {{ user_timezone }}</p>
 {% endblock %}

@@ -1,10 +1,10 @@
 {% if flash %}
 {% if flash.queued %}
-<p class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+<div class="alert alert-success" role="alert">
   Queued {{ flash.queued }} re-sync job(s) in the background.
-</p>
+</div>
 {% endif %}
 {% if flash.error %}
-<p class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">{{ flash.error }}</p>
+<div class="alert alert-danger" role="alert">{{ flash.error }}</div>
 {% endif %}
 {% endif %}

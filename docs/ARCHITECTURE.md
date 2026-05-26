@@ -49,7 +49,7 @@ sequenceDiagram
 | Garmin Connect | Web `JWT_WEB` + refresh по `session` cookie → Playwright / HTTP / garth-ng |
 | Состояние | SQLite (`user_id` на activities и events) |
 | CLI | typer (`getsync`; CLI `getsync`) |
-| Веб-UI | Jinja2 + HTMX + Tailwind ([UI.md](UI.md)) |
+| Веб-UI | Jinja2 + HTMX + Bootstrap 5 ([UI.md](UI.md)) |
 | Деплой | VPS + nginx + systemd ([CI-CD.md](CI-CD.md)) |
 
 ## Данные и изоляция tenant
@@ -222,5 +222,5 @@ Cutover DNS и legacy host: [1.5-RENAME.md](1.5-RENAME.md), [CI-CD.md](CI-CD.md)
 | [CI-CD.md](CI-CD.md) | Деплой |
 | [API_HAMMERHEAD.md](API_HAMMERHEAD.md) | OAuth, webhook |
 | [API_GARMIN.md](API_GARMIN.md) | JWT, upload |
-| [UI.md](UI.md) | Шаблоны и Tailwind |
+| [UI.md](UI.md) | Шаблоны и Bootstrap |
 | [1.5-RENAME.md](1.5-RENAME.md) | Переименование |

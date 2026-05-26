@@ -1,22 +1,21 @@
-<div class="user-bar mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-teal-100 bg-teal-50/80 px-4 py-3">
-  <div class="user-bar-info min-w-0">
-    <p class="text-base font-semibold text-slate-900">{{ current_user.display_name }}</p>
-    <p class="user-bar-meta text-sm text-slate-600">
-      {{ current_user.email }} · <code class="rounded bg-white/80 px-1.5 py-0.5 text-xs">{{ current_user.slug }}</code>
-    </p>
-    {% if current_user.is_admin or current_user.disabled %}
-    <div class="user-bar-badges mt-1 flex flex-wrap gap-1.5">
-      {% if current_user.is_admin %}
-      <span class="badge-admin rounded px-2 py-0.5 text-xs font-semibold bg-teal-700 text-white">{{ t.badge_admin }}</span>
-      {% endif %}
-      {% if current_user.disabled %}
-      <span class="badge-off rounded px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-800">{{ t.badge_disabled }}</span>
+<div class="card border-primary-subtle bg-primary-subtle mb-4">
+  <div class="card-body py-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div class="user-bar-info">
+      <p class="mb-0 fw-semibold">{{ current_user.display_name }}</p>
+      <p class="mb-0 small text-muted">
+        {{ current_user.email }} · <code>{{ current_user.slug }}</code>
+      </p>
+      {% if current_user.is_admin or current_user.disabled %}
+      <div class="mt-1">
+        {% if current_user.is_admin %}
+        <span class="badge bg-primary">{{ t.badge_admin }}</span>
+        {% endif %}
+        {% if current_user.disabled %}
+        <span class="badge bg-danger">{{ t.badge_disabled }}</span>
+        {% endif %}
+      </div>
       {% endif %}
     </div>
-    {% endif %}
+    <a href="{{ prefix }}/logout" class="btn btn-outline-primary btn-sm">{{ t.logout }}</a>
   </div>
-  <a href="{{ prefix }}/logout"
-     class="btn-logout shrink-0 rounded-lg border border-teal-700 px-3 py-1.5 text-sm font-medium text-teal-800 hover:bg-teal-100">
-    {{ t.logout }}
-  </a>
 </div>

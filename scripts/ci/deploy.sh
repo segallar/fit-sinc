@@ -33,8 +33,6 @@ export RSYNC_RSH="$RSYNC_SSH"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
-"${ROOT}/scripts/ci/build-frontend-css.sh"
-
 COMMIT="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || true)"
 DEPLOY_NUMBER="${GETSYNC_DEPLOY_NUMBER:-${GITHUB_RUN_NUMBER:-}}"
 DEPLOYED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
