@@ -31,7 +31,7 @@ class TestConnectionsBanner(unittest.TestCase):
                 )
                 self.assertEqual(r.status_code, 303)
 
-                dash = client.get("/app/", follow_redirects=True)
+                dash = client.get("/app/", follow_redirects=False)
                 self.assertEqual(dash.status_code, 200)
                 self.assertIn('aria-label="Connections"', dash.text)
                 self.assertIn("Hammerhead", dash.text)

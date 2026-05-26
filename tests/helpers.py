@@ -25,6 +25,7 @@ def isolated_env(tmp_root: Path, **extra: str) -> Iterator[Path]:
         "DATA_DIR": str(data_dir),
         "HAMMERHEAD_WEBHOOK_SECRET": "test-webhook-secret",
         "SESSION_SECRET": "test-session-secret-for-unittest",
+        "SESSION_COOKIE_SECURE": "false",
         "DEFAULT_USER_ID": "default",
         "REGISTRATION_OPEN": "false",
         **extra,
