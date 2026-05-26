@@ -1,7 +1,7 @@
 # Roadmap GetSync
 
-> **Статус (2026-05-26):** MVP (фазы 0–5) в production; **горизонт 1:** **1.1–1.4**, **1.6–1.8**, **1.5 A+B** ✅ · **1.5 C** (DNS/certbot на prod) 🔄 · далее **2.1**.  
-> Продукт: **GetSync** — пакет и CLI **`getsync`** ([1.5-RENAME.md](1.5-RENAME.md)).
+> **Статус (2026-05-26):** MVP (фазы 0–5) в production на sirocco (`/opt/getsync`, CI Test + Deploy). **Горизонт 1:** **1.1–1.4**, **1.6–1.8**, **1.5 A+B** ✅ · **1.5 C** (DNS/certbot **getsync.me** / **app.getsync.me**) 🔄. **Горизонт 2:** **2.1** `/register` ✅ · **2.2** тесты регистрации ✅ · далее **2.10** / **2.11** / **2.3**. Открыто: **2.1e** (email verify), осознанный `REGISTRATION_OPEN` на prod.  
+> Продукт: **GetSync** — пакет и CLI **`getsync`** ([1.5-RENAME.md](1.5-RENAME.md)) · подвал UI: версия, коммит, deploy #, UTC.
 
 **Текущее состояние:** [README](../README.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [docs/README.md](README.md)  
 **Операции:** [CI-CD.md](CI-CD.md) · [API Hammerhead](API_HAMMERHEAD.md) · [API Garmin](API_GARMIN.md)
@@ -44,7 +44,7 @@
 | 3 Garmin upload (web JWT, browser, fallback) | ✅ код / ⚠️ ops на сервере |
 | 4 CI (GitHub Actions test + deploy main) | ✅ |
 | 5 Мультипользовательность (tenants, `/admin`, `/app`) | ✅ MVP |
-| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | **1.1–1.4**, **1.7–1.8** ✅ · **2.1** MVP ✅ · **2.1e** email · **1.5** rename |
+| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | **1.1–1.4**, **1.6–1.8** ✅ · **2.1** ✅ · **2.2** ✅ · **2.1e** email · **1.5 C** 🔄 |
 | **UI** Новый интерфейс приложения (Jinja2 + Tailwind) | ✅ |
 | **Design** Проектирование и улучшение UI/UX (дизайн-система) | 📋 · **2.10** |
 | **Site** Главная страница [romansegalla.online](https://romansegalla.online) | MVP ✅ · полировка **2.11** |
@@ -52,7 +52,7 @@
 | 6 UI v2 (календарь, поиск, failed) | 📋 · **2.3** (баннер **1.8** ✅) |
 | 6.1 Алерты (Telegram / email) | 📋 · **2.4** |
 | 6.2 Локализация (i18n: ru, en, …) | 📋 · **2.5** · **3.6** |
-| — Ops: README + тесты CI | ✅ README / **1.7** ✅ · deploy CSS ✅ |
+| — Ops: README + тесты CI | ✅ **87** тестов · deploy CSS · подвал build meta (`/health`) |
 | 7 Хаб активностей: сбор, хранение, анализ, sync → сервисы | 📋 · **2.8–2.9** · **3.1**, **3.5** |
 | **Modularity** Модули и интерфейсы между ними | 📋 · **3.9** |
 | 8 Маршруты (routes) | 📋 · **3.2** |
@@ -74,16 +74,16 @@
 
 | ID | Фаза (справка) | Кратко |
 |----|----------------|--------|
-| **1.1** | Security | Тесты session auth, tenant, webhook HMAC |
+| **1.1** | Security | Тесты session auth, tenant, webhook HMAC | ✅ |
 | **1.2** | 5b.4 | `/app/settings` — профиль, пароль, HH OAuth, Garmin status | ✅ |
-| **1.3** | 5b.2 | Пункт Settings в nav |
-| **1.4** | 5b.5 | Снять nginx Basic Auth |
-| **1.5** | 9 | **GetSync** — getsync.me, rename — [1.5-RENAME.md](1.5-RENAME.md) |
-| **1.6** | Docs | ARCHITECTURE: `data/users/{id}/` |
+| **1.3** | 5b.2 | Пункт Settings в nav | ✅ |
+| **1.4** | 5b.5 | Снять nginx Basic Auth | ✅ |
+| **1.5** | 9 | **GetSync** — getsync.me, rename — [1.5-RENAME.md](1.5-RENAME.md) | A+B ✅ · C 🔄 |
+| **1.6** | Docs | ARCHITECTURE: `data/users/{id}/` | ✅ |
 | **1.7** | Ops | Даты в UI по `users.timezone` | ✅ |
 | **1.8** | 6 мин | Баннер HH + Garmin на дашборде | ✅ |
-| **2.1** | 5b.3 | `/register` + `REGISTRATION_OPEN` |
-| **2.2** | 5b.6 | Тесты register / settings / admin |
+| **2.1** | 5b.3 | `/register` + `REGISTRATION_OPEN` | ✅ [2.1-REGISTER.md](2.1-REGISTER.md) |
+| **2.2** | 5b.6 | Тесты register / settings / admin | ✅ |
 | **2.3** | 6 | Календарь, поиск, failed, sync log |
 | **2.4** | 6.1 | Telegram-алерты |
 | **2.5** | 6.2 | i18n ru/en, `users.locale` |
@@ -122,7 +122,7 @@
 
 **Порядок выполнения:** **1.1** → **1.2**+**1.3** → **1.4** → **1.5** (сразу, если имя готово) → **1.7**–**1.8** параллельно → **1.6**.
 
-**MVP «можно жить» после горизонта 1:** **1.1**–**1.4** + **1.2**/**1.3** ✅ (без CLI для HH; Garmin — refresh/status в UI, **первый** login через CLI). **1.5** — до публичного **getsync.me** и **2.1** / **3.4**.
+**MVP «можно жить»:** **1.1**–**1.4**, **1.7**–**1.8**, **2.1** ✅ (кабинет + settings + `/register` при `REGISTRATION_OPEN=true`). До публичного **getsync.me** — **1.5 C**; до OAuth — **3.4**.
 
 ---
 
@@ -134,8 +134,8 @@
 
 | ID | Задача | Оценка |
 |----|--------|--------|
-| **2.1** | **5b.3:** `/register` + `REGISTRATION_OPEN`, rate limit, auto-login | 1 вечер |
-| **2.2** | **5b.6:** функциональные тесты register / settings / admin forms | 1 вечер |
+| **2.1** | **5b.3:** `/register` + `REGISTRATION_OPEN`, rate limit, auto-login | ✅ |
+| **2.2** | **5b.6:** функциональные тесты register / settings / admin forms | ✅ |
 | **2.3** | **6:** календарь + поиск на `/app/activities`; failed-очередь; понятный sync log | 2–3 дня |
 | **2.4** | **6.1:** Telegram-алерты при ошибках sync | 0.5–1 день |
 | **2.5** | **6.2:** i18n `ru`/`en`, `users.locale`, выбор в settings | 2–3 вечера |
@@ -146,7 +146,7 @@
 | **2.10** | **[Design](#дизайн-uiux-210):** аудит UX, дизайн-система, визуал, вёрстка ключевых экранов | 1–2 недели |
 | **2.11** | **[Site](#главная-romansegallaonline-211):** лендинг romansegalla.online — структура, контент, дизайн, SEO | 1–2 недели |
 
-**Порядок (рекомендация):** **2.1** → **2.2** → **2.10.0–2.10.1** → **2.11** (после **1.5**, параллельно **2.10.2**) → **2.3** → **2.5** → **2.4** → **2.6**–**2.7** → **2.8** → **2.9**.
+**Порядок (рекомендация):** ~~**2.1** → **2.2**~~ ✅ → **2.10.0–2.10.1** → **2.11** (после **1.5 C**, параллельно **2.10.2**) → **2.3** → **2.5** → **2.4** → **2.6**–**2.7** → **2.8** → **2.9**.
 
 ---
 
@@ -173,7 +173,7 @@
 ```mermaid
 flowchart LR
     H1["🔴 1.1–1.4, 1.6–1.8 ✅\n1.5 GetSync"]
-    H2["🟡 2.1–2.11\nRegister + Design + Site + UI"]
+    H2["🟡 2.1–2.2 ✅\n2.10–2.11 + 2.3…"]
     H3["🔵 3.1–3.9\nModules + Хаб + S3 + OAuth"]
     H1 --> H2 --> H3
 ```
@@ -184,7 +184,7 @@ flowchart LR
 
 > Ниже — детализация [идеи продукта](#идея-продукта) по фазам. Порядок работ см. [три горизонта](#приоритеты-три-горизонта).
 
-**Актуальный порядок:** см. [три горизонта](#приоритеты-три-горизонта) и [реестр](#реестр-задач). Кратко: **1.1**–**1.8** → **2.1**–**2.11** → **3.1**–**3.9** (сначала **3.9**, затем хаб **3.1**+).
+**Актуальный порядок:** см. [три горизонта](#приоритеты-три-горизонта) и [реестр](#реестр-задач). Кратко: **1.5 C** → **2.10** / **2.11** / **2.3** → остальной **2.x** → **3.x** (сначала **3.9**, затем хаб **3.1**+).
 
 ```mermaid
 flowchart TB
@@ -237,8 +237,8 @@ flowchart TB
 - ~~nginx Basic Auth~~ — снят (**1.4** ✅)
 - ~~`/app/settings`~~ — есть (**1.2** ✅): профиль, пароль, Hammerhead OAuth; Garmin status/refresh/disconnect; **первичный** Garmin — CLI (`garmin login`)
 - ~~Settings в nav, TZ в UI, баннер HH/Garmin~~ — **1.3**, **1.7**, **1.8** ✅
-- Нет `/register` — **2.1** (5b.3)
-- Нет публичного **getsync.me** — **1.5**
+- ~~Нет `/register`~~ — **2.1** ✅ ([2.1-REGISTER.md](2.1-REGISTER.md))
+- Публичный **getsync.me** на prod — **1.5 C** 🔄 (код и **A+B** ✅)
 
 **Уже сделано в 5b.1:** один логин; админка `/app/admin/*` по `users.is_admin`; legacy `/admin/*` → 301; `ADMIN_PASSWORD` убран.
 
@@ -553,16 +553,16 @@ flowchart TB
 | **5b.0** | Решения: открытая регистрация / invite-only; bootstrap первого admin (`BOOTSTRAP_ADMIN_EMAIL` или CLI `user promote-admin`) | ✅ [5b-DECISIONS.md](5b-DECISIONS.md) |
 | **5b.1** | `users.is_admin`; один логин; убрать `SESSION_ADMIN_KEY` + `/admin/login`; guard `/app/admin/*`; legacy `/admin` → 301 | ✅ |
 | **5b.2** → **1.3** | Пункт **Settings** в nav → `/app/settings` | ✅ |
-| **5b.3** → **2.1** | `/register`: slug/email/password/timezone, rate limit, auto-login | 1 вечер |
+| **5b.3** → **2.1** | `/register`: slug/email/password/timezone, rate limit, auto-login | ✅ |
 | **5b.3+** → **2.6** | Доработка регистрации: email, invite, captcha, onboarding | 1–2 вечера |
 | **5b.4** → **1.2** | `/app/settings`: профиль + пароль; HH OAuth; Garmin status | ✅ |
 | **5b.4+** → **2.7** | Settings: источники / правила / приёмники (заглушки → **3.1**) | 1–2 вечера |
 | **5b.5** → **1.4** | nginx: без Basic Auth; `SESSION_COOKIE_SECURE` | ✅ |
-| **5b.6** → **2.2** | Функциональные тесты: register, settings, admin | 1 вечер |
+| **5b.6** → **2.2** | Функциональные тесты: register, settings, admin | ✅ |
 
 **Порядок (актуальный):** [🔴 1.x](#-горизонт-1--срочно-важно-небольшие) → [🟡 2.x](#-горизонт-2--средняя-срочность-и-объём) → [🔵 3.x](#-горизонт-3--далёкое-будущее).
 
-**MVP «можно пользоваться»:** 5b.1 ✅ + **UI** ✅ + **1.1**–**1.4**, **1.7**–**1.8**, **1.5 A+B** ✅; открыты **1.5 C**, **2.1**.
+**MVP «можно пользоваться»:** 5b.1 ✅ + **UI** ✅ + **1.1**–**1.4**, **1.6**–**1.8**, **2.1**–**2.2** ✅, **1.5 A+B** ✅; открыто **1.5 C** (DNS), **2.1e** (email).
 
 #### 5b.2 — Settings в nav — ✅ **1.3**
 
@@ -1199,7 +1199,7 @@ StorageBackend          — LocalFS | S3 (boto3)
 ### 🟡 Горизонт 2 — средний срок (TODO)
 
 - [x] **2.1** 5b.3 — `/register` + `REGISTRATION_OPEN` — [2.1-REGISTER.md](2.1-REGISTER.md) · email verify → **2.1e**
-- [ ] **2.2** 5b.6 — тесты register / settings / admin forms
+- [x] **2.2** register — `tests/test_register.py` · settings — `tests/test_settings.py` · admin — `test_security_auth` / `test_app_auth`
 - [ ] **2.3** 6 — календарь, поиск, failed, sync log
 - [ ] **2.4** 6.1 — Telegram-алерты
 - [ ] **2.5** 6.2 — i18n ru/en, `users.locale`

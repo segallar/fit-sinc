@@ -58,3 +58,9 @@ def register_attempt_allowed(request: Request) -> bool:
 
 def register_retry_after_sec(request: Request) -> int:
     return _register_limiter.retry_after_sec(f"register:{client_ip(request)}")
+
+
+def reset_register_limiter() -> None:
+    """Clear in-memory register limits (tests and after deploy restarts in one process)."""
+    with _register_limiter._lock:
+        _register_limiter._hits.clear()
