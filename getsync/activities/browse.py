@@ -450,7 +450,7 @@ def _rows_from_hammerhead(
                 activity_date=_hh_date(item),
                 distance=item.get("distance"),
                 duration=item.get("duration"),
-                activity_type=_hh_type(item),
+                activity_type="cycling",
                 sync_status=status,
                 sync_detail=detail,
                 hammerhead_id=aid,
@@ -461,13 +461,6 @@ def _rows_from_hammerhead(
             )
         )
     return rows
-
-
-def _hh_type(item: dict[str, Any]) -> str | None:
-    raw = item.get("type") or item.get("activityType")
-    if isinstance(raw, dict):
-        return raw.get("name") or raw.get("type") or str(raw.get("id", ""))
-    return str(raw) if raw else None
 
 
 def _rows_from_garmin(

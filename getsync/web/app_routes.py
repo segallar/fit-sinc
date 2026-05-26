@@ -287,7 +287,9 @@ def _activity_row_view(
         "name": row.name or "—",
         "source": row.source,
         "source_label": _SOURCE_LABELS.get(row.source, row.source),
-        "activity_type": row.activity_type or "—",
+        "activity_type": (
+            "cycling" if row.source == "hammerhead" else (row.activity_type or "—")
+        ),
         "distance": row.distance,
         "duration_fmt": duration_fmt,
         "sync_status": row.sync_status,
