@@ -3,7 +3,9 @@
 {% block title %}Admin — Users — GetSync{% endblock %}
 
 {% block page_content %}
-<h2 class="h5 mb-3">Users</h2>
+<h2 class="h5 mb-2">Admin</h2>
+{% include "components/admin_subnav.html" %}
+<h3 class="h6 text-primary mb-3">Users</h3>
 <p class="mb-3">
   <a href="{{ admin_prefix }}/users/new" class="btn btn-primary btn-sm">New user</a>
 </p>

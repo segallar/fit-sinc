@@ -3,7 +3,9 @@
 {% block title %}{{ form.title }} — GetSync{% endblock %}
 
 {% block page_content %}
-<h2 class="h5 mb-3">{{ form.title }}</h2>
+<h2 class="h5 mb-2">Admin</h2>
+{% include "components/admin_subnav.html" %}
+<h3 class="h6 text-primary mb-3">{{ form.title }}</h3>
 
 {% if form.error %}
 <div class="alert alert-danger">{{ form.error }}</div>

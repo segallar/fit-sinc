@@ -1,0 +1,8 @@
+<ul class="nav nav-pills gap-1 mb-3">
+  <li class="nav-item">
+    <a class="nav-link{% if admin_section == 'users' %} active{% endif %}" href="{{ admin_prefix }}/">Users</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link{% if admin_section == 'log' %} active{% endif %}" href="{{ admin_prefix }}/log">Log</a>
+  </li>
+</ul>

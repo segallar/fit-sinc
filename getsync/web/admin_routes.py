@@ -11,6 +11,7 @@ from getsync.config import get_settings
 from getsync.state.store import Store
 from getsync.web.auth import APP_ADMIN_PREFIX
 from getsync.web.cabinet import render_cabinet
+from getsync.web.connections import garmin_refresh_log_context
 
 router = APIRouter(prefix=APP_ADMIN_PREFIX, tags=["admin"])
 A = APP_ADMIN_PREFIX
@@ -42,6 +43,19 @@ class UserFormData:
         return "leave empty to keep" if self.edit else "min. 8 characters"
 
 
+@router.get("/log", response_class=HTMLResponse, include_in_schema=False)
+async def admin_refresh_log(request: Request) -> str:
+    store = _store()
+    return render_cabinet(
+        request,
+        "pages/admin/log.html",
+        active=f"{A}/log",
+        admin_section="log",
+        show_user_column=True,
+        **garmin_refresh_log_context(store),
+    )
+
+
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def admin_users_list(request: Request) -> str:
     users = _store().list_users()
@@ -49,6 +63,7 @@ async def admin_users_list(request: Request) -> str:
         request,
         "pages/admin/users.html",
         active=f"{A}/",
+        admin_section="users",
         users=users,
     )
 
@@ -60,6 +75,7 @@ async def admin_user_new(request: Request) -> str:
         request,
         "pages/admin/user_form.html",
         active=f"{A}/",
+        admin_section="users",
         form=form,
     )
 
@@ -102,7 +118,13 @@ async def admin_user_create(
             hammerhead_user_id=hammerhead_user_id,
         )
         return HTMLResponse(
-            render_cabinet(request, "pages/admin/user_form.html", active=f"{A}/", form=form),
+            render_cabinet(
+                request,
+                "pages/admin/user_form.html",
+                active=f"{A}/",
+                admin_section="users",
+                form=form,
+            ),
             status_code=400,
         )
     return RedirectResponse(f"{A}/", status_code=303)
@@ -116,6 +138,7 @@ async def admin_user_edit(request: Request, user_id: str) -> str:
             request,
             "pages/admin/user_form.html",
             active=f"{A}/",
+            admin_section="users",
             form=UserFormData(
                 action=f"{A}/users/{user_id}/edit",
                 title="Not found",
@@ -142,6 +165,7 @@ async def admin_user_edit(request: Request, user_id: str) -> str:
         request,
         "pages/admin/user_form.html",
         active=f"{A}/",
+        admin_section="users",
         form=form,
     )
 

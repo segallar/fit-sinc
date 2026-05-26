@@ -1,0 +1,34 @@
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Time</th>
+          {% if show_user_column %}
+          <th>User</th>
+          {% endif %}
+          <th>Trigger</th>
+          <th>Event</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in garmin_session_events %}
+        <tr>
+          <td class="font-monospace small">{{ fmt_date(e.created_at) }}</td>
+          {% if show_user_column %}
+          <td class="font-monospace small">{{ e.user_label }}</td>
+          {% endif %}
+          <td>{{ e.trigger }}</td>
+          <td class="fw-medium {% if e.status_class == 'ok' %}text-success{% elif e.status_class == 'failed' %}text-danger{% endif %}">{{ e.event_type }}</td>
+          <td>{{ e.message }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="{{ 5 if show_user_column else 4 }}" class="text-center text-muted py-4">No refresh events yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

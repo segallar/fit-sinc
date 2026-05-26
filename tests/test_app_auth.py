@@ -148,6 +148,14 @@ class TestAdminAccess(unittest.TestCase):
                 self.assertIn("getsync-app-topbar", users.text)
                 self.assertIn("admin@test.local", users.text)
 
+                log_page = client.get("/app/admin/log")
+                self.assertEqual(log_page.status_code, 200)
+                self.assertIn("Garmin JWT refresh log", log_page.text)
+
+                settings = client.get("/app/settings")
+                self.assertEqual(settings.status_code, 200)
+                self.assertNotIn("Refresh log", settings.text)
+
                 new_user = client.get("/app/admin/users/new")
                 self.assertEqual(new_user.status_code, 200)
                 self.assertIn('class="card shadow-sm"', new_user.text)

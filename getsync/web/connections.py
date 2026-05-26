@@ -96,13 +96,8 @@ def _session_event_class(event_type: str) -> str:
     return ""
 
 
-def garmin_session_context(ctx: UserContext) -> dict[str, object]:
-    """Garmin JWT monitor + refresh log for Settings."""
-    mon_raw = session_monitor(ctx)
-    events_raw = Store(ctx.db_path).list_session_refresh_events(
-        limit=150, user_id=ctx.user_id
-    )
-    mon = {
+def _garmin_session_monitor(mon_raw: dict[str, object]) -> dict[str, object]:
+    return {
         "upload_ready": mon_raw["upload_ready"],
         "upload_label": "ready" if mon_raw["upload_ready"] else "not ready",
         "has_session_cookie": mon_raw["has_session_cookie"],
@@ -115,9 +110,31 @@ def garmin_session_context(ctx: UserContext) -> dict[str, object]:
         "interval_min": mon_raw["refresh_interval_sec"] // 60,
         "before_h": mon_raw["refresh_before_sec"] // 3600,
     }
+
+
+def garmin_session_context(ctx: UserContext) -> dict[str, object]:
+    """Garmin JWT monitor for Settings (status + manual refresh)."""
+    return {"mon": _garmin_session_monitor(session_monitor(ctx))}
+
+
+def garmin_refresh_log_context(
+    store: Store,
+    *,
+    user_id: str | None = None,
+    limit: int = 200,
+) -> dict[str, object]:
+    """JWT refresh event log (admin: all users; optional filter by user_id)."""
+    users_by_id = {u.id: u for u in store.list_users()}
+    events_raw = store.list_session_refresh_events(limit=limit, user_id=user_id)
     events = [
         {
             "created_at": e.created_at,
+            "user_id": e.user_id,
+            "user_label": (
+                users_by_id[e.user_id].slug
+                if e.user_id and e.user_id in users_by_id
+                else (e.user_id or "—")
+            ),
             "trigger": e.trigger,
             "event_type": e.event_type,
             "message": e.message,
@@ -125,7 +142,7 @@ def garmin_session_context(ctx: UserContext) -> dict[str, object]:
         }
         for e in events_raw
     ]
-    return {"mon": mon, "garmin_session_events": events}
+    return {"garmin_session_events": events}
 
 
 def list_connections(ctx: UserContext, user: UserRow) -> ConnectionGroups:
