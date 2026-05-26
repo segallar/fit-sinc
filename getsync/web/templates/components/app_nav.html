@@ -1,0 +1,6 @@
+<nav class="nav nav-pills getsync-app-nav flex-wrap gap-2 mb-3" aria-label="Cabinet">
+  {% for href, label in nav_items %}
+  {% set is_active = (href.rstrip('/') == active_nav.rstrip('/')) %}
+  <a href="{{ href }}" class="nav-link {% if is_active %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</nav>

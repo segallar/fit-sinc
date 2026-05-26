@@ -1,0 +1,59 @@
+<header class="getsync-app-topbar sticky-top bg-white border-bottom">
+  <div class="getsync-app-topbar-inner d-flex align-items-center gap-2 px-3 py-2 w-100">
+    <a href="{{ prefix }}/" class="getsync-app-brand d-flex align-items-center gap-2 text-decoration-none text-body flex-shrink-0">
+      <img src="/static/icon.svg" alt="" width="32" height="32" class="rounded-2">
+      <span class="fw-semibold">GetSync</span>
+    </a>
+
+    <nav class="nav getsync-app-nav d-none d-md-flex flex-row flex-nowrap align-items-center gap-1 ms-md-2"
+         aria-label="Cabinet">
+      {% for href, label in nav_items %}
+      {% set is_active = (href.rstrip('/') == active_nav.rstrip('/')) %}
+      <a href="{{ href }}"
+         class="nav-link rounded-2 py-1 px-2 {% if is_active %}active{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </nav>
+
+    <div class="getsync-app-topbar-right ms-auto d-flex align-items-center gap-2 flex-shrink-0">
+      {% if current_user %}
+      <div class="getsync-app-user-menu d-flex align-items-center gap-2 border-start ps-2 ms-1">
+        <div class="text-end lh-sm d-none d-sm-block">
+          <div class="small fw-semibold text-truncate getsync-topbar-user-text"
+               title="{{ current_user.display_name }}">{{ current_user.display_name }}</div>
+          <div class="small text-muted text-truncate getsync-topbar-user-text"
+               title="{{ current_user.email }}">{{ current_user.email }}</div>
+        </div>
+        <span class="small fw-semibold d-sm-none text-truncate getsync-topbar-user-text"
+              title="{{ current_user.display_name }}">{{ current_user.display_name }}</span>
+        {% if current_user.is_admin %}
+        <span class="badge getsync-badge--synced d-none d-md-inline">{{ t.badge_admin }}</span>
+        {% endif %}
+        <a href="{{ prefix }}/logout" class="btn btn-outline-primary btn-sm">{{ t.logout }}</a>
+      </div>
+      {% endif %}
+      <button class="btn btn-outline-secondary btn-sm d-md-none flex-shrink-0" type="button"
+              data-bs-toggle="offcanvas" data-bs-target="#getsyncAppNavDrawer"
+              aria-controls="getsyncAppNavDrawer">
+        Menu
+      </button>
+    </div>
+  </div>
+</header>
+
+<aside class="offcanvas offcanvas-start getsync-app-nav-drawer d-md-none" tabindex="-1"
+       id="getsyncAppNavDrawer" aria-labelledby="getsyncAppNavDrawerLabel">
+  <div class="offcanvas-header border-bottom">
+    <h2 class="h6 mb-0" id="getsyncAppNavDrawerLabel">Menu</h2>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
+            data-bs-target="#getsyncAppNavDrawer" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <nav class="nav flex-column getsync-app-nav gap-1" aria-label="Cabinet">
+      {% for href, label in nav_items %}
+      {% set is_active = (href.rstrip('/') == active_nav.rstrip('/')) %}
+      <a href="{{ href }}"
+         class="nav-link rounded-2 {% if is_active %}active{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </nav>
+  </div>
+</aside>

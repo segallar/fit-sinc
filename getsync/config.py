@@ -9,6 +9,13 @@ class Settings(BaseSettings):
 
     data_dir: Path = Path("data")
 
+    # Activity artifacts: local | s3 (S3 adapter — phase 11.1)
+    storage_backend: str = "local"
+    s3_bucket: str = ""
+    s3_region: str = ""
+    s3_endpoint_url: str = ""
+    s3_prefix: str = ""
+
     hammerhead_client_id: str = ""
     hammerhead_client_secret: str = ""
     hammerhead_webhook_secret: str = ""
@@ -28,6 +35,13 @@ class Settings(BaseSettings):
     default_user_id: str = "default"
     registration_open: bool = False
     bootstrap_admin_email: str = ""
+
+    # Email (2.1e) — MAIL_BACKEND=null in dev/CI unless configured
+    mail_backend: str = "null"
+    resend_api_key: str = ""
+    mail_from: str = "GetSync <noreply@getsync.me>"
+    mail_reply_to: str = ""
+    app_public_url: str = "http://127.0.0.1:8765"
 
     @property
     def hammerhead_tokens_path(self) -> Path:

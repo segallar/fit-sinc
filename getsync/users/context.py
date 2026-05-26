@@ -32,8 +32,19 @@ class UserContext:
         return self.user_data_dir / "garmin_web"
 
     @property
+    def activities_dir(self) -> Path:
+        """Per-user activity artifacts (FIT/GPX): activities/{source}/…"""
+        return self.user_data_dir / "activities"
+
+    @property
     def fits_dir(self) -> Path:
+        """Legacy layout; new files use activities_dir via ActivityStorage."""
         return self.user_data_dir / "fits"
+
+    def activity_storage(self) -> "ActivityStorage":
+        from getsync.storage.activity import ActivityStorage
+
+        return ActivityStorage(self)
 
     @property
     def db_path(self) -> Path:

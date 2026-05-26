@@ -22,12 +22,15 @@ def _utcnow() -> str:
 @dataclass(frozen=True)
 class ActivityRow:
     user_id: str
+    source: str
     activity_id: str
     name: str | None
     activity_date: str | None
     distance: float | None
     duration: float | None
+    activity_type: str | None
     sync_status: str
+    storage_key: str | None
     fit_path: str | None
     synced_at: str | None
     error_message: str | None
@@ -49,6 +52,7 @@ class SyncIndexEntry:
     sync_status: str
     garmin_id: int | None
     garmin_upload_status: str | None
+    storage_key: str | None
     fit_path: str | None
     synced_at: str | None
     error_message: str | None
@@ -168,25 +172,87 @@ class Store:
         if self._table_exists(conn, "activities"):
             if not self._table_has_column(conn, "activities", "user_id"):
                 self._migrate_activities_v1(conn)
+            if not self._table_has_column(conn, "activities", "source"):
+                self._migrate_activities_add_source(conn)
+            elif not self._table_has_column(conn, "activities", "activity_type"):
+                conn.execute("ALTER TABLE activities ADD COLUMN activity_type TEXT")
+            if not self._table_has_column(conn, "activities", "storage_key"):
+                conn.execute("ALTER TABLE activities ADD COLUMN storage_key TEXT")
             return
         conn.execute(
             """
             CREATE TABLE activities (
                 user_id TEXT NOT NULL,
+                source TEXT NOT NULL DEFAULT 'hammerhead',
                 activity_id TEXT NOT NULL,
                 name TEXT,
                 activity_date TEXT,
                 distance REAL,
                 duration REAL,
+                activity_type TEXT,
                 sync_status TEXT NOT NULL DEFAULT 'pending',
+                storage_key TEXT,
                 fit_path TEXT,
                 garmin_result TEXT,
                 synced_at TEXT,
                 error_message TEXT,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
-                PRIMARY KEY (user_id, activity_id)
+                PRIMARY KEY (user_id, source, activity_id)
             )
+            """
+        )
+
+    def _migrate_activities_add_source(self, conn: sqlite3.Connection) -> None:
+        conn.execute(
+            """
+            CREATE TABLE activities_catalog (
+                user_id TEXT NOT NULL,
+                source TEXT NOT NULL DEFAULT 'hammerhead',
+                activity_id TEXT NOT NULL,
+                name TEXT,
+                activity_date TEXT,
+                distance REAL,
+                duration REAL,
+                activity_type TEXT,
+                sync_status TEXT NOT NULL DEFAULT 'pending',
+                storage_key TEXT,
+                fit_path TEXT,
+                garmin_result TEXT,
+                synced_at TEXT,
+                error_message TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY (user_id, source, activity_id)
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO activities_catalog (
+                user_id, source, activity_id, name, activity_date, distance, duration,
+                activity_type, sync_status, storage_key, fit_path, garmin_result, synced_at,
+                error_message, created_at, updated_at
+            )
+            SELECT
+                user_id, 'hammerhead', activity_id, name, activity_date, distance, duration,
+                NULL, sync_status, NULL, fit_path, garmin_result, synced_at,
+                error_message, created_at, updated_at
+            FROM activities
+            """
+        )
+        conn.execute("DROP TABLE activities")
+        conn.execute("ALTER TABLE activities_catalog RENAME TO activities")
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_activities_user_date
+                ON activities(user_id, activity_date DESC)
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_activities_user_source_date
+                ON activities(user_id, source, activity_date DESC)
             """
         )
 
@@ -466,14 +532,20 @@ class Store:
             return None
         return user
 
-    def is_synced(self, user_id: str, activity_id: str) -> bool:
+    def is_synced(
+        self,
+        user_id: str,
+        activity_id: str,
+        *,
+        source: str = "hammerhead",
+    ) -> bool:
         with self._conn() as conn:
             row = conn.execute(
                 """
                 SELECT sync_status FROM activities
-                WHERE user_id = ? AND activity_id = ?
+                WHERE user_id = ? AND source = ? AND activity_id = ?
                 """,
-                (user_id, activity_id),
+                (user_id, source, activity_id),
             ).fetchone()
         return row is not None and row["sync_status"] == "synced"
 
@@ -482,11 +554,14 @@ class Store:
         user_id: str,
         activity_id: str,
         *,
+        source: str = "hammerhead",
         name: str | None = None,
         activity_date: str | None = None,
         distance: float | None = None,
         duration: float | None = None,
+        activity_type: str | None = None,
         sync_status: str | None = None,
+        storage_key: str | None = None,
         fit_path: str | None = None,
         garmin_result: dict[str, Any] | str | None = None,
         synced_at: str | None = None,
@@ -502,9 +577,9 @@ class Store:
             existing = conn.execute(
                 """
                 SELECT activity_id FROM activities
-                WHERE user_id = ? AND activity_id = ?
+                WHERE user_id = ? AND source = ? AND activity_id = ?
                 """,
-                (user_id, activity_id),
+                (user_id, source, activity_id),
             ).fetchone()
             if existing:
                 fields: list[str] = ["updated_at = ?"]
@@ -514,7 +589,9 @@ class Store:
                     ("activity_date", activity_date),
                     ("distance", distance),
                     ("duration", duration),
+                    ("activity_type", activity_type),
                     ("sync_status", sync_status),
+                    ("storage_key", storage_key),
                     ("fit_path", fit_path),
                     ("garmin_result", garmin_json),
                     ("synced_at", synced_at),
@@ -523,29 +600,32 @@ class Store:
                     if val is not None:
                         fields.append(f"{col} = ?")
                         values.append(val)
-                values.extend([user_id, activity_id])
+                values.extend([user_id, source, activity_id])
                 conn.execute(
                     f"UPDATE activities SET {', '.join(fields)} "
-                    "WHERE user_id = ? AND activity_id = ?",
+                    "WHERE user_id = ? AND source = ? AND activity_id = ?",
                     values,
                 )
             else:
                 conn.execute(
                     """
                     INSERT INTO activities (
-                        user_id, activity_id, name, activity_date, distance, duration,
-                        sync_status, fit_path, garmin_result, synced_at, error_message,
-                        created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        user_id, source, activity_id, name, activity_date, distance, duration,
+                        activity_type, sync_status, storage_key, fit_path, garmin_result,
+                        synced_at, error_message, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         user_id,
+                        source,
                         activity_id,
                         name,
                         activity_date,
                         distance,
                         duration,
+                        activity_type,
                         sync_status or "pending",
+                        storage_key,
                         fit_path,
                         garmin_json,
                         synced_at,
@@ -559,9 +639,10 @@ class Store:
         self,
         user_id: str,
         activity_id: str,
-        fit_path: str,
         garmin_result: dict[str, Any],
         *,
+        storage_key: str,
+        fit_path: str | None = None,
         name: str | None = None,
         activity_date: str | None = None,
         distance: float | None = None,
@@ -575,6 +656,7 @@ class Store:
             distance=distance,
             duration=duration,
             sync_status="synced",
+            storage_key=storage_key,
             fit_path=fit_path,
             garmin_result=garmin_result,
             synced_at=_utcnow(),
@@ -606,15 +688,20 @@ class Store:
                 (user_id, activity_id, event_type, message[:2000] or None, _utcnow()),
             )
 
-    def count_activities_by_status(self, user_id: str) -> dict[str, int]:
+    def count_activities_by_status(
+        self,
+        user_id: str,
+        *,
+        source: str | None = None,
+    ) -> dict[str, int]:
         with self._conn() as conn:
             rows = conn.execute(
                 """
                 SELECT sync_status, COUNT(*) AS n FROM activities
-                WHERE user_id = ?
+                WHERE user_id = ? AND (? IS NULL OR source = ?)
                 GROUP BY sync_status
                 """,
-                (user_id,),
+                (user_id, source, source),
             ).fetchall()
         return {str(r["sync_status"]): int(r["n"]) for r in rows}
 
@@ -623,44 +710,90 @@ class Store:
         user_id: str,
         limit: int = 50,
         *,
+        source: str | None = None,
         sync_status: str | None = None,
     ) -> list[ActivityRow]:
         with self._conn() as conn:
             rows = conn.execute(
                 """
-                SELECT user_id, activity_id, name, activity_date, distance, duration,
-                       sync_status, fit_path, synced_at, error_message
+                SELECT user_id, source, activity_id, name, activity_date, distance, duration,
+                       activity_type, sync_status, storage_key, fit_path, synced_at,
+                       error_message
                 FROM activities
-                WHERE user_id = ? AND (? IS NULL OR sync_status = ?)
+                WHERE user_id = ?
+                  AND (? IS NULL OR source = ?)
+                  AND (? IS NULL OR sync_status = ?)
                 ORDER BY COALESCE(activity_date, created_at) DESC
                 LIMIT ?
                 """,
-                (user_id, sync_status, sync_status, limit),
+                (user_id, source, source, sync_status, sync_status, limit),
             ).fetchall()
         return [self._activity_from_row(r) for r in rows]
 
-    def get_activity(self, user_id: str, activity_id: str) -> ActivityRow | None:
+    def list_activity_calendar_rows(
+        self,
+        user_id: str,
+        *,
+        source: str | None = None,
+    ) -> list[tuple[str, str]]:
+        """(activity_date, sync_status) for month calendar aggregation."""
+        with self._conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT activity_date, sync_status FROM activities
+                WHERE user_id = ?
+                  AND activity_date IS NOT NULL AND TRIM(activity_date) != ''
+                  AND (? IS NULL OR source = ?)
+                """,
+                (user_id, source, source),
+            ).fetchall()
+        return [(str(r["activity_date"]), str(r["sync_status"])) for r in rows]
+
+    def count_catalog(self, user_id: str, *, source: str | None = None) -> int:
+        with self._conn() as conn:
+            row = conn.execute(
+                """
+                SELECT COUNT(*) AS n FROM activities
+                WHERE user_id = ? AND (? IS NULL OR source = ?)
+                """,
+                (user_id, source, source),
+            ).fetchone()
+        return int(row["n"]) if row else 0
+
+    def get_activity(
+        self,
+        user_id: str,
+        activity_id: str,
+        *,
+        source: str = "hammerhead",
+    ) -> ActivityRow | None:
         with self._conn() as conn:
             r = conn.execute(
                 """
-                SELECT user_id, activity_id, name, activity_date, distance, duration,
-                       sync_status, fit_path, synced_at, error_message
-                FROM activities WHERE user_id = ? AND activity_id = ?
+                SELECT user_id, source, activity_id, name, activity_date, distance, duration,
+                       activity_type, sync_status, storage_key, fit_path, synced_at,
+                       error_message
+                FROM activities
+                WHERE user_id = ? AND source = ? AND activity_id = ?
                 """,
-                (user_id, activity_id),
+                (user_id, source, activity_id),
             ).fetchone()
         return self._activity_from_row(r) if r else None
 
     @staticmethod
     def _activity_from_row(r: sqlite3.Row) -> ActivityRow:
+        keys = r.keys()
         return ActivityRow(
             user_id=r["user_id"],
+            source=r["source"] if "source" in keys else "hammerhead",
             activity_id=r["activity_id"],
             name=r["name"],
             activity_date=r["activity_date"],
             distance=r["distance"],
             duration=r["duration"],
+            activity_type=r["activity_type"] if "activity_type" in keys else None,
             sync_status=r["sync_status"],
+            storage_key=r["storage_key"] if "storage_key" in keys else None,
             fit_path=r["fit_path"],
             synced_at=r["synced_at"],
             error_message=r["error_message"],
@@ -751,20 +884,23 @@ class Store:
         with self._conn() as conn:
             rows = conn.execute(
                 """
-                SELECT activity_id, sync_status, garmin_result, fit_path,
+                SELECT activity_id, sync_status, garmin_result, storage_key, fit_path,
                        synced_at, error_message
-                FROM activities WHERE user_id = ?
+                FROM activities
+                WHERE user_id = ? AND source = 'hammerhead'
                 """,
                 (user_id,),
             ).fetchall()
         index: dict[str, SyncIndexEntry] = {}
         for r in rows:
             garmin_result = r["garmin_result"]
+            keys = r.keys()
             index[r["activity_id"]] = SyncIndexEntry(
                 activity_id=r["activity_id"],
                 sync_status=r["sync_status"],
                 garmin_id=self._garmin_id_from_result(garmin_result),
                 garmin_upload_status=self._upload_status_from_result(garmin_result),
+                storage_key=r["storage_key"] if "storage_key" in keys else None,
                 fit_path=r["fit_path"],
                 synced_at=r["synced_at"],
                 error_message=r["error_message"],

@@ -23,14 +23,17 @@ from getsync.users.bootstrap import apply_bootstrap_admin
 from getsync.users.context import UserContext, resolve_user_context
 from getsync.users.migrate import infer_hammerhead_user_id, migrate_legacy_files
 from getsync.users.models import UserRow
+from getsync.mail import MailConfigurationError, MailSendError, send_email
 
 app = typer.Typer(help="GetSync — sync workouts (Hammerhead → Garmin)")
 hammerhead_app = typer.Typer(help="Hammerhead OAuth and API")
 garmin_app = typer.Typer(help="Garmin Connect session")
 user_app = typer.Typer(help="Tenant users")
+mail_app = typer.Typer(help="Outgoing email (Resend)")
 app.add_typer(hammerhead_app, name="hammerhead")
 app.add_typer(garmin_app, name="garmin")
 app.add_typer(user_app, name="user")
+app.add_typer(mail_app, name="mail")
 
 
 def _resolve_user(user: Optional[str]) -> UserContext:
@@ -423,6 +426,33 @@ def sync(
 
     typer.echo("Specify --activity-id or --since YYYY-MM-DD", err=True)
     raise typer.Exit(1)
+
+
+@mail_app.command("test")
+def mail_test(
+    to: str = typer.Option(..., "--to", help="Recipient email address"),
+    from_addr: str = typer.Option(
+        "",
+        "--from",
+        help="Override MAIL_FROM (default: env or onboarding@resend.dev for sandbox)",
+    ),
+) -> None:
+    """Send a test email via Resend (requires MAIL_BACKEND=resend and RESEND_API_KEY)."""
+    settings = get_settings()
+    sender = from_addr.strip() or settings.mail_from.strip() or "onboarding@resend.dev"
+    try:
+        result = send_email(
+            to=to,
+            subject="Hello World",
+            html="<p>Congrats on sending your <strong>first email</strong>!</p>",
+            from_addr=sender,
+            settings=settings,
+        )
+    except (MailConfigurationError, MailSendError) as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+
+    typer.echo(f"Sent via {result.backend}, id={result.message_id}")
 
 
 if __name__ == "__main__":

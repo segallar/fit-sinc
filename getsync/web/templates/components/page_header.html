@@ -1,0 +1,11 @@
+{# title (required); lead (plain text); lead_html (optional, safe HTML for links) #}
+<div class="getsync-page-header d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+  <div>
+    <h1 class="h4 mb-0 fw-semibold">{{ title }}</h1>
+    {% if lead_html %}
+    <p class="text-muted small mb-0 mt-1">{{ lead_html | safe }}</p>
+    {% elif lead %}
+    <p class="text-muted small mb-0 mt-1">{{ lead }}</p>
+    {% endif %}
+  </div>
+</div>

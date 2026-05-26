@@ -6,6 +6,7 @@ import math
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from getsync.activities.catalog import persist_browse_rows
 from getsync.users.context import UserContext, as_context
 from getsync.garmin.activities import list_garmin_activities
 from getsync.hammerhead.client import HammerheadClient
@@ -14,6 +15,8 @@ from getsync.timeutil import _parse_iso, parse_date_only
 from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 
 Source = Literal["hammerhead", "garmin"]
+SourceFilter = Literal["", "hammerhead", "garmin"]  # "" = all sources
+BrowseMode = Literal["all", "hammerhead", "garmin"]
 MAX_HH_SCAN_PAGES = 25
 MAX_GM_SCAN_ITEMS = 500
 GM_SCAN_BATCH = 100
@@ -26,8 +29,9 @@ class ActivityFilters:
     activity_type: str = ""
     date_from: str = ""
     date_to: str = ""
+    source: str = ""  # "" = all; hammerhead | garmin
 
-    def is_active(self) -> bool:
+    def has_content_filters(self) -> bool:
         return bool(
             self.q.strip()
             or self.status.strip()
@@ -35,6 +39,15 @@ class ActivityFilters:
             or self.date_from.strip()
             or self.date_to.strip()
         )
+
+    def is_active(self) -> bool:
+        return self.has_content_filters() or bool(self.source.strip())
+
+    def source_filter(self) -> SourceFilter:
+        s = self.source.strip().lower()
+        if s in ("hammerhead", "garmin"):
+            return s  # type: ignore[return-value]
+        return ""
 
 
 @dataclass(frozen=True)
@@ -55,7 +68,7 @@ class ActivityBrowseRow:
 
 @dataclass(frozen=True)
 class ActivityBrowsePage:
-    source: Source
+    mode: BrowseMode
     rows: list[ActivityBrowseRow]
     page: int
     per_page: int
@@ -94,6 +107,9 @@ def _matches_filters(
     if filters.q.strip():
         if filters.q.strip().lower() not in row.name.lower():
             return False
+    if filters.source.strip():
+        if row.source != filters.source.strip().lower():
+            return False
     if filters.status.strip():
         if row.sync_status != filters.status.strip():
             return False
@@ -119,7 +135,7 @@ def _matches_filters(
 
 
 def _paginate(
-    source: Source,
+    mode: BrowseMode,
     rows: list[ActivityBrowseRow],
     *,
     page: int,
@@ -132,7 +148,7 @@ def _paginate(
     start = (page - 1) * per_page
     end = start + per_page
     return ActivityBrowsePage(
-        source=source,
+        mode=mode,
         rows=rows[start:end],
         page=page,
         per_page=per_page,
@@ -142,8 +158,102 @@ def _paginate(
     )
 
 
+def _sort_rows_by_date(
+    rows: list[ActivityBrowseRow],
+    *,
+    display_tz: str,
+) -> list[ActivityBrowseRow]:
+    def key(row: ActivityBrowseRow) -> float:
+        dt = _parse_iso(row.activity_date, tz=display_tz) if row.activity_date else None
+        return dt.timestamp() if dt is not None else 0.0
+
+    return sorted(rows, key=key, reverse=True)
+
+
+def _dedupe_linked_rows(rows: list[ActivityBrowseRow]) -> list[ActivityBrowseRow]:
+    """When listing all sources, skip Garmin rows already shown via Hammerhead link."""
+    seen_garmin: set[int] = set()
+    out: list[ActivityBrowseRow] = []
+    for row in rows:
+        if row.source != "hammerhead":
+            continue
+        out.append(row)
+        if row.garmin_id is not None:
+            seen_garmin.add(row.garmin_id)
+    for row in rows:
+        if row.source != "garmin":
+            continue
+        if row.garmin_id is not None and row.garmin_id in seen_garmin:
+            continue
+        out.append(row)
+    return out
+
+
+def _browse_mode(filters: ActivityFilters) -> BrowseMode:
+    src = filters.source_filter()
+    return "all" if not src else src  # type: ignore[return-value]
+
+
+async def _fetch_unified(
+    *,
+    page: int,
+    per_page: int,
+    filters: ActivityFilters,
+    ctx: UserContext,
+    store: Store,
+    display_tz: str,
+) -> ActivityBrowsePage:
+    mode = _browse_mode(filters)
+    src = filters.source_filter()
+    index = store.build_sync_index(ctx.user_id)
+    errors: list[str] = []
+    rows: list[ActivityBrowseRow] = []
+
+    if src in ("", "hammerhead"):
+        try:
+            rows.extend(await _scan_hammerhead(index, ctx))
+        except Exception as exc:
+            errors.append(f"Hammerhead: {exc}")
+
+    if src in ("", "garmin"):
+        try:
+            rows.extend(_scan_garmin(index, ctx))
+        except Exception as exc:
+            errors.append(f"Garmin: {exc}")
+
+    if not src:
+        rows = _dedupe_linked_rows(rows)
+
+    filtered = [row for row in rows if _matches_filters(row, filters, display_tz=display_tz)]
+    filtered = _sort_rows_by_date(filtered, display_tz=display_tz)
+    persist_browse_rows(store, ctx.user_id, filtered)
+    result = _paginate(mode, filtered, page=page, per_page=per_page, filters=filters)
+    if errors and not result.rows:
+        return ActivityBrowsePage(
+            mode=mode,
+            rows=[],
+            page=page,
+            per_page=per_page,
+            total=0,
+            total_pages=1,
+            filters=filters,
+            error="; ".join(errors),
+        )
+    if errors:
+        return ActivityBrowsePage(
+            mode=result.mode,
+            rows=result.rows,
+            page=result.page,
+            per_page=result.per_page,
+            total=result.total,
+            total_pages=result.total_pages,
+            filters=result.filters,
+            error="; ".join(errors),
+        )
+    return result
+
+
 async def fetch_activities_page(
-    source: Source,
     *,
     page: int = 1,
     per_page: int = 50,
@@ -158,30 +268,24 @@ async def fetch_activities_page(
     tz = normalize_timezone(display_tz or DEFAULT_TIMEZONE)
     page = max(1, page)
     per_page = min(max(10, per_page), 100)
+    src = filters.source_filter()
 
-    if filters.is_active():
-        try:
-            if source == "hammerhead":
-                rows = await _scan_hammerhead(
-                    index := store.build_sync_index(user_ctx.user_id), user_ctx
-                )
-            else:
-                rows = _scan_garmin(
-                    index := store.build_sync_index(user_ctx.user_id), user_ctx
-                )
-        except Exception as exc:
-            return ActivityBrowsePage(
-                source, [], page, per_page, 0, 1, filters, error=str(exc)
-            )
-        filtered = [
-            row for row in rows if _matches_filters(row, filters, display_tz=tz)
-        ]
-        return _paginate(source, filtered, page=page, per_page=per_page, filters=filters)
-
-    index = store.build_sync_index(user_ctx.user_id)
-    if source == "hammerhead":
+    if not filters.has_content_filters() and src == "hammerhead":
+        index = store.build_sync_index(user_ctx.user_id)
         return await _fetch_hammerhead_native(page, per_page, index, user_ctx, filters)
-    return _fetch_garmin_native(page, per_page, index, user_ctx, filters)
+
+    if not filters.has_content_filters() and src == "garmin":
+        index = store.build_sync_index(user_ctx.user_id)
+        return _fetch_garmin_native(page, per_page, index, user_ctx, filters)
+
+    return await _fetch_unified(
+        page=page,
+        per_page=per_page,
+        filters=filters,
+        ctx=user_ctx,
+        store=store,
+        display_tz=tz,
+    )
 
 
 async def _fetch_hammerhead_native(
@@ -194,21 +298,36 @@ async def _fetch_hammerhead_native(
     hh = HammerheadClient(ctx)
     if hh.load_tokens() is None:
         return ActivityBrowsePage(
-            "hammerhead", [], page, per_page, 0, 1, filters, error="Hammerhead not connected"
+            mode="hammerhead",
+            rows=[],
+            page=page,
+            per_page=per_page,
+            total=0,
+            total_pages=1,
+            filters=filters,
+            error="Hammerhead not connected",
         )
 
     try:
         payload = await hh.list_activities(page=page, per_page=per_page)
     except Exception as exc:
         return ActivityBrowsePage(
-            "hammerhead", [], page, per_page, 0, 1, filters, error=str(exc)
+            mode="hammerhead",
+            rows=[],
+            page=page,
+            per_page=per_page,
+            total=0,
+            total_pages=1,
+            filters=filters,
+            error=str(exc),
         )
 
     total_pages = max(1, int(payload.get("totalPages") or 1))
     total = _hh_total(payload, per_page, total_pages)
     rows = _rows_from_hammerhead(payload.get("data") or [], index)
+    persist_browse_rows(Store(user_ctx.db_path), user_ctx.user_id, rows)
     return ActivityBrowsePage(
-        source="hammerhead",
+        mode="hammerhead",
         rows=rows,
         page=page,
         per_page=per_page,
@@ -230,11 +349,19 @@ def _fetch_garmin_native(
         items = list_garmin_activities(limit=per_page, start=start, ctx=ctx)
     except Exception as exc:
         return ActivityBrowsePage(
-            "garmin", [], page, per_page, 0, 1, filters, error=str(exc)
+            mode="garmin",
+            rows=[],
+            page=page,
+            per_page=per_page,
+            total=0,
+            total_pages=1,
+            filters=filters,
+            error=str(exc),
         )
 
     by_garmin = {entry.garmin_id: entry for entry in index.values() if entry.garmin_id}
     rows = _rows_from_garmin(items, by_garmin)
+    persist_browse_rows(Store(ctx.db_path), ctx.user_id, rows)
     has_next = len(items) >= per_page
     if has_next:
         total = page * per_page + 1
@@ -243,7 +370,7 @@ def _fetch_garmin_native(
         total = start + len(items)
         total_pages = page
     return ActivityBrowsePage(
-        source="garmin",
+        mode="garmin",
         rows=rows,
         page=page,
         per_page=per_page,
@@ -316,7 +443,9 @@ def _rows_from_hammerhead(
                 sync_detail=detail,
                 hammerhead_id=aid,
                 garmin_id=entry.garmin_id if entry else None,
-                fit_available=bool(entry and entry.fit_path),
+                fit_available=bool(
+                    entry and (entry.storage_key or entry.fit_path)
+                ),
             )
         )
     return rows
@@ -350,7 +479,9 @@ def _rows_from_garmin(
                 sync_detail=detail,
                 hammerhead_id=hh_id,
                 garmin_id=item.activity_id,
-                fit_available=bool(entry and entry.fit_path),
+                fit_available=bool(
+                    entry and (entry.storage_key or entry.fit_path)
+                ),
             )
         )
     return rows

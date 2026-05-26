@@ -1,0 +1,59 @@
+{% extends "layouts/cabinet_sidebar.html" %}
+{% from "components/status_badge.html" import status_badge %}
+
+{% block title %}UI preview — Activities{% endblock %}
+
+{% block page_content %}
+<div class="alert alert-info small mb-3">Wireframe — no form fields</div>
+
+{% with title="Activities", lead="All activities from connected sources. Source is a column." %}
+{% include "components/page_header.html" %}
+{% endwith %}
+
+<ul class="nav nav-pills mb-3">
+  <li class="nav-item"><span class="nav-link">List</span></li>
+  <li class="nav-item"><span class="nav-link active">Calendar</span></li>
+</ul>
+
+{% if calendar %}
+{% include "components/activity_calendar.html" %}
+{% else %}
+<div class="getsync-wireframe-calendar mb-3 p-4 text-center text-muted small">
+  Activity calendar — load preview with catalog data
+</div>
+{% endif %}
+
+<div class="getsync-filter-card card card-body border mb-4">
+  <p class="small text-muted mb-2 fw-medium">Filters (list view)</p>
+  <div class="row g-0">
+    {% with label="Source" %}{% include "components/wireframe_field.html" %}{% endwith %}
+    {% with label="Name search" %}{% include "components/wireframe_field.html" %}{% endwith %}
+    {% with label="GetSync status" %}{% include "components/wireframe_field.html" %}{% endwith %}
+  </div>
+</div>
+
+<div class="card getsync-data-card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Date</th>
+          <th>Source</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>2026-05-20</td>
+          <td><span class="badge text-bg-light border">Hammerhead</span></td>
+          <td>Morning Ride</td>
+          <td>cycling</td>
+          <td>{{ status_badge("synced") }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

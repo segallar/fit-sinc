@@ -1,0 +1,5 @@
+{# label (required), wide (optional bool) #}
+<div class="mb-3 {% if wide %}col-12{% else %}col-md-6{% endif %}">
+  <div class="form-label small text-muted mb-1">{{ label }}</div>
+  <div class="getsync-wireframe-field{% if wide %} getsync-wireframe-field--wide{% endif %}"></div>
+</div>

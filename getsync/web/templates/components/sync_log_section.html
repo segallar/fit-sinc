@@ -1,0 +1,49 @@
+<section id="sync-log" class="mt-4 pt-2">
+  <h2 class="h6 mb-1">Sync log</h2>
+  <p class="text-muted small mb-3">{{ log_range_label }}</p>
+
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Time</th>
+            <th>Event</th>
+            <th>Activity</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in log_events %}
+          <tr>
+            <td class="font-monospace small text-nowrap">{{ fmt_date(e.created_at) }}</td>
+            <td>{{ e.event_type }}</td>
+            <td class="font-monospace small">{{ e.activity_id or '—' }}</td>
+            <td>{{ e.message }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center text-muted py-4">No events yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if log_prev_page or log_next_page %}
+  <nav class="mt-3" aria-label="Sync log pagination">
+    <ul class="pagination pagination-sm mb-0">
+      {% if log_prev_page %}
+      <li class="page-item">
+        <a class="page-link" href="{{ prefix }}/?log_page={{ log_prev_page }}#sync-log">← Prev</a>
+      </li>
+      {% endif %}
+      <li class="page-item disabled"><span class="page-link">Page {{ log_page }}</span></li>
+      {% if log_next_page %}
+      <li class="page-item">
+        <a class="page-link" href="{{ prefix }}/?log_page={{ log_next_page }}#sync-log">Next →</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</section>

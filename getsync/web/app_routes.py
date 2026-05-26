@@ -5,16 +5,19 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from urllib.parse import quote
 
 from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 
 from getsync.activities.browse import ActivityFilters, ActivityBrowseRow, fetch_activities_page
+from getsync.activities.calendar import build_activity_calendar
+from getsync.timeutil import zone_info
+from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 from getsync.config import get_settings
-from getsync.garmin.web_refresh import refresh_web_session, session_monitor
 from getsync.state.store import Store
 from getsync.sync.service import sync_activity
 from getsync.users.bootstrap import registration_is_open
@@ -28,8 +31,9 @@ from getsync.web.auth import (
     user_row_from_session,
 )
 from getsync.web.cabinet import render_cabinet
-from getsync.web.connections import connection_status
+from getsync.web.connections import connection_settings_view
 from getsync.web.site_i18n import LANG_COOKIE, lang_from_request, landing_strings
+from getsync.storage.activity import ActivityStorage
 from getsync.web.templating import render_template
 
 logger = logging.getLogger("getsync")
@@ -66,19 +70,27 @@ def _safe_return_url(next_url: str, default: str) -> str:
     return default
 
 
-def _activities_return_url(
-    source: str,
+def _activities_query_params(
     *,
     page: int = 1,
     per_page: int = 50,
     filters: ActivityFilters | None = None,
+    view: str = "list",
+    year: int | None = None,
+    month: int | None = None,
     extra: dict[str, str] | None = None,
-) -> str:
+) -> dict[str, object]:
     params: dict[str, object] = {
-        "source": source,
-        "page": page,
         "per_page": per_page,
+        "view": view,
     }
+    if view == "list":
+        params["page"] = page
+    if view == "calendar" and year is not None and month is not None:
+        params["year"] = year
+        params["month"] = month
+    if filters and filters.source.strip():
+        params["source"] = filters.source.strip()
     if filters:
         if filters.q:
             params["q"] = filters.q
@@ -92,8 +104,59 @@ def _activities_return_url(
             params["date_to"] = filters.date_to
     if extra:
         params.update(extra)
+    return params
+
+
+def _activities_return_url(
+    *,
+    page: int = 1,
+    per_page: int = 50,
+    filters: ActivityFilters | None = None,
+    view: str = "list",
+    year: int | None = None,
+    month: int | None = None,
+    extra: dict[str, str] | None = None,
+) -> str:
+    params = _activities_query_params(
+        page=page,
+        per_page=per_page,
+        filters=filters,
+        view=view,
+        year=year,
+        month=month,
+        extra=extra,
+    )
     q = H.query_string(params)
-    return f"{P}/activities?{q}" if q else f"{P}/activities?source={source}"
+    return f"{P}/activities?{q}" if q else f"{P}/activities"
+
+
+def _shift_month(year: int, month: int, delta: int) -> tuple[int, int]:
+    m = month + delta
+    y = year
+    while m < 1:
+        m += 12
+        y -= 1
+    while m > 12:
+        m -= 12
+        y += 1
+    return y, m
+
+
+def _activities_tab_query_factory(
+    base: dict[str, object],
+) -> Callable[[str], str]:
+    def tab_query(view_name: str) -> str:
+        params = {k: v for k, v in base.items() if k not in ("page", "year", "month", "view")}
+        params["view"] = view_name
+        if view_name == "calendar":
+            y = base.get("year")
+            m = base.get("month")
+            if y is not None and m is not None:
+                params["year"] = y
+                params["month"] = m
+        return H.query_string(params)
+
+    return tab_query
 
 
 @dataclass(frozen=True)
@@ -104,15 +167,15 @@ class _ResyncAction:
     label: str = "Re-sync"
 
 
+_SOURCE_LABELS = {"hammerhead": "Hammerhead", "garmin": "Garmin"}
+
+
 def _activity_row_view(
     row: ActivityBrowseRow,
-    source: str,
     *,
     return_url: str,
 ) -> dict[str, Any]:
     hh_id = row.hammerhead_id
-    if source == "hammerhead" and row.hammerhead_id:
-        hh_id = row.hammerhead_id
 
     fit_url = None
     resync = None
@@ -126,28 +189,30 @@ def _activity_row_view(
             return_url=return_url,
             force_confirm=row.sync_status == "synced",
         )
-    if source == "garmin" and row.garmin_id:
+    if row.garmin_id:
         garmin_href = f"https://connect.garmin.com/modern/activity/{row.garmin_id}"
 
     cross_href = None
     cross_label = None
     cross_external = False
-    if source == "hammerhead" and row.garmin_id:
-        cross_href = f"https://connect.garmin.com/modern/activity/{row.garmin_id}"
+    if row.garmin_id:
+        cross_href = garmin_href
         cross_label = str(row.garmin_id)
         cross_external = True
-    elif source == "garmin" and row.hammerhead_id:
+    elif row.hammerhead_id and row.source == "garmin":
         cross_label = row.hammerhead_id
 
     duration_fmt = (
         H.fmt_duration(row.duration)
-        if source == "hammerhead"
+        if row.source == "hammerhead"
         else H.fmt_duration_sec(row.duration)
     )
 
     return {
         "activity_date": row.activity_date,
         "name": row.name or "—",
+        "source": row.source,
+        "source_label": _SOURCE_LABELS.get(row.source, row.source),
         "activity_type": row.activity_type or "—",
         "distance": row.distance,
         "duration_fmt": duration_fmt,
@@ -208,38 +273,109 @@ async def app_logout(request: Request) -> RedirectResponse:
     return RedirectResponse(f"{P}/login", status_code=303)
 
 
+_PREVIEW_PAGES: list[tuple[str, str, str]] = [
+    (f"{P}/ui-preview", "Overview", "All wireframe screens"),
+    (f"{P}/ui-preview/dashboard", "Dashboard", "Recent activities table"),
+    (f"{P}/ui-preview/activities", "Activities", "Calendar + filters + table"),
+    (f"{P}/ui-preview/settings", "Settings", "Profile, connections, password"),
+    (f"{P}/ui-preview/admin", "Admin", "Users list"),
+]
+
+_PREVIEW_TEMPLATES: dict[str, tuple[str, str]] = {
+    "dashboard": ("pages/app/ui_preview_dashboard.html", f"{P}/"),
+    "activities": ("pages/app/ui_preview_activities.html", f"{P}/activities"),
+    "settings": ("pages/app/ui_preview_settings.html", f"{P}/settings"),
+    "admin": ("pages/app/ui_preview_admin.html", f"{P}/admin/"),
+}
+
+
+def _render_ui_preview(
+    request: Request,
+    template: str,
+    *,
+    active: str,
+    **extra: object,
+) -> str:
+    ctx = _ctx(request)
+    user = _store().get_user(ctx.user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="user not found")
+    return render_cabinet(
+        request,
+        template,
+        active=active,
+        preview_pages=_PREVIEW_PAGES,
+        settings_section="profile",
+        **extra,
+    )
+
+
+@router.get("/ui-preview", response_class=HTMLResponse, include_in_schema=False)
+async def ui_preview_index(request: Request) -> str:
+    """Layout wireframes (no form fields) — local design review."""
+    return _render_ui_preview(
+        request,
+        "pages/app/ui_preview_index.html",
+        active=f"{P}/ui-preview",
+    )
+
+
+@router.get("/ui-preview/{page_name}", response_class=HTMLResponse, include_in_schema=False)
+async def ui_preview_page(request: Request, page_name: str) -> str:
+    spec = _PREVIEW_TEMPLATES.get(page_name)
+    if spec is None:
+        raise HTTPException(status_code=404, detail="unknown preview page")
+    template, active = spec
+    extra: dict[str, object] = {}
+    if page_name == "activities":
+        ctx = _ctx(request)
+        store = _store()
+        user = store.get_user(ctx.user_id)
+        tz_name = normalize_timezone(user.timezone if user else DEFAULT_TIMEZONE)
+        today = datetime.now(zone_info(tz_name)).date()
+        extra["calendar"] = build_activity_calendar(
+            store,
+            ctx.user_id,
+            year=today.year,
+            month=today.month,
+            display_tz=user.timezone if user else None,
+            prev_href="#",
+            next_href="#",
+            today_href="#",
+            day_list_href=lambda _d: "#",
+        )
+    return _render_ui_preview(request, template, active=active, **extra)
+
+
+def _sync_log_context(store: Store, user_id: str, log_page: int) -> dict[str, object]:
+    per_page = 50
+    total = store.count_events(user_id=user_id)
+    offset = (log_page - 1) * per_page
+    events = store.list_events(limit=per_page, offset=offset, user_id=user_id)
+    has_next = offset + len(events) < total
+    from_idx = offset + 1 if total else 0
+    to_idx = offset + len(events)
+    return {
+        "log_events": events,
+        "log_page": log_page,
+        "log_prev_page": log_page - 1 if log_page > 1 else None,
+        "log_next_page": log_page + 1 if has_next else None,
+        "log_range_label": f"{from_idx}–{to_idx} of {total}",
+    }
+
+
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def dashboard(request: Request) -> str:
+async def dashboard(
+    request: Request,
+    log_page: int = Query(1, ge=1),
+) -> str:
     ctx = _ctx(request)
     user = _store().get_user(ctx.user_id)
     store = _store()
-    activities = store.list_activities(ctx.user_id, limit=30)
-    status_counts = store.count_activities_by_status(ctx.user_id)
+    status_counts = store.count_activities_by_status(ctx.user_id, source="hammerhead")
+    catalog_total = store.count_catalog(ctx.user_id)
     error_n = status_counts.get("error", 0)
     dash_return = f"{P}/"
-
-    activity_rows = []
-    for a in activities:
-        aid_q = quote(a.activity_id, safe="")
-        fit_url = None
-        if a.fit_path and Path(a.fit_path).is_file():
-            fit_url = f"{P}/activities/{aid_q}/fit"
-        resync = _ResyncAction(
-            activity_id=a.activity_id,
-            return_url=dash_return,
-            force_confirm=a.sync_status == "synced",
-        )
-        activity_rows.append(
-            {
-                "activity_date": a.activity_date,
-                "name": a.name or "—",
-                "sync_status": a.sync_status,
-                "error_message": a.error_message,
-                "distance": a.distance,
-                "fit_url": fit_url,
-                "resync": resync,
-            }
-        )
 
     sync_bits = []
     for label, key in (
@@ -255,31 +391,32 @@ async def dashboard(request: Request) -> str:
 
     errors_url = None
     if error_n:
-        errors_url = (
-            f"{P}/activities?"
-            f'{H.query_string({"source": "hammerhead", "status": "error"})}'
-        )
+        errors_url = f"{P}/activities?{H.query_string({'status': 'error'})}"
 
     return render_cabinet(
         request,
         "pages/app/dashboard.html",
         active="/",
         sync_summary=sync_summary,
+        catalog_total=catalog_total,
         error_count=error_n,
         dash_return=dash_return,
         errors_url=errors_url,
-        connections=connection_status(ctx, user),
-        activities=activity_rows,
+        activities_url=f"{P}/activities",
+        **_sync_log_context(store, ctx.user_id, log_page),
     )
 
 
 @router.get("/activities", response_class=HTMLResponse, include_in_schema=False)
 async def activities_browser(
     request: Request,
-    source: str = Query("hammerhead", pattern="^(hammerhead|garmin)$"),
+    view: str = Query("list", pattern="^(list|calendar)$"),
+    source: str = Query("", pattern="^(|hammerhead|garmin)$"),
     queued: str = Query(""),
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=10, le=100),
+    year: int | None = Query(None, ge=2000, le=2100),
+    month: int | None = Query(None, ge=1, le=12),
     q: str = Query(""),
     status: str = Query(""),
     activity_type: str = Query(""),
@@ -287,7 +424,8 @@ async def activities_browser(
     date_to: str = Query(""),
 ) -> str:
     ctx = _ctx(request)
-    user = _store().get_user(ctx.user_id)
+    store = _store()
+    user = store.get_user(ctx.user_id)
     display_tz = user.timezone if user else None
     filters = ActivityFilters(
         q=q.strip(),
@@ -295,56 +433,26 @@ async def activities_browser(
         activity_type=activity_type.strip(),
         date_from=date_from.strip(),
         date_to=date_to.strip(),
+        source=source.strip().lower(),
     )
-    query_params: dict[str, object] = {
-        "source": source,
-        "per_page": per_page,
-        "q": filters.q,
-        "status": filters.status,
-        "activity_type": filters.activity_type,
-        "date_from": filters.date_from,
-        "date_to": filters.date_to,
-    }
+    tz_name = normalize_timezone(display_tz or DEFAULT_TIMEZONE)
+    today = datetime.now(zone_info(tz_name)).date()
+    cal_year = year if year is not None else today.year
+    cal_month = month if month is not None else today.month
 
-    result = await fetch_activities_page(
-        source,  # type: ignore[arg-type]
-        page=page,
+    base_params = _activities_query_params(
         per_page=per_page,
         filters=filters,
-        ctx=ctx,
-        display_tz=display_tz,
+        view=view,
+        year=cal_year if view == "calendar" else None,
+        month=cal_month if view == "calendar" else None,
     )
-    query_params["page"] = result.page
-    list_return = _activities_return_url(
-        source, page=result.page, per_page=per_page, filters=filters
-    )
+    tab_query = _activities_tab_query_factory(base_params)
     flash = {"queued": queued} if queued else None
 
-    rows = [
-        _activity_row_view(row, source, return_url=list_return) for row in result.rows
-    ]
-
-    cross_header = "Garmin ID" if source == "hammerhead" else "Hammerhead ID"
-    from_idx = (result.page - 1) * result.per_page + 1 if result.total else 0
-    to_idx = min(result.page * result.per_page, result.total)
-    total_label = f"{from_idx}–{to_idx} of {result.total}"
-    if source == "garmin" and not filters.is_active() and result.page == result.total_pages:
-        total_label = f"{from_idx}–{to_idx} loaded"
-
-    errors_quick_url = None
-    if source == "hammerhead" and filters.status != "error":
-        errors_quick_url = (
-            f"{P}/activities?"
-            f'{H.query_string({"source": "hammerhead", "status": "error", "per_page": per_page})}'
-        )
-
-    return render_cabinet(
-        request,
-        "pages/app/activities.html",
-        active="/activities",
-        wide=True,
-        flash=flash,
-        source=source,
+    common = dict(
+        activities_view=view,
+        activities_tab_query=tab_query,
         per_page=per_page,
         filters={
             "q": filters.q,
@@ -352,116 +460,188 @@ async def activities_browser(
             "activity_type": filters.activity_type,
             "date_from": filters.date_from,
             "date_to": filters.date_to,
+            "source": filters.source,
         },
         filters_active=filters.is_active(),
+        errors_quick_url=None,
+    )
+
+    if view == "calendar":
+        src = filters.source or None
+
+        def day_list_href(day_iso: str) -> str:
+            day_filters = ActivityFilters(
+                q=filters.q,
+                status=filters.status,
+                activity_type=filters.activity_type,
+                date_from=day_iso,
+                date_to=day_iso,
+                source=filters.source,
+            )
+            return _activities_return_url(
+                page=1,
+                per_page=per_page,
+                filters=day_filters,
+                view="list",
+            )
+
+        calendar = build_activity_calendar(
+            store,
+            ctx.user_id,
+            year=cal_year,
+            month=cal_month,
+            display_tz=display_tz,
+            prev_href=_activities_return_url(
+                per_page=per_page,
+                filters=filters,
+                view="calendar",
+                year=_shift_month(cal_year, cal_month, -1)[0],
+                month=_shift_month(cal_year, cal_month, -1)[1],
+            ),
+            next_href=_activities_return_url(
+                per_page=per_page,
+                filters=filters,
+                view="calendar",
+                year=_shift_month(cal_year, cal_month, 1)[0],
+                month=_shift_month(cal_year, cal_month, 1)[1],
+            ),
+            today_href=_activities_return_url(
+                per_page=per_page,
+                filters=filters,
+                view="calendar",
+                year=today.year,
+                month=today.month,
+            ),
+            day_list_href=day_list_href,
+            selected_from=filters.date_from,
+            selected_to=filters.date_to,
+            source=src,
+        )
+        return render_cabinet(
+            request,
+            "pages/app/activities.html",
+            active="/activities",
+            wide=True,
+            flash=flash,
+            calendar=calendar,
+            **common,
+        )
+
+    result = await fetch_activities_page(
+        page=page,
+        per_page=per_page,
+        filters=filters,
+        ctx=ctx,
+        display_tz=display_tz,
+    )
+    query_params = _activities_query_params(
+        page=result.page,
+        per_page=per_page,
+        filters=filters,
+        view="list",
+    )
+    list_return = _activities_return_url(
+        page=result.page, per_page=per_page, filters=filters, view="list"
+    )
+
+    rows = [_activity_row_view(row, return_url=list_return) for row in result.rows]
+
+    from_idx = (result.page - 1) * result.per_page + 1 if result.total else 0
+    to_idx = min(result.page * result.per_page, result.total)
+    total_label = f"{from_idx}–{to_idx} of {result.total}"
+    if (
+        result.mode == "garmin"
+        and not filters.has_content_filters()
+        and result.page == result.total_pages
+    ):
+        total_label = f"{from_idx}–{to_idx} loaded"
+
+    errors_quick_url = None
+    if filters.status != "error":
+        err_params: dict[str, object] = {
+            "status": "error",
+            "per_page": per_page,
+            "view": "list",
+        }
+        if filters.source:
+            err_params["source"] = filters.source
+        errors_quick_url = f"{P}/activities?{H.query_string(err_params)}"
+
+    tab_base = _activities_query_params(
+        per_page=per_page,
+        filters=filters,
+        view="list",
+        page=result.page,
+        year=today.year,
+        month=today.month,
+    )
+
+    return render_cabinet(
+        request,
+        "pages/app/activities.html",
+        active="/activities",
+        wide=True,
+        flash=flash,
         rows=rows,
         browse_error=result.error,
-        cross_header=cross_header,
         total_label=total_label,
         base_path=f"{P}/activities",
         params=query_params,
         page=result.page,
         total_pages=result.total_pages,
         errors_quick_url=errors_quick_url,
+        activities_tab_query=_activities_tab_query_factory(tab_base),
+        **{k: v for k, v in common.items() if k != "activities_tab_query"},
     )
 
 
-@router.get("/log", response_class=HTMLResponse, include_in_schema=False)
-async def sync_log(request: Request, page: int = Query(1, ge=1)) -> str:
-    ctx = _ctx(request)
-    per_page = 50
-    store = _store()
-    total = store.count_events(user_id=ctx.user_id)
-    offset = (page - 1) * per_page
-    events = store.list_events(limit=per_page, offset=offset, user_id=ctx.user_id)
-    has_next = offset + len(events) < total
-
-    from_idx = offset + 1 if total else 0
-    to_idx = offset + len(events)
-    return render_cabinet(
-        request,
-        "pages/app/log.html",
-        active="/log",
-        events=events,
-        page=page,
-        prev_page=page - 1 if page > 1 else None,
-        next_page=page + 1 if has_next else None,
-        range_label=f"{from_idx}–{to_idx} of {total}",
-    )
+@router.get("/log", include_in_schema=False)
+async def sync_log_redirect(request: Request, page: int = Query(1, ge=1)) -> RedirectResponse:
+    """Legacy URL — sync log lives on the dashboard."""
+    _ctx(request)
+    return RedirectResponse(f"{P}/?log_page={page}#sync-log", status_code=303)
 
 
-def _session_event_class(event_type: str) -> str:
-    if event_type in ("refreshed", "ok"):
-        return "ok"
-    if event_type in ("failed", "error"):
-        return "failed"
-    return ""
-
-
-@router.get("/session", response_class=HTMLResponse, include_in_schema=False)
-async def session_monitor_page(request: Request) -> str:
-    ctx = _ctx(request)
-    mon_raw = session_monitor(ctx)
-    events_raw = _store().list_session_refresh_events(limit=150, user_id=ctx.user_id)
-
-    mon = {
-        "upload_ready": mon_raw["upload_ready"],
-        "upload_label": "ready" if mon_raw["upload_ready"] else "not ready",
-        "has_session_cookie": mon_raw["has_session_cookie"],
-        "jwt_valid": mon_raw["jwt_valid"],
-        "needs_refresh": mon_raw["needs_refresh"],
-        "expires_at": mon_raw["expires_at"],
-        "ttl_sec": mon_raw["ttl_sec"],
-        "refreshed_at": mon_raw["refreshed_at"],
-        "refresh_method": mon_raw.get("refresh_method") or "",
-        "interval_min": mon_raw["refresh_interval_sec"] // 60,
-        "before_h": mon_raw["refresh_before_sec"] // 3600,
-    }
-    events = [
-        {
-            "created_at": e.created_at,
-            "trigger": e.trigger,
-            "event_type": e.event_type,
-            "message": e.message,
-            "status_class": _session_event_class(e.event_type),
-        }
-        for e in events_raw
-    ]
-
-    return render_cabinet(
-        request,
-        "pages/app/session.html",
-        active="/session",
-        mon=mon,
-        events=events,
-    )
+@router.get("/session", include_in_schema=False)
+async def session_page_redirect(request: Request) -> RedirectResponse:
+    """Legacy URL — Garmin session monitor lives in Settings."""
+    _ctx(request)
+    return RedirectResponse(f"{P}/settings#garmin-session", status_code=303)
 
 
 @router.post("/session/refresh", include_in_schema=False)
-async def session_refresh_now(request: Request) -> RedirectResponse:
+async def session_refresh_legacy(request: Request) -> RedirectResponse:
+    """Legacy POST — same as Settings → Refresh now."""
+    from getsync.garmin.web_refresh import refresh_web_session
+
     ctx = _ctx(request)
     await asyncio.to_thread(refresh_web_session, ctx, force=True, trigger="web")
-    return RedirectResponse(url=f"{P}/session", status_code=303)
+    return RedirectResponse(f"{P}/settings?msg=garmin_refreshed#garmin-session", status_code=303)
 
 
 @router.get("/activities/{activity_id}/fit", include_in_schema=False)
 async def download_fit(request: Request, activity_id: str) -> FileResponse:
     ctx = _ctx(request)
-    row = _store().get_activity(ctx.user_id, activity_id)
-    if row and row.fit_path and Path(row.fit_path).is_file():
-        return FileResponse(
-            row.fit_path,
-            media_type="application/vnd.ant.fit",
-            filename=Path(row.fit_path).name,
-        )
-    candidate = ctx.fits_dir / f"{activity_id.replace('/', '_')}.fit"
-    if candidate.is_file():
-        return FileResponse(
-            candidate,
-            media_type="application/vnd.ant.fit",
-            filename=candidate.name,
-        )
-    raise HTTPException(status_code=404, detail="FIT file not found")
+    storage = ActivityStorage(ctx)
+    row = _store().get_activity(ctx.user_id, activity_id, source="hammerhead")
+    fit_file: Path | None = None
+    if row:
+        fit_file = storage.open_fit_path(row.storage_key)
+        if fit_file is None and row.fit_path:
+            legacy = Path(row.fit_path)
+            if legacy.is_file():
+                fit_file = legacy
+    if fit_file is None:
+        candidate = storage.legacy_fit_path(activity_id)
+        if candidate.is_file():
+            fit_file = candidate
+    if fit_file is None:
+        raise HTTPException(status_code=404, detail="FIT file not found")
+    return FileResponse(
+        fit_file,
+        media_type="application/vnd.ant.fit",
+        filename=fit_file.name,
+    )
 
 
 @router.post("/activities/{activity_id}/retry", include_in_schema=False)
@@ -472,7 +652,7 @@ async def retry_activity(
     next: str = Form(""),
 ) -> RedirectResponse:
     ctx = _ctx(request)
-    default = _activities_return_url("hammerhead")
+    default = _activities_return_url()
     background_tasks.add_task(_run_sync_force, activity_id, ctx.user_id)
     _store().log_event(
         "resync_queued",
@@ -491,7 +671,9 @@ async def retry_all_errors(
 ) -> RedirectResponse:
     ctx = _ctx(request)
     store = _store()
-    failed = store.list_activities(ctx.user_id, limit=50, sync_status="error")
+    failed = store.list_activities(
+        ctx.user_id, limit=50, sync_status="error", source="hammerhead"
+    )
     for row in failed:
         background_tasks.add_task(_run_sync_force, row.activity_id, ctx.user_id)
     if failed:
@@ -502,7 +684,6 @@ async def retry_all_errors(
             user_id=ctx.user_id,
         )
     default = _activities_return_url(
-        "hammerhead",
         filters=ActivityFilters(status="error"),
         extra={"queued": str(len(failed))},
     )

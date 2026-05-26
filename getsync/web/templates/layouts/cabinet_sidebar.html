@@ -1,0 +1,18 @@
+{% extends "layouts/base.html" %}
+{% block html_lang %}{{ lang }}{% endblock %}
+{% block body_class %}getsync-app getsync-app-shell bg-light{% endblock %}
+{% block container_class %}getsync-app-shell-wrap flex-grow-1 w-100{% endblock %}
+{% block container_padding %}{% endblock %}
+
+{% block header %}{% endblock %}
+{% block header_extra %}{% endblock %}
+
+{% block content %}
+<div class="getsync-app-layout getsync-app-layout--topbar d-flex flex-column w-100">
+  {% include "components/app_topbar.html" %}
+  <div class="getsync-app-main flex-grow-1 w-100">
+    {% include "components/flash.html" %}
+    {% block page_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

@@ -50,7 +50,7 @@ class TestResyncUi(unittest.TestCase):
                 client, _, _ = self._setup_client(tmp)
                 r = client.post(
                     "/app/activities/act-err/retry",
-                    data={"next": "/app/activities?source=hammerhead&status=error"},
+                    data={"next": "/app/activities?status=error"},
                     follow_redirects=False,
                 )
                 self.assertEqual(r.status_code, 303)

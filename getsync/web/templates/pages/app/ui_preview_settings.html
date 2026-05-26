@@ -1,0 +1,98 @@
+{% extends "layouts/cabinet_sidebar.html" %}
+
+{% block title %}UI preview — Settings{% endblock %}
+
+{% block page_content %}
+<div class="alert alert-info small mb-3">Wireframe — no form fields</div>
+
+{% with title="Settings", lead="Profile, many connections (sources + destinations), password." %}
+{% include "components/page_header.html" %}
+{% endwith %}
+
+{% include "components/settings_subnav.html" %}
+
+<section id="profile" class="getsync-settings-section mb-4">
+  <div class="card getsync-data-card shadow-sm">
+    <div class="card-body">
+      <h2 class="h6 text-primary mb-3">Profile</h2>
+      <div class="row g-0">
+        {% with label="Display name" %}{% include "components/wireframe_field.html" %}{% endwith %}
+        {% with label="Email" %}{% include "components/wireframe_field.html" %}{% endwith %}
+        {% with label="Telegram" %}{% include "components/wireframe_field.html" %}{% endwith %}
+        {% with label="Language" %}{% include "components/wireframe_field.html" %}{% endwith %}
+        {% with label="Timezone" %}{% include "components/wireframe_field.html" %}{% endwith %}
+      </div>
+      <button type="button" class="btn btn-primary btn-sm" disabled>Save profile</button>
+    </div>
+  </div>
+</section>
+
+<section id="connections" class="getsync-settings-section mb-4">
+  <h2 class="h6 text-primary mb-2">Connections</h2>
+  <p class="small text-muted mb-3">Sources and destinations — list grows per user (not only HH + Garmin).</p>
+
+  <h3 class="small text-uppercase text-muted fw-semibold mb-2">Sources</h3>
+  <div class="card getsync-data-card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-2 mb-2">
+        <span class="h6 text-primary mb-0">Hammerhead</span>
+        <span class="badge text-bg-light border">Source</span>
+      </div>
+      <p class="small text-muted mb-2">Status: <span class="text-success fw-medium">connected</span></p>
+      <button type="button" class="btn btn-outline-secondary btn-sm" disabled>Disconnect</button>
+    </div>
+  </div>
+  <div class="card getsync-data-card shadow-sm mb-3 opacity-75">
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-2 mb-2">
+        <span class="h6 mb-0">Strava</span>
+        <span class="badge text-bg-light border">Source</span>
+        <span class="badge text-bg-secondary">Soon</span>
+      </div>
+      <button type="button" class="btn btn-outline-secondary btn-sm" disabled>Not available yet</button>
+    </div>
+  </div>
+
+  <h3 class="small text-uppercase text-muted fw-semibold mb-2 mt-4">Destinations</h3>
+  <div class="card getsync-data-card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-2 mb-2">
+        <span class="h6 text-primary mb-0">Garmin Connect</span>
+        <span class="badge text-bg-light border">Destination</span>
+      </div>
+      <p class="small text-muted mb-2">Status: <span class="text-warning fw-medium">not ready</span></p>
+      <button type="button" class="btn btn-outline-secondary btn-sm" disabled>Refresh session</button>
+    </div>
+  </div>
+
+  <section id="garmin-session" class="mt-4">
+    <h3 class="h6 text-primary mb-2">Garmin web session</h3>
+    <div class="card getsync-data-card shadow-sm mb-3">
+      <div class="card-body small text-muted">
+        JWT status · Refresh now · refresh log table (wireframe)
+      </div>
+    </div>
+  </section>
+
+  <div class="card border border-dashed bg-light">
+    <div class="card-body py-3 d-flex justify-content-between align-items-center">
+      <span class="small text-muted">Wahoo, S3, …</span>
+      <button type="button" class="btn btn-outline-secondary btn-sm" disabled>Add connection</button>
+    </div>
+  </div>
+</section>
+
+<section id="password" class="getsync-settings-section mb-4">
+  <div class="card getsync-data-card shadow-sm">
+    <div class="card-body">
+      <h2 class="h6 text-primary mb-3">Password</h2>
+      <div class="row g-0 col-lg-6">
+        {% with label="Current password" %}{% include "components/wireframe_field.html" %}{% endwith %}
+        {% with label="New password" %}{% include "components/wireframe_field.html" %}{% endwith %}
+        {% with label="Confirm password" %}{% include "components/wireframe_field.html" %}{% endwith %}
+      </div>
+      <button type="button" class="btn btn-outline-secondary btn-sm" disabled>Change password</button>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,7 +1,8 @@
 # Архитектура GetSync
 
-> **Статус (2026-05-26):** production — фазы 0–5; кабинет и settings — фаза **5b** ([PLAN.md](PLAN.md)).  
-> Быстрый старт — [README](../README.md) · индекс документов — [README.md](README.md).
+> **Статус (2026-05-26):** production — фазы 0–5; кабинет **5b** + **2.3** (unified activities, calendar, local storage) — [PLAN.md](PLAN.md).  
+> UI-спека: [APP-UI.md](APP-UI.md) · connections: [CONNECTIONS.md](CONNECTIONS.md) · FIT: [STORAGE.md](STORAGE.md)  
+> Быстрый старт — [README](../README.md) · индекс — [docs/README.md](README.md).
 
 **GetSync** — сервис автоматической синхронизации велотренировок с **Hammerhead Karoo** в **Garmin Connect**.
 
@@ -18,9 +19,9 @@ Hammerhead и Garmin — разные экосистемы без встроен
 1. Тренировка на Karoo → Hammerhead Cloud  
 2. `POST /webhooks/hammerhead` — JSON `{ activityId, userId }`, HMAC `X-Hmac-Signature`  
 3. `userId` → `users.hammerhead_user_id` → `user_id` tenant (или `default`, если не найден)  
-4. Скачивание `.fit` (retry **5 / 15 / 30** с) в `data/users/{id}/fits/`  
+4. Скачивание `.fit` (retry **5 / 15 / 30** с) → `ActivityStorage.put_fit()` → `data/users/{id}/activities/hammerhead/{id}.fit`  
 5. Upload в Garmin Connect **этого** tenant ([Garmin upload](#garmin-upload))  
-6. SQLite: `activities(user_id, activity_id)` — без дубликатов  
+6. SQLite: `activities(user_id, source, activity_id)` + `storage_key` — dedup и каталог UI  
 
 ```mermaid
 sequenceDiagram
@@ -34,7 +35,7 @@ sequenceDiagram
     GS->>GS: HMAC + resolve user_id
     GS->>HH: GET FIT (tenant OAuth)
     HH-->>GS: FIT binary
-    GS->>GS: SQLite + data/users/id/fits
+    GS->>GS: SQLite + data/users/id/activities/hammerhead
     GS->>GC: upload (tenant JWT_WEB)
     GS->>GS: mark synced
 ```
@@ -58,22 +59,29 @@ sequenceDiagram
 
 | Слой | Изоляция |
 |------|----------|
-| SQLite | `activities`, `sync_events`, `session_refresh_events` с `user_id` |
-| Файлы | `data/users/{user_id}/` |
+| SQLite | `activities` (PK `user_id, source, activity_id`), `sync_events`, `session_refresh_events` |
+| Файлы | `data/users/{user_id}/` — OAuth, Garmin session, `activities/{source}/*.fit` |
 | Webhook | `payload.userId` → `users.hammerhead_user_id` |
-| Sync / upload | `UserContext` → пути и сессии tenant |
+| Sync / upload | `UserContext` → `StorageBackend`, Garmin paths |
+| UI browse | `fetch_activities_page` → `persist_browse_rows` — каталог per tenant |
 
 ```text
 data/
   getsync.db                    # предпочтительно; legacy: fit_sinc.db
   users/{user_id}/
+    activities/                 # артефакты каталога (FIT, позже GPX)
+      hammerhead/{id}.fit
+      garmin/…
     hammerhead_tokens.json      # OAuth Hammerhead
     garmin_web/session.json     # JWT_WEB, session, …
     garth/                      # OAuth garth-ng (fallback upload)
-    fits/                       # кэш .fit
+    fits/                       # legacy; миграция → activities/
 ```
 
-**Миграция v1:** плоские `data/hammerhead_tokens.json`, `data/garth/`, … копируются в `data/users/default/` при старте ([`getsync/users/migrate.py`](../getsync/users/migrate.py)).
+Каталог в SQLite: `activities(user_id, source, activity_id)` + `storage_key`, `activity_type`, … — см. [STORAGE.md](STORAGE.md).  
+Бэкенд: `getsync.storage.StorageBackend` — **local** ✅; S3 — roadmap **3.3**.
+
+**Миграция v1:** плоские `data/hammerhead_tokens.json`, `data/garth/`, … → `data/users/default/` ([`getsync/users/migrate.py`](../getsync/users/migrate.py)). Legacy `fits/` → `activities/hammerhead/` — [`storage/migrate.py`](../getsync/storage/migrate.py).
 
 **Пользователь в БД:** `slug`, `email`, `password_hash`, `timezone`, `telegram`, `hammerhead_user_id`, `is_admin`, `disabled`. Подробнее — [PLAN.md](PLAN.md).
 
@@ -97,7 +105,7 @@ Garmin часто блокирует чистый `garth.upload()`; основн
 | «N браузеров на N users» | Нет — cookies на диске, браузер только при refresh/upload |
 | «Один JWT на сервер» | Нет — per `data/users/{id}/garmin_web/` |
 
-**Настройка в UI:** `/app/settings` — профиль, Hammerhead OAuth, Garmin status/refresh/disconnect. **Первичный** Garmin login — CLI (или import cookies).
+**Настройка в UI:** `/app/settings` — профиль, **Connections** (sources/destinations), Garmin status/refresh, **`#garmin-session`** (монитор JWT/cookies). **Первичный** Garmin login — CLI (**2.12** — UI в roadmap).
 
 ```bash
 getsync --user <slug> garmin login
@@ -119,7 +127,12 @@ getsync --user <slug> garmin status   # upload_ready
 | [`getsync/garmin/web_refresh.py`](../getsync/garmin/web_refresh.py) | Refresh `JWT_WEB`, фон + ручной trigger |
 | [`getsync/garmin/browser_upload.py`](../getsync/garmin/browser_upload.py) | Playwright upload / refresh cookies |
 | [`getsync/sync/service.py`](../getsync/sync/service.py) | `sync_activity`, backfill, webhook routing |
+| [`getsync/activities/browse.py`](../getsync/activities/browse.py) | Unified HH+Garmin list, filters, pagination |
+| [`getsync/activities/catalog.py`](../getsync/activities/catalog.py) | Upsert browse rows → SQLite |
+| [`getsync/activities/calendar.py`](../getsync/activities/calendar.py) | Month aggregate для UI calendar |
+| [`getsync/storage/`](../getsync/storage/) | `StorageBackend`, keys, `ActivityStorage` |
 | [`getsync/users/context.py`](../getsync/users/context.py) | `UserContext`, пути tenant |
+| [`getsync/web/connections.py`](../getsync/web/connections.py) | Registry sources/sinks для Settings |
 | [`getsync/users/bootstrap.py`](../getsync/users/bootstrap.py) | Первый admin (`BOOTSTRAP_ADMIN_EMAIL`) |
 | [`getsync/state/store.py`](../getsync/state/store.py) | SQLite, миграции, users CRUD |
 | [`getsync/web/app.py`](../getsync/web/app.py) | FastAPI, webhook, JWT refresh loop |
@@ -138,15 +151,25 @@ getsync --user <slug> garmin status   # upload_ready
 | `/webhooks/hammerhead` | Hammerhead | Приём событий |
 | `/health` | Мониторинг | `{"service":"getsync","version":"0.5.0"}` |
 | `/app/login` | Гость | Вход email + password |
-| `/app/settings` | Пользователь | Профиль, HH/Garmin |
-| `/app/*` | Пользователь | Дашборд, activities, log, session |
+| `/app/activities` | Пользователь | **Главный экран:** List \| Calendar, unified sources |
+| `/app/` | Пользователь | Dashboard: sync summary + **sync log** (`#sync-log`) |
+| `/app/settings` | Пользователь | Profile, Connections, Password, `#garmin-session` |
+| `/app/log` | — | **303** → `/?#sync-log` |
+| `/app/session` | — | **303** → `/settings#garmin-session` |
 | `/app/admin/*` | `is_admin` | CRUD users |
 
-Кабинет: user bar, Settings в nav, баннер HH/Garmin на дашборде, re-sync активностей. Вёрстка: [UI.md](UI.md).
+**Nav:** Activities · Dashboard · Settings (+ Admin). Спека экранов: [APP-UI.md](APP-UI.md). Вёрстка: [UI.md](UI.md).
 
-**Регистрация:** `/register` при `REGISTRATION_OPEN=true` — [2.1-REGISTER.md](2.1-REGISTER.md); подтверждение email — **2.1e**.
+**Регистрация:** `/register` при `REGISTRATION_OPEN=true` — [2.1-REGISTER.md](2.1-REGISTER.md); email verify — **2.1e**.
 
-FIT на диске: `data/users/{user_id}/fits/{activity_id}.fit` (путь дублируется в SQLite `fit_path`).
+```text
+Browse (API) ──► persist_browse_rows() ──► SQLite activities
+                    │
+Calendar ◄──────────┘ aggregate by local date (TZ user)
+Sync ──► ActivityStorage.put_fit() + storage_key
+```
+
+FIT: `data/users/{user_id}/activities/{source}/{id}.fit` · download `.fit` — `GET /app/activities/{id}/fit` (hammerhead).
 
 ## CLI
 
@@ -180,9 +203,11 @@ getsync serve
 ## Ограничения (актуальные)
 
 - Подтверждение email не реализовано — **2.1e** (`REGISTRATION_OPEN=false` на prod по умолчанию)  
-- Garmin **первичный** login — CLI; в settings — status/refresh/disconnect  
-- Даты: UTC в SQLite, отображение в `users.timezone`  
-- Только **активности** Hammerhead → Garmin (не routes / workouts)  
+- Garmin **первичный** login — CLI; в settings — status/refresh/session monitor  
+- Календарь — только дни из SQLite-каталога (после browse); облачные дни без upsert не видны  
+- Browse Garmin — постранично; без «полного месяца из API» в calendar v1  
+- Даты: UTC/ISO в SQLite, отображение в `users.timezone`  
+- Production pipeline: **Hammerhead → Garmin**; Garmin в activities — просмотр/каталог, не auto-sync обратно  
 - Неофициальный Garmin API (web + garth-ng)  
 - MVP: один инстанс, несколько tenants; не полноценный multi-tenant SaaS  
 
@@ -210,6 +235,8 @@ Cutover DNS и legacy host: [1.5-RENAME.md](1.5-RENAME.md), [CI-CD.md](CI-CD.md)
 | **4** | GitHub Actions test + deploy |
 | **5** | Tenants, `user_id`, `/app`, `/app/admin`, webhook routing |
 | **5b** | Settings, security tests, без nginx Basic Auth |
+| **2.3** (часть) | Unified activities, SQLite catalog, calendar tab, dashboard sync log, connections UI |
+| **11.0** (часть) | `StorageBackend` local, `storage_key`, per-user `activities/{source}/` |
 | **1.5** | Rename GetSync — A+B в коде; **C** DNS/certbot на prod |
 
 ## Связанная документация
@@ -219,6 +246,9 @@ Cutover DNS и legacy host: [1.5-RENAME.md](1.5-RENAME.md), [CI-CD.md](CI-CD.md)
 | [README.md](README.md) | Индекс документации |
 | [README](../README.md) | Быстрый старт |
 | [PLAN.md](PLAN.md) | Roadmap |
+| [APP-UI.md](APP-UI.md) | Страницы `/app`, компоненты |
+| [CONNECTIONS.md](CONNECTIONS.md) | Sources / destinations |
+| [STORAGE.md](STORAGE.md) | FIT, `storage_key`, backends |
 | [CI-CD.md](CI-CD.md) | Деплой |
 | [API_HAMMERHEAD.md](API_HAMMERHEAD.md) | OAuth, webhook |
 | [API_GARMIN.md](API_GARMIN.md) | JWT, upload |

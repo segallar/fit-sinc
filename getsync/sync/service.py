@@ -12,6 +12,7 @@ import httpx
 from getsync.garmin.session import upload_fit
 from getsync.hammerhead.client import HammerheadClient
 from getsync.state.store import Store
+from getsync.storage.activity import ActivityStorage
 from getsync.users.context import UserContext, as_context, resolve_user_context
 
 logger = logging.getLogger("getsync.sync")
@@ -24,12 +25,6 @@ class SyncResult:
     activity_id: str
     status: str  # synced, skipped, error
     message: str = ""
-
-
-def _fit_path(ctx: UserContext, activity_id: str) -> Path:
-    ctx.fits_dir.mkdir(parents=True, exist_ok=True)
-    safe = activity_id.replace("/", "_")
-    return ctx.fits_dir / f"{safe}.fit"
 
 
 def _store(ctx: UserContext) -> Store:
@@ -114,19 +109,30 @@ async def sync_activity(
         store.log_event("error", msg, activity_id, user_id=user_ctx.user_id)
         return SyncResult(activity_id, "error", msg)
 
-    fit_path = _fit_path(user_ctx, activity_id)
-    fit_path.write_bytes(fit_bytes)
-    store.log_event("fit_saved", str(fit_path), activity_id, user_id=user_ctx.user_id)
+    artifacts = ActivityStorage(user_ctx)
+    storage_key = artifacts.put_fit("hammerhead", activity_id, fit_bytes)
+    fit_path = artifacts.open_fit_path(storage_key)
+    store.log_event(
+        "fit_saved",
+        storage_key,
+        activity_id,
+        user_id=user_ctx.user_id,
+    )
 
     try:
-        garmin_result = upload_fit(fit_bytes, fit_path.name, user_ctx)
+        garmin_result = upload_fit(
+            fit_bytes,
+            fit_path.name if fit_path else f"{activity_id}.fit",
+            user_ctx,
+        )
     except Exception as exc:
         msg = f"Garmin upload failed: {exc}"
         store.upsert_activity(
             user_ctx.user_id,
             activity_id,
             sync_status="error",
-            fit_path=str(fit_path),
+            storage_key=storage_key,
+            fit_path=str(fit_path) if fit_path else None,
             error_message=msg,
             **meta,
         )
@@ -136,8 +142,9 @@ async def sync_activity(
     store.mark_synced(
         user_ctx.user_id,
         activity_id,
-        str(fit_path),
         garmin_result,
+        storage_key=storage_key,
+        fit_path=str(fit_path) if fit_path else None,
         **meta,
     )
     store.log_event(
@@ -152,7 +159,7 @@ async def sync_activity(
         user_ctx.user_id,
         len(fit_bytes),
     )
-    return SyncResult(activity_id, "synced", str(fit_path))
+    return SyncResult(activity_id, "synced", storage_key)
 
 
 async def backfill_since(

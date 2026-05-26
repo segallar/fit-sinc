@@ -1,0 +1,22 @@
+{% extends "layouts/cabinet_sidebar.html" %}
+
+{% block title %}UI preview — GetSync{% endblock %}
+
+{% block page_content %}
+{% with title="UI preview", lead="Layout wireframes without form fields. Production pages still use the old content until rollout." %}
+{% include "components/page_header.html" %}
+{% endwith %}
+
+<div class="row g-3">
+  {% for href, label, desc in preview_pages %}
+  <div class="col-md-6 col-lg-4">
+    <a href="{{ href }}" class="card getsync-data-card shadow-sm text-decoration-none h-100 text-body">
+      <div class="card-body">
+        <h2 class="h6 mb-1">{{ label }}</h2>
+        <p class="small text-muted mb-0">{{ desc }}</p>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

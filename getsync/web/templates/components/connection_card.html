@@ -1,0 +1,28 @@
+<div class="card shadow-sm mb-3{% if not connection.available %} opacity-75{% endif %}">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+      <h3 class="h6 text-primary mb-0">{{ connection.name }}</h3>
+      <span class="badge text-bg-light border">{{ connection.role_label }}</span>
+      {% if not connection.available %}
+      <span class="badge text-bg-secondary">Soon</span>
+      {% endif %}
+    </div>
+    <p class="small mb-3">
+      Status:
+      <span class="fw-medium text-{{ connection.status_variant }}">{{ connection.status_text }}</span>
+    </p>
+    {% if connection.details %}
+    <dl class="row small mb-3">
+      {% for d in connection.details %}
+      <dt class="col-sm-4 text-muted">{{ d.label }}</dt>
+      <dd class="col-sm-8{% if d.mono %} font-monospace small{% endif %}">{{ d.value }}</dd>
+      {% endfor %}
+    </dl>
+    {% endif %}
+    {% if connection.available and connection.actions_template %}
+    {% include connection.actions_template %}
+    {% elif not connection.available %}
+    <button type="button" class="btn btn-outline-secondary btn-sm" disabled>Not available yet</button>
+    {% endif %}
+  </div>
+</div>

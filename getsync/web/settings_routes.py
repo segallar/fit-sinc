@@ -17,7 +17,11 @@ from getsync.storage import save_json
 from getsync.users.context import UserContext
 from getsync.web import html as H
 from getsync.web.auth import user_context_from_session
-from getsync.web.connections import connection_settings_view
+from getsync.web.connections import (
+    connection_settings_view,
+    garmin_session_context,
+    list_connections,
+)
 from getsync.users.locale import normalize_locale
 from getsync.web.app_i18n import flash_message
 from getsync.web.cabinet import render_cabinet
@@ -39,7 +43,12 @@ def _ctx(request: Request) -> UserContext:
     return ctx
 
 
-def _redirect(msg: str = "", *, error: str = "") -> RedirectResponse:
+def _redirect(
+    msg: str = "",
+    *,
+    error: str = "",
+    anchor: str = "",
+) -> RedirectResponse:
     params: dict[str, str] = {}
     if msg:
         params["msg"] = msg
@@ -47,6 +56,8 @@ def _redirect(msg: str = "", *, error: str = "") -> RedirectResponse:
         params["error"] = error
     q = H.query_string(params)
     url = f"{P}?{q}" if q else P
+    if anchor:
+        url = f"{url}#{anchor}"
     return RedirectResponse(url, status_code=303)
 
 
@@ -104,6 +115,9 @@ async def settings_page(request: Request) -> str:
         user=user,
         flash=_flash_from_query(request, user.locale),
         conn=connection_settings_view(ctx, user),
+        connection_groups=list_connections(ctx, user),
+        settings_section="profile",
+        **garmin_session_context(ctx),
     )
 
 
@@ -221,7 +235,7 @@ async def hammerhead_disconnect(request: Request) -> RedirectResponse:
 async def garmin_refresh(request: Request) -> RedirectResponse:
     ctx = _ctx(request)
     await asyncio.to_thread(refresh_web_session, ctx, force=True, trigger="settings")
-    return _redirect("garmin_refreshed")
+    return _redirect("garmin_refreshed", anchor="garmin-session")
 
 
 @router.post("/garmin/disconnect", include_in_schema=False)

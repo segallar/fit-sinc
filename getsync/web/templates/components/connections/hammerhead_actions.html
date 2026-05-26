@@ -1,0 +1,14 @@
+<div class="d-flex flex-wrap gap-2">
+  {% if conn.hammerhead_oauth_configured %}
+  <a href="{{ prefix }}/settings/hammerhead/connect" class="btn btn-primary btn-sm">Connect Hammerhead</a>
+  {% else %}
+  <p class="small text-muted mb-0">OAuth not configured on server (HAMMERHEAD_CLIENT_ID).</p>
+  {% endif %}
+  <form method="post" action="{{ prefix }}/settings/hammerhead/disconnect"
+        onsubmit="return confirm('Disconnect Hammerhead tokens for this account?');">
+    <button type="submit" class="btn btn-outline-secondary btn-sm">Disconnect</button>
+  </form>
+</div>
+<p class="small text-muted mt-3 mb-0">
+  Redirect URI: <code class="small">{{ prefix }}/settings/hammerhead/callback</code>
+</p>

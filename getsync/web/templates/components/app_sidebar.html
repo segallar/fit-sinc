@@ -1,0 +1,47 @@
+<aside class="getsync-sidebar offcanvas-md offcanvas-start" tabindex="-1" id="getsyncAppSidebar"
+       aria-labelledby="getsyncAppSidebarLabel">
+  <div class="offcanvas-header border-bottom d-md-none">
+    <h2 class="h6 mb-0" id="getsyncAppSidebarLabel">GetSync</h2>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#getsyncAppSidebar"
+            aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body getsync-sidebar-body d-flex flex-column p-0">
+    <a href="{{ prefix }}/" class="getsync-sidebar-brand d-none d-md-flex align-items-center gap-2 text-decoration-none text-body mb-3 px-2">
+      <img src="/static/icon.svg" alt="" width="32" height="32" class="rounded-2">
+      <span class="fw-semibold">GetSync</span>
+    </a>
+
+    <nav class="nav flex-column getsync-sidebar-nav px-2" aria-label="Cabinet">
+      {% for href, label in nav_items %}
+      {% set is_active = (href.rstrip('/') == active_nav.rstrip('/')) %}
+      <a href="{{ href }}"
+         class="nav-link rounded-2 {% if is_active %}active{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </nav>
+
+    <div class="getsync-sidebar-spacer flex-grow-1"></div>
+
+    {% if current_user %}
+    <div class="getsync-sidebar-user border-top mt-3 pt-3 px-2 pb-2">
+      <p class="mb-0 fw-semibold small text-truncate" title="{{ current_user.display_name }}">
+        {{ current_user.display_name }}
+      </p>
+      <p class="mb-2 small text-muted text-truncate" title="{{ current_user.email }}">
+        {{ current_user.email }}
+      </p>
+      <p class="mb-2 small text-muted font-monospace">{{ current_user.slug }}</p>
+      {% if current_user.is_admin or current_user.disabled %}
+      <div class="mb-2">
+        {% if current_user.is_admin %}
+        <span class="badge getsync-badge--synced">{{ t.badge_admin }}</span>
+        {% endif %}
+        {% if current_user.disabled %}
+        <span class="badge getsync-badge--error">{{ t.badge_disabled }}</span>
+        {% endif %}
+      </div>
+      {% endif %}
+      <a href="{{ prefix }}/logout" class="btn btn-outline-primary btn-sm w-100">{{ t.logout }}</a>
+    </div>
+    {% endif %}
+  </div>
+</aside>

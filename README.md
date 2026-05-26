@@ -178,7 +178,7 @@ getsync serve                  # http://127.0.0.1:8080 — webhook + UI
 |----------|------------|
 | [docs/README.md](docs/README.md) | Индекс документации, соглашения, URL production |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архитектура v1, tenants, компоненты, фазы |
-| [docs/PLAN.md](docs/PLAN.md) | Roadmap v2, будущие фазы |
+| [docs/PLAN.md](docs/PLAN.md) | Roadmap (открытые задачи) · [PLAN-ARCHIVE.md](docs/PLAN-ARCHIVE.md) — история |
 | [docs/1.5-RENAME.md](docs/1.5-RENAME.md) | Переименование GetSync (1.5) |
 | [docs/5b-DECISIONS.md](docs/5b-DECISIONS.md) | Фаза 5b.0: регистрация, bootstrap admin |
 | [docs/CI-CD.md](docs/CI-CD.md) | Сервер, nginx, certbot, deploy |

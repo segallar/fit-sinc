@@ -1,0 +1,10 @@
+<ul class="nav nav-pills mb-3">
+  <li class="nav-item">
+    <a class="nav-link{% if activities_view == 'list' %} active{% endif %}"
+       href="{{ prefix }}/activities?{{ activities_tab_query('list') }}">List</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link{% if activities_view == 'calendar' %} active{% endif %}"
+       href="{{ prefix }}/activities?{{ activities_tab_query('calendar') }}">Calendar</a>
+  </li>
+</ul>

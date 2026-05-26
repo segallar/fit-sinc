@@ -39,6 +39,21 @@ def migrate_legacy_files(settings: Settings, user_id: str) -> None:
             shutil.copy2(src, target)
             logger.info("copied %s -> %s", src, target)
 
+    from getsync.config import get_settings
+    from getsync.state.store import Store
+    from getsync.storage.migrate import (
+        migrate_legacy_fit_path_column,
+        migrate_user_fit_files,
+    )
+
+    store = Store(get_settings().db_path)
+    n = migrate_user_fit_files(store, user_id)
+    if n:
+        logger.info("migrated %s FIT files to activities/ for user %s", n, user_id)
+    n2 = migrate_legacy_fit_path_column(store, user_id)
+    if n2:
+        logger.info("set storage_key on %s activities for user %s", n2, user_id)
+
 
 def infer_hammerhead_user_id(settings: Settings) -> str | None:
     data = load_json(settings.data_dir / "hammerhead_tokens.json")

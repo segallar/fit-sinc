@@ -10,7 +10,7 @@ from helpers import isolated_env
 
 
 class TestConnectionsBanner(unittest.TestCase):
-    def test_dashboard_shows_connections_banner(self) -> None:
+    def test_settings_shows_connections_section(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 from getsync.config import get_settings
@@ -31,14 +31,10 @@ class TestConnectionsBanner(unittest.TestCase):
                 )
                 self.assertEqual(r.status_code, 303)
 
-                dash = client.get("/app/", follow_redirects=False)
-                self.assertEqual(dash.status_code, 200)
-                self.assertIn('aria-label="Connections"', dash.text)
-                self.assertIn("Hammerhead", dash.text)
-                self.assertIn("Garmin Connect", dash.text)
-                self.assertIn("upload", dash.text)
-                self.assertIn("JWT", dash.text)
-                self.assertIn("/app/settings", dash.text)
+                settings_page = client.get("/app/settings", follow_redirects=True)
+                self.assertEqual(settings_page.status_code, 200)
+                self.assertIn("Hammerhead", settings_page.text)
+                self.assertIn("Garmin Connect", settings_page.text)
 
     def test_connection_status_structure(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

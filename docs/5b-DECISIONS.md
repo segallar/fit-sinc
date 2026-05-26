@@ -1,7 +1,7 @@
 # Фаза 5b.0 — решения
 
 > Реализовано в коде: `users.is_admin`, bootstrap, CLI, `REGISTRATION_OPEN`.  
-> Следующий шаг: [PLAN.md](PLAN.md#фаза-5b-единый-кабинет-регистрация-настройки-без-basic-auth) → **5b.1**.
+> Решения закрыты (5b ✅). Актуальный roadmap: [PLAN.md](PLAN.md) · история: [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md).
 
 ## Регистрация
 

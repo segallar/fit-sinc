@@ -1,0 +1,32 @@
+{% extends "layouts/cabinet_sidebar.html" %}
+
+{% block title %}UI preview — Admin{% endblock %}
+
+{% block page_content %}
+<div class="alert alert-info small mb-3">Wireframe — no form fields</div>
+
+{% with title="Users", lead_html='<button type="button" class="btn btn-primary btn-sm" disabled>New user</button>' %}
+{% include "components/page_header.html" %}
+{% endwith %}
+
+<div class="card getsync-data-card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>slug</th><th>Name</th><th>Email</th><th>admin</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>default</td>
+          <td>Default</td>
+          <td>owner@local</td>
+          <td>yes</td>
+          <td><button type="button" class="btn btn-outline-secondary btn-sm" disabled>Edit</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

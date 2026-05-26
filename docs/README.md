@@ -14,11 +14,20 @@
 | [API_HAMMERHEAD.md](API_HAMMERHEAD.md) | Интеграции | OAuth, REST, webhook HMAC, Developer Portal |
 | [API_GARMIN.md](API_GARMIN.md) | Интеграции | Web JWT, Playwright upload, garth-ng, refresh |
 | [CI-CD.md](CI-CD.md) | Ops | VPS, nginx, certbot, rsync, GitHub Actions |
-| [UI.md](UI.md) | Frontend | Jinja2, Bootstrap 5, `app.css` (тема) |
-| [PLAN.md](PLAN.md) | Roadmap | Фазы, горизонты 1.x–3.x, реестр задач |
+| [UI.md](UI.md) | Frontend | Jinja2, Bootstrap 5, tokens + `app.css` |
+| **[APP-UI.md](APP-UI.md)** | Frontend | **Единая спецификация** всех страниц `/app` и admin |
+| [design/SCREENS.md](design/SCREENS.md) | Frontend | Карта URL, user flows, wireframes |
+| [design/DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md) | Frontend | Замечания к дизайну кабинета (текущий ввод) |
+| [design/README.md](design/README.md) | Frontend | Дизайн-индекс, статус **2.10** / **2.3** |
+| [CONNECTIONS.md](CONNECTIONS.md) | Product / FE | Sources и destinations в Settings |
+| [STORAGE.md](STORAGE.md) | Backend | FIT, `storage_key`, `StorageBackend` |
+| [PLAN.md](PLAN.md) | Roadmap | Открытые задачи, горизонты H1–H3 |
+| [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md) | Roadmap | История фаз 0–5 / выполненное (до 2026-05-26) |
 | [1.5-RENAME.md](1.5-RENAME.md) | Cutover | Бренд GetSync, DNS, cookie, SQLite |
 | [5b-DECISIONS.md](5b-DECISIONS.md) | Auth | Регистрация, bootstrap admin |
 | [2.1-REGISTER.md](2.1-REGISTER.md) | Auth | Саморегистрация `/register`, план email verify (**2.1e**) |
+| [2.1e-EMAIL.md](2.1e-EMAIL.md) | Auth / Ops | Отправка email: SMTP/API, verify, алерты (**2.1e**, **2.6**) |
+| [3.4-OAUTH-LOGIN.md](3.4-OAUTH-LOGIN.md) | Auth | Вход через Google / Apple (OIDC), **3.4** / фаза 10 |
 
 ---
 
@@ -53,11 +62,14 @@ data/
   getsync.db              # SQLite (или legacy fit_sinc.db)
   users/
     {user_id}/
+      activities/           # FIT: hammerhead/, garmin/, …
       hammerhead_tokens.json
       garmin_web/session.json
       garth/                # OAuth garth-ng (fallback upload)
-      fits/                 # кэш .fit
+      fits/                 # legacy → activities/hammerhead/
 ```
+
+Подробнее: [STORAGE.md](STORAGE.md) · [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Миграция с плоского `data/*` → `data/users/default/` при старте: [`getsync/users/migrate.py`](../getsync/users/migrate.py).
 

@@ -1,0 +1,45 @@
+{% extends "layouts/cabinet_sidebar.html" %}
+
+{% block title %}UI preview — Dashboard{% endblock %}
+
+{% block page_content %}
+<div class="alert alert-info small mb-3">Wireframe — no form fields</div>
+
+{% with title="Dashboard", lead_html="Sync overview. Full catalog on <a href=\"#\">Activities</a>." %}
+{% include "components/page_header.html" %}
+{% endwith %}
+
+<button type="button" class="btn btn-outline-secondary btn-sm mb-3" disabled>Re-sync all errors (1)</button>
+
+<div class="card getsync-data-card shadow-sm">
+  <div class="card-body">
+    <h2 class="h6 mb-2">Sync status</h2>
+    <p class="text-muted small mb-3">synced: 12, error: 1</p>
+    <button type="button" class="btn btn-primary btn-sm" disabled>Open activities</button>
+  </div>
+</div>
+
+<section id="sync-log" class="mt-4 pt-2">
+  <h2 class="h6 mb-1">Sync log</h2>
+  <p class="text-muted small mb-3">1–2 of 2</p>
+  <div class="card getsync-data-card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0">
+        <thead class="table-light">
+          <tr><th>Time</th><th>Event</th><th>Activity</th><th>Message</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-monospace small">2026-05-20</td>
+            <td>synced</td>
+            <td class="font-monospace small">hh-1</td>
+            <td class="text-muted">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<p class="mt-3 small text-muted">Updated just now · TZ Europe/Moscow</p>
+{% endblock %}

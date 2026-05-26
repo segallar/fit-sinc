@@ -38,9 +38,9 @@ class TestAppLogin(unittest.TestCase):
 
                 dash = client.get("/app/", follow_redirects=False)
                 self.assertEqual(dash.status_code, 200)
-                self.assertIn('aria-label="Connections"', dash.text)
-                self.assertIn("upload", dash.text)
-                self.assertIn("user-bar", dash.text)
+                self.assertIn("Open activities", dash.text)
+                self.assertIn("/app/activities", dash.text)
+                self.assertIn("getsync-app-topbar", dash.text)
                 self.assertIn("owner@test.local", dash.text)
                 self.assertIn("/app/logout", dash.text)
                 self.assertNotIn('nav><a href="/app/logout">Logout</a>', dash.text)
@@ -145,7 +145,7 @@ class TestAdminAccess(unittest.TestCase):
                 users = client.get("/app/admin/")
                 self.assertEqual(users.status_code, 200)
                 self.assertIn("default", users.text)
-                self.assertIn("user-bar", users.text)
+                self.assertIn("getsync-app-topbar", users.text)
                 self.assertIn("admin@test.local", users.text)
 
                 new_user = client.get("/app/admin/users/new")

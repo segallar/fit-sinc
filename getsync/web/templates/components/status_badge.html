@@ -1,11 +1,11 @@
 {% macro status_badge(status, detail=None) %}
 {% set classes = {
-  "synced": "bg-success",
-  "error": "bg-danger",
-  "pending": "bg-warning text-dark",
-  "not synced": "bg-secondary",
-  "skipped": "bg-secondary",
+  "synced": "getsync-badge--synced",
+  "error": "getsync-badge--error",
+  "pending": "getsync-badge--pending",
+  "not synced": "getsync-badge--neutral",
+  "skipped": "getsync-badge--neutral",
 } %}
-<span class="badge {{ classes.get(status, 'bg-secondary') }}"
+<span class="badge {{ classes.get(status, 'getsync-badge--neutral') }}"
       {% if detail %}title="{{ detail }}"{% endif %}>{{ status }}</span>
 {% endmacro %}

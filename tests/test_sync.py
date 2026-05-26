@@ -23,8 +23,9 @@ class TestSyncActivity(unittest.IsolatedAsyncioTestCase):
                 store.mark_synced(
                     "default",
                     "act-done",
-                    "/tmp/fake.fit",
                     {"id": 1},
+                    storage_key="activities/hammerhead/act-done.fit",
+                    fit_path="/tmp/fake.fit",
                     name="Done ride",
                 )
 

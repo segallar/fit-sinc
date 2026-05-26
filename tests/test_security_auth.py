@@ -138,7 +138,7 @@ class TestAppRoutesRequireSession(unittest.TestCase):
                 )
 
     @patch("getsync.web.app_routes._run_sync_force", new_callable=AsyncMock)
-    @patch("getsync.web.app_routes.refresh_web_session")
+    @patch("getsync.garmin.web_refresh.refresh_web_session")
     def test_app_post_allowed_with_session(
         self,
         _mock_refresh,
@@ -310,7 +310,7 @@ class TestTenantIsolation(unittest.TestCase):
                 _login(client, "alice@test.local", "alice-pass")
                 r = client.get("/app/", follow_redirects=False)
                 self.assertEqual(r.status_code, 200)
-                self.assertIn("Alice ride", r.text)
+                self.assertIn("1 activities in catalog", r.text)
                 self.assertNotIn("Admin secret ride", r.text)
 
 

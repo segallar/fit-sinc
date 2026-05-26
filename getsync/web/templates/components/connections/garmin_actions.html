@@ -1,0 +1,13 @@
+<div class="d-flex flex-wrap gap-2">
+  <form method="post" action="{{ prefix }}/settings/garmin/refresh">
+    <button type="submit" class="btn btn-primary btn-sm">Refresh web session</button>
+  </form>
+  <form method="post" action="{{ prefix }}/settings/garmin/disconnect"
+        onsubmit="return confirm('Remove Garmin web and OAuth files for this account?');">
+    <button type="submit" class="btn btn-outline-secondary btn-sm">Disconnect</button>
+  </form>
+  <a href="{{ prefix }}/settings#garmin-session" class="btn btn-outline-secondary btn-sm">Session details</a>
+</div>
+<p class="small text-muted mt-3 mb-0">
+  CLI: <code>getsync --user {{ user.slug }} garmin login</code>
+</p>

@@ -1,20 +1,52 @@
-"""Hammerhead + Garmin connection status for dashboard banner and settings."""
+"""Connection registry: sources and sinks (many per user)."""
 
 from __future__ import annotations
 
 import time
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Literal
 
 from getsync.config import get_settings
 from getsync.garmin.session import garmin_status
 from getsync.garmin.web_refresh import session_monitor
+from getsync.state.store import Store
 from getsync.hammerhead.client import HammerheadClient
 from getsync.users.context import UserContext
 from getsync.users.models import UserRow
 
+ConnectionRole = Literal["source", "sink"]
+
+
+@dataclass(frozen=True)
+class ConnectionDetail:
+    label: str
+    value: str
+    mono: bool = False
+
+
+@dataclass(frozen=True)
+class ConnectionItem:
+    """One row in Settings → Connections (extensible list)."""
+
+    id: str
+    role: ConnectionRole
+    role_label: str
+    name: str
+    status_text: str
+    status_variant: str  # success | warning | secondary
+    details: tuple[ConnectionDetail, ...]
+    actions_template: str | None = None
+    available: bool = True
+
+
+@dataclass(frozen=True)
+class ConnectionGroups:
+    sources: tuple[ConnectionItem, ...]
+    sinks: tuple[ConnectionItem, ...]
+
 
 def connection_status(ctx: UserContext, user: UserRow | None = None) -> dict[str, Any]:
-    """Structured HH + Garmin state for dashboard banner."""
+    """Structured HH + Garmin state (legacy banner / helpers)."""
     hh = HammerheadClient(ctx).status()
     gm = garmin_status(ctx)
     mon = session_monitor(ctx)
@@ -52,12 +84,132 @@ def connection_status(ctx: UserContext, user: UserRow | None = None) -> dict[str
             "web_reason": web.get("reason") or "",
         },
         "settings_path": "/settings",
-        "session_path": "/session",
+        "session_path": "/settings#garmin-session",
     }
 
 
+def _session_event_class(event_type: str) -> str:
+    if event_type in ("refreshed", "ok"):
+        return "ok"
+    if event_type in ("failed", "error"):
+        return "failed"
+    return ""
+
+
+def garmin_session_context(ctx: UserContext) -> dict[str, object]:
+    """Garmin JWT monitor + refresh log for Settings."""
+    mon_raw = session_monitor(ctx)
+    events_raw = Store(ctx.db_path).list_session_refresh_events(
+        limit=150, user_id=ctx.user_id
+    )
+    mon = {
+        "upload_ready": mon_raw["upload_ready"],
+        "upload_label": "ready" if mon_raw["upload_ready"] else "not ready",
+        "has_session_cookie": mon_raw["has_session_cookie"],
+        "jwt_valid": mon_raw["jwt_valid"],
+        "needs_refresh": mon_raw["needs_refresh"],
+        "expires_at": mon_raw["expires_at"],
+        "ttl_sec": mon_raw["ttl_sec"],
+        "refreshed_at": mon_raw["refreshed_at"],
+        "refresh_method": mon_raw.get("refresh_method") or "",
+        "interval_min": mon_raw["refresh_interval_sec"] // 60,
+        "before_h": mon_raw["refresh_before_sec"] // 3600,
+    }
+    events = [
+        {
+            "created_at": e.created_at,
+            "trigger": e.trigger,
+            "event_type": e.event_type,
+            "message": e.message,
+            "status_class": _session_event_class(e.event_type),
+        }
+        for e in events_raw
+    ]
+    return {"mon": mon, "garmin_session_events": events}
+
+
+def list_connections(ctx: UserContext, user: UserRow) -> ConnectionGroups:
+    """All connection slots for Settings UI (implemented + planned)."""
+    status = connection_status(ctx, user)
+    hh = status["hammerhead"]
+    gm = status["garmin"]
+    from getsync.web import html as H
+
+    fmt = H.make_formatter(user.timezone)
+    jwt_exp = gm.get("expires_at")
+
+    hh_status = "connected" if hh["connected"] else "not connected"
+    hh_variant = "success" if hh["connected"] else "warning"
+
+    gm_status = "ready" if gm["upload_ready"] else "not ready"
+    gm_variant = "success" if gm["upload_ready"] else "warning"
+
+    sources: list[ConnectionItem] = [
+        ConnectionItem(
+            id="hammerhead",
+            role="source",
+            role_label="Source",
+            name="Hammerhead",
+            status_text=hh_status,
+            status_variant=hh_variant,
+            details=(
+                ConnectionDetail("Webhook user id", str(hh.get("user_id") or "—"), mono=True),
+            ),
+            actions_template="components/connections/hammerhead_actions.html",
+        ),
+        ConnectionItem(
+            id="strava",
+            role="source",
+            role_label="Source",
+            name="Strava",
+            status_text="planned",
+            status_variant="secondary",
+            details=(),
+            available=False,
+        ),
+        ConnectionItem(
+            id="wahoo",
+            role="source",
+            role_label="Source",
+            name="Wahoo",
+            status_text="planned",
+            status_variant="secondary",
+            details=(),
+            available=False,
+        ),
+    ]
+
+    sinks: list[ConnectionItem] = [
+        ConnectionItem(
+            id="garmin",
+            role="sink",
+            role_label="Destination",
+            name="Garmin Connect",
+            status_text=gm_status,
+            status_variant=gm_variant,
+            details=(
+                ConnectionDetail(
+                    "Web session",
+                    "ok" if gm["web_connected"] else str(gm.get("web_reason") or "—"),
+                ),
+                ConnectionDetail(
+                    "JWT expires",
+                    fmt.fmt_ts(jwt_exp) if jwt_exp else "—",
+                ),
+                ConnectionDetail(
+                    "OAuth (garth)",
+                    "connected" if gm["oauth_connected"] else "—",
+                ),
+            ),
+            actions_template="components/connections/garmin_actions.html",
+        ),
+    ]
+
+    return ConnectionGroups(sources=tuple(sources), sinks=tuple(sinks))
+
+
 def connection_settings_view(ctx: UserContext, user: UserRow) -> dict[str, object]:
-    """Flat dict for settings.html (backward compatible)."""
+    """Flat dict for connection action partials (backward compatible)."""
     status = connection_status(ctx, user)
     hh = status["hammerhead"]
     gm = status["garmin"]

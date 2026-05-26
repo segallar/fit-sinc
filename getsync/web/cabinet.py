@@ -14,10 +14,8 @@ APP_PREFIX = "/app"
 ADMIN_PREFIX = "/app/admin"
 
 _NAV_KEYS = (
-    ("nav_dashboard", f"{APP_PREFIX}/"),
     ("nav_activities", f"{APP_PREFIX}/activities"),
-    ("nav_log", f"{APP_PREFIX}/log"),
-    ("nav_session", f"{APP_PREFIX}/session"),
+    ("nav_dashboard", f"{APP_PREFIX}/"),
     ("nav_settings", f"{APP_PREFIX}/settings"),
 )
 
