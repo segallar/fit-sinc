@@ -17,6 +17,7 @@
 
 - **1 источник:** Hammerhead (OAuth + webhook)
 - **1 приёмник:** Garmin Connect (web session / garth)
+- **Garmin как source (metadata):** список активностей в browse — без локального FIT и wellness; полный pull — roadmap [**3.11**](3.11-GARMIN-PULL.md) · [PLAN.md](PLAN.md)
 
 В Settings показываются **все слоты** (включая planned), чтобы UI не ломался при добавлении провайдера.
 
@@ -74,6 +75,7 @@ connections (
 |------|--------|
 | `activities.source` | id провайдера-источника |
 | Sync HH→Garmin | правило по умолчанию: source=hammerhead → sink=garmin |
+| Garmin pull (**3.11**) | source=garmin: FIT + `daily_steps` / `daily_sleep` |
 | Будущее | N sources → M sinks по правилам пользователя |
 
 См. [PLAN.md](PLAN.md) фазы **2.7**, **7**, [APP-UI.md](APP-UI.md) §6.3.

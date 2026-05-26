@@ -3,7 +3,7 @@
 > **Обновлено:** 2026-05-26 · **Фокус сейчас:** [дизайн-ревью кабинета → вёрстка **2.10**](#фокус-сейчас-тестирование-и-кабинет-app) · замечания → [DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md).  
 > Выполненное (фазы 0–5, 5b, ядро **2.3**) — [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md). **~117** тестов · prod: HH→Garmin.
 
-**Документы:** [APP-UI.md](APP-UI.md) · [design/SCREENS.md](design/SCREENS.md) · [CONNECTIONS.md](CONNECTIONS.md) · [STORAGE.md](STORAGE.md)
+**Документы:** [APP-UI.md](APP-UI.md) · [design/SCREENS.md](design/SCREENS.md) · [CONNECTIONS.md](CONNECTIONS.md) · [STORAGE.md](STORAGE.md) · [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md)
 
 ---
 
@@ -15,7 +15,8 @@
 | ------- | --------- |
 | Sync | Webhook HH → FIT → Garmin; dedup SQLite; re-sync |
 | Tenants | `user_id`, `data/users/{id}/`, session auth, security tests |
-| Кабинет | Activities (List \| Calendar, HH+Garmin), Dashboard + sync log, Settings (profile, connections, garmin-session) |
+| Кабинет | Activities (List \| Calendar, HH+Garmin, sync log), Settings (profile, connections, garmin-session) |
+| Garmin | **Upload** FIT ✅ · **list** активностей в browse ✅ · **pull** FIT / шаги / сон 📋 [**3.11**](3.11-GARMIN-PULL.md) |
 | Хранение | `StorageBackend` local, `storage_key`, `activities/{source}/` — [STORAGE.md](STORAGE.md) |
 | Регистрация | `/register` при `REGISTRATION_OPEN` — без email verify (**2.6**) |
 | Бренд в коде | Пакет `getsync`, cookie dual-read — **A+B** ✅ |
@@ -33,7 +34,7 @@
                               └──► Правила ──► Приёмники (Garmin, S3, …)
 ```
 
-**Сейчас в prod:** один pipeline **Hammerhead → Garmin**. Остальное — горизонты ниже.
+**Сейчас в prod:** один pipeline **Hammerhead → Garmin** (Garmin — приёмник). Список активностей Garmin в UI — metadata only; локальные `.fit` и wellness — [**3.11**](3.11-GARMIN-PULL.md).
 
 **Не в фокусе:** тренировочный планировщик (TP/Intervals), соцсеть. Приоритет — **надёжный ingest + статус + self-service**.
 
@@ -116,13 +117,13 @@ flowchart TB
 | -------- | ----- | ---------- |
 | ⏸ **H1 — Запуск** | После стабильного кабинета | **1.5 C** — getsync.me, certbot, HH redirect |
 | 🟡 **H2 — остаток продукта** | Параллельно/следом | **2.11** SEO/скрины · **2.4** алерты · **2.6** email |
-| 🔵 **H3 — Платформа** | 1–3 месяца+ | **2.8** → **3.9** → **3.1** · **3.3** → **3.5** |
+| 🔵 **H3 — Платформа** | 1–3 месяца+ | **2.8** → **3.11** (Garmin pull) → **3.9** → **3.1** · **3.3** → **3.5** |
 
 ```mermaid
 flowchart LR
-  NOW["▶ Сейчас\n2.13·2.10·2.3a·2.12"]
+  NOW["▶ Сейчас\n2.10·2.12·2.13"]
   H1["H1\n1.5 C"]
-  H3["H3\nхаб"]
+  H3["H3\n3.11 pull\nхаб 3.1"]
   NOW --> H1 --> H3
 ```
 
@@ -212,7 +213,8 @@ flowchart LR
 
 ### 2.12 — Garmin login в UI
 
-**P1** в текущей волне — часть «основного интерфейса» Settings.
+**P1** в текущей волне — часть «основного интерфейса» Settings.  
+**Блокер для [3.11](#311--garmin-pull-fit-шаги-сон):** без стабильной сессии tenant pull FIT/wellness упирается в CLI.
 
 ### 2.5 — i18n
 
@@ -243,7 +245,45 @@ flowchart LR
   ENG --> SNK[Sinks]
 ```
 
-Каталог MVP в UI уже есть (HH+Garmin); не хватает **rule engine** и вторых адаптеров.
+Каталог MVP в UI уже есть (HH+Garmin); не хватает **rule engine**, **Garmin как source** ([**3.11**](#311--garmin-pull-fit-шаги-сон)) и вторых адаптеров.
+
+**Порядок H3 (рекомендация):**
+
+```text
+2.8 (spike моделей)
+  → 3.11.0 spike download FIT
+  → 3.11a FIT pull + 3.11b wellness (можно параллельно после spike)
+  → 3.11c UI (steps/sleep widget)
+  → 3.9 ∥ 3.3
+  → 3.1 rule engine
+  → 3.5 полный хаб
+  → 3.4 OAuth login (после 1.5 C + 2.6)
+```
+
+| ID | Кратко | Детали |
+| -- | ------ | ------ |
+| **3.11** | Garmin **source**: download `.fit`, `daily_steps`, `daily_sleep` | [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) |
+| **3.11a** | FIT → `activities/garmin/` | spike auth, CLI backfill, Download в UI |
+| **3.11b** | Wellness SQLite + daily job | garth `DailySteps`, `DailySleepData` |
+| **3.11c** | Widget шагов/сна в UI | шаги + сон; i18n с **2.5** |
+
+### 3.11 — Garmin Pull (FIT, шаги, сон)
+
+> **Детали:** [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md)
+
+Расширить Garmin Connect: не только **destination** (upload HH), но и **source** — скачивание артефактов и ежедневных wellness-метрик.
+
+| Поток | Сейчас | После 3.11 |
+| ----- | ------ | ----------- |
+| HH → Garmin upload | ✅ | ✅ |
+| Garmin activities в browse | metadata ✅ | + локальный `.fit` |
+| Шаги / сон | ❌ | SQLite + UI |
+
+**Зависимости:** **2.12** (login в Settings), browse ✅, [STORAGE.md](STORAGE.md) (`activities/garmin/`).  
+**Не блокирует:** **3.1** rule engine — можно выпустить раньше хаба.  
+**Связь с 3.10:** дедуп HH↔Garmin одной поездки — backlog, не в 3.11.
+
+**Оценка:** 5–8 вечеров (FIT ~2–3, wellness+UI ~3–5).
 
 ### 3.9 — Модульность
 
@@ -255,7 +295,7 @@ flowchart LR
 | 3.9.3 | Рефактор pipeline без смены поведения |
 | 3.9.4 | Контрактные тесты на границах |
 
-**Порядок H3:** **2.8** → **3.9** → **3.1** ∥ **3.3** → **3.5** · **3.4** после **1.5 C**.
+**Порядок H3 (сводка):** **2.8** → **3.11** → **3.9** → **3.1** ∥ **3.3** → **3.5** · **3.4** после **1.5 C** + **2.6**.
 
 ### 3.3 — S3
 
@@ -267,7 +307,8 @@ Local `StorageBackend` ✅. Открыто: boto3 adapter, migrate CLI, signed d
 
 ### 3.5 — Полный хаб
 
-Strava/Wahoo, импорт архива, сложные правила — только после **3.1** + **3.9**.
+Strava/Wahoo, импорт архива, сложные правила — только после **3.1** + **3.9**.  
+Garmin как **source** (FIT archive, wellness) — [**3.11**](#311--garmin-pull-fit-шаги-сон), до Strava/Wahoo.
 
 ---
 
@@ -288,6 +329,8 @@ Strava/Wahoo, импорт архива, сложные правила — то�
 | Риск | Mitigation |
 | ---- | ---------- |
 | Garmin меняет auth/upload | JWT + HTTP + Playwright + garth; pin versions |
+| Garmin download/wellness API (**3.11**) | Spike **3.11.0**; обёртка `getsync/garmin/`; pin `garth-ng` |
+| Нет FIT у manual activity в Connect | `sync_status=no_file`, не error (**3.11a**) |
 | Календарь пустой до browse | Подсказка в UI; **2.3b** не блокирует волну |
 | Регрессия при **2.10** | Сначала **2.13**, потом sidebar — тесты до merge |
 | Регистрация без **2.6** | `REGISTRATION_OPEN=false` на prod |
@@ -306,3 +349,19 @@ Strava/Wahoo, импорт архива, сложные правила — то�
 | [2.1-REGISTER.md](2.1-REGISTER.md) | Регистрация (реализовано) |
 | [2.1e-EMAIL.md](2.1e-EMAIL.md) | Email (**2.6**) |
 | [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) | Garmin pull: FIT, steps, sleep (**3.11**) |
+
+---
+
+## Чеклист открытого (сводка)
+
+| ID | Задача | Статус |
+| -- | ------ | ------ |
+| **2.10**–**2.13** | Кабинет: дизайн, Garmin login UI, тесты | ▶ волна |
+| **1.5 C** | DNS getsync.me | ⏸ H1 |
+| **2.6** | Email verify | ⏸ [2.1e-EMAIL.md](2.1e-EMAIL.md) |
+| **3.11** | Garmin pull: FIT, шаги, сон | 📋 [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) |
+| **3.11.0** | Spike download FIT auth | 📋 |
+| **3.11a** | FIT → storage + UI download | 📋 |
+| **3.11b** | Wellness tables + daily sync | 📋 |
+| **3.11c** | Widget шагов/сна | 📋 |
+| **3.1** | Rule engine, полный хаб | 🔵 после **3.11** / **3.9** |
