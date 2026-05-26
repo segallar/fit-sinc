@@ -67,7 +67,8 @@ erDiagram
 | `sync_events` | Журнал pipeline HH→Garmin (admin UI: все tenants) |
 | `session_refresh_events` | Журнал обновления Garmin JWT (admin UI: Garmin log) |
 
-**Не в SQLite:** OAuth-токены Hammerhead, сессия Garmin, garth — JSON под `data/users/{user_id}/` ([STORAGE.md](STORAGE.md)).
+**Не в SQLite:** OAuth-токены Hammerhead, сессия Garmin, garth — JSON под `data/users/{user_id}/`.  
+**FIT-файлы:** на диске по `storage_key` — [STORAGE.md](STORAGE.md).
 
 ---
 
