@@ -24,17 +24,6 @@
      data-rows-url="{{ rows_load_url }}"
      data-next-page="{{ next_page }}"
      data-has-more="{{ 'true' if has_more_rows else 'false' }}">
-  <div class="getsync-activities-list-meta d-flex flex-wrap align-items-center gap-2 mb-2 flex-shrink-0 small text-muted">
-    <span class="text-truncate">
-      {{ total_label }}{% if filters_active %} · filters active{% endif %}
-      · {{ fmt_now() }}
-      <span class="getsync-activities-scroll-status"></span>
-    </span>
-    {% if data_source_hint %}
-    <span class="getsync-activities-data-hint text-truncate" title="{{ data_source_hint }}">{{ data_source_hint }}</span>
-    {% endif %}
-  </div>
-
   <div class="getsync-activities-table-card flex-grow-1 min-h-0 d-flex flex-column">
     <div class="getsync-activities-table-scroll flex-grow-1 min-h-0">
       <table class="table table-hover table-sm mb-0 align-middle getsync-activities-table">
@@ -60,6 +49,17 @@
         </tbody>
       </table>
     </div>
+  </div>
+
+  <div class="getsync-activities-list-meta d-flex flex-wrap align-items-center gap-2 mt-2 flex-shrink-0 small text-muted">
+    <span class="text-truncate">
+      {{ total_label }}{% if filters_active %} · filters active{% endif %}
+      · {{ fmt_now() }}
+      <span class="getsync-activities-scroll-status"></span>
+    </span>
+    {% if data_source_hint %}
+    <span class="getsync-activities-data-hint text-truncate" title="{{ data_source_hint }}">{{ data_source_hint }}</span>
+    {% endif %}
   </div>
 
 </div>
