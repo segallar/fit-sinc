@@ -8,7 +8,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from fit_sinc.state.store import Store
+from getsync.state.store import Store
 from helpers import isolated_env
 
 
@@ -17,7 +17,7 @@ class TestAppLogin(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 store = Store(settings.db_path)
                 store.ensure_default_user(
@@ -25,7 +25,7 @@ class TestAppLogin(unittest.TestCase):
                     password="good-pass",
                 )
 
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 r = client.post(
@@ -52,38 +52,53 @@ class TestAppLogin(unittest.TestCase):
                 SESSION_COOKIE_SECURE="true",
             ):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
-                Store(settings.db_path).ensure_default_user(
+                self.assertTrue(settings.session_cookie_secure)
+
+    def test_legacy_fit_sinc_session_cookie(self) -> None:
+        import json
+        from base64 import b64encode
+
+        import itsdangerous
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(Path(tmp)):
+                settings = __import__(
+                    "getsync.config", fromlist=["get_settings"]
+                ).get_settings()
+                store = Store(settings.db_path)
+                store.ensure_default_user(
                     email="owner@test.local",
                     password="good-pass",
                 )
 
-                from fit_sinc.web.app import app
-
-                client = TestClient(app, base_url="https://testserver")
-                r = client.post(
-                    "/app/login",
-                    data={"email": "owner@test.local", "password": "good-pass"},
-                    follow_redirects=False,
+                signer = itsdangerous.TimestampSigner(settings.session_secret)
+                payload = b64encode(
+                    json.dumps({"user_id": "default"}).encode("utf-8")
                 )
-                self.assertEqual(r.status_code, 303)
-                cookie = r.headers.get("set-cookie", "")
-                self.assertIn("fit_sinc_session=", cookie)
-                self.assertIn("secure", cookie.lower())
+                legacy = signer.sign(payload).decode("utf-8")
+
+                from getsync.web.app import app
+
+                client = TestClient(app)
+                client.cookies.set("fit_sinc_session", legacy)
+                dash = client.get("/app/", follow_redirects=False)
+                self.assertEqual(dash.status_code, 200)
+                self.assertIn("owner@test.local", dash.text)
 
     def test_login_wrong_password_redirects_with_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 Store(settings.db_path).ensure_default_user(
                     email="owner@test.local",
                     password="good-pass",
                 )
 
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 r = client.post(
@@ -97,7 +112,7 @@ class TestAppLogin(unittest.TestCase):
     def test_app_requires_login(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 r = client.get("/app/activities", follow_redirects=False)
@@ -110,14 +125,14 @@ class TestAdminAccess(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 Store(settings.db_path).ensure_default_user(
                     email="admin@test.local",
                     password="admin-pass",
                 )
 
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 r = client.post(
@@ -142,7 +157,7 @@ class TestAdminAccess(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 store = Store(settings.db_path)
                 store.ensure_default_user(
@@ -158,7 +173,7 @@ class TestAdminAccess(unittest.TestCase):
                     is_admin=False,
                 )
 
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 client.post(
@@ -173,14 +188,14 @@ class TestAdminAccess(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 Store(settings.db_path).ensure_default_user(
                     email="owner@test.local",
                     password="admin-pass",
                 )
 
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 client.post(

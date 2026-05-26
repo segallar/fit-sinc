@@ -8,7 +8,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from fit_sinc.state.store import Store
+from getsync.state.store import Store
 from helpers import isolated_env
 
 
@@ -16,7 +16,7 @@ class TestSettings(unittest.TestCase):
     def test_settings_requires_login(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 r = client.get("/app/settings", follow_redirects=False)
@@ -27,7 +27,7 @@ class TestSettings(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 store = Store(settings.db_path)
                 store.ensure_default_user(
@@ -35,7 +35,7 @@ class TestSettings(unittest.TestCase):
                     password="good-pass",
                 )
 
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 client.post(

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import httpx
 
-from fit_sinc.garmin.web_session import web_resume
+from getsync.garmin.web_session import web_resume
 
 cookies = web_resume() or {}
 client = httpx.Client(

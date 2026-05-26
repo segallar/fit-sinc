@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 class TestTemplates(unittest.TestCase):
     def test_render_status_fragment(self) -> None:
-        from fit_sinc.web.templating import render_template
+        from getsync.web.templating import render_template
 
         html = render_template(
             "fragments/status_panel.html",
@@ -18,7 +18,7 @@ class TestTemplates(unittest.TestCase):
         self.assertIn("2h", html)
 
     def test_login_page_uses_app_css(self) -> None:
-        from fit_sinc.web.app import app
+        from getsync.web.app import app
 
         client = TestClient(app)
         r = client.get("/app/login")
@@ -27,7 +27,7 @@ class TestTemplates(unittest.TestCase):
         self.assertIn("Sign in", r.text)
 
     def test_timezone_select_template(self) -> None:
-        from fit_sinc.web.templating import render_template
+        from getsync.web.templating import render_template
 
         html = render_template(
             "components/timezone_select.html",

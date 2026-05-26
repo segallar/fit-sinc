@@ -1,7 +1,7 @@
-# fit_sinc — deploy to sirocco after successful Test on push to main
+# GetSync — deploy to sirocco after successful Test on push to main
 #
 # Secrets: SSH_PRIVATE_KEY
-# Optional vars: FIT_SINC_SSH_HOST, FIT_SINC_SSH_USER, FIT_SINC_DEPLOY_PATH
+# Optional vars: GETSYNC_SSH_HOST, GETSYNC_SSH_USER, GETSYNC_DEPLOY_PATH (legacy FIT_SINC_* still work in deploy.sh)
 
 name: Deploy
 
@@ -42,6 +42,9 @@ jobs:
       - name: Deploy to sirocco
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          GETSYNC_SSH_HOST: ${{ vars.GETSYNC_SSH_HOST }}
+          GETSYNC_SSH_USER: ${{ vars.GETSYNC_SSH_USER }}
+          GETSYNC_DEPLOY_PATH: ${{ vars.GETSYNC_DEPLOY_PATH }}
           FIT_SINC_SSH_HOST: ${{ vars.FIT_SINC_SSH_HOST }}
           FIT_SINC_SSH_USER: ${{ vars.FIT_SINC_SSH_USER }}
           FIT_SINC_DEPLOY_PATH: ${{ vars.FIT_SINC_DEPLOY_PATH }}

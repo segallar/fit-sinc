@@ -7,10 +7,10 @@
 
 | Режим | `REGISTRATION_OPEN` | Кто создаёт пользователей |
 |-------|---------------------|---------------------------|
-| **Invite-only (prod)** | `false` (по умолчанию) | Админ через `/admin` или `fit_sinc user create` |
+| **Invite-only (prod)** | `false` (по умолчанию) | Админ через `/app/admin` или `getsync user create` |
 | **Открытая** | `true` | Саморегистрация на `/register` (реализация в **5b.3**) |
 
-На production **fit.romansegalla.online** оставляем `REGISTRATION_OPEN=false` до готовности rate limit и UI регистрации.
+На production **app.getsync.me** оставляем `REGISTRATION_OPEN=false` до готовности rate limit и UI регистрации (**2.1**).
 
 ## Первый admin
 
@@ -22,10 +22,10 @@
 Ручное управление:
 
 ```bash
-fit_sinc user promote-admin default
-fit_sinc user promote-admin owner@example.com
-fit_sinc user demote-admin rider@example.com   # нельзя снять последнего admin
-fit_sinc user list                             # флаг [admin]
+getsync user promote-admin default
+getsync user promote-admin owner@example.com
+getsync user demote-admin rider@example.com   # нельзя снять последнего admin
+getsync user list                             # флаг [admin]
 ```
 
 ## Что ещё не меняется (до 5b.1+)

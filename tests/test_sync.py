@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from fit_sinc.state.store import Store
-from fit_sinc.sync.service import sync_activity
+from getsync.state.store import Store
+from getsync.sync.service import sync_activity
 from helpers import isolated_env
 
 
@@ -16,7 +16,7 @@ class TestSyncActivity(unittest.IsolatedAsyncioTestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 store = Store(settings.db_path)
                 store.ensure_default_user(password="x")

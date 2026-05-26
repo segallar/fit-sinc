@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Tailwind → fit_sinc/web/static/app.css (before rsync deploy).
+# Tailwind → getsync/web/static/app.css (before rsync deploy).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 FRONTEND="${ROOT}/frontend"
-OUT="${ROOT}/fit_sinc/web/static/app.css"
+OUT="${ROOT}/getsync/web/static/app.css"
 
 if [[ ! -f "${FRONTEND}/package.json" ]]; then
   echo "frontend/package.json not found" >&2

@@ -2,7 +2,7 @@
 
 import unittest
 
-from fit_sinc.hammerhead.oauth import TokenSet, verify_webhook_signature
+from getsync.hammerhead.oauth import TokenSet, verify_webhook_signature
 
 
 class TestWebhookHmac(unittest.TestCase):
@@ -24,19 +24,19 @@ class TestWebhookHmac(unittest.TestCase):
 
 class TestImports(unittest.TestCase):
     def test_fastapi_app(self) -> None:
-        from fit_sinc.web.app import app
+        from getsync.web.app import app
 
-        self.assertEqual(app.title, "fit_sinc")
+        self.assertEqual(app.title, "GetSync")
 
     def test_root_landing_not_500(self) -> None:
         from fastapi.testclient import TestClient
 
-        from fit_sinc.web.app import app
+        from getsync.web.app import app
 
         client = TestClient(app, raise_server_exceptions=True)
         r = client.get("/", follow_redirects=False)
         self.assertEqual(r.status_code, 200)
-        self.assertIn("fit_sinc", r.text)
+        self.assertIn("GetSync", r.text)
         self.assertIn("/app/login", r.text)
 
     def test_root_redirects_when_logged_in(self) -> None:
@@ -45,19 +45,19 @@ class TestImports(unittest.TestCase):
 
         from fastapi.testclient import TestClient
 
-        from fit_sinc.state.store import Store
+        from getsync.state.store import Store
         from helpers import isolated_env
 
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 Store(settings.db_path).ensure_default_user(
                     email="u@test.local",
                     password="secret",
                 )
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 client.post(
@@ -81,8 +81,8 @@ class TestStore(unittest.TestCase):
         import tempfile
         from pathlib import Path
 
-        from fit_sinc.state.store import Store
-        from fit_sinc.users.context import DEFAULT_USER_ID
+        from getsync.state.store import Store
+        from getsync.users.context import DEFAULT_USER_ID
 
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / "test.db"

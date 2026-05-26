@@ -6,7 +6,7 @@ from pathlib import Path
 
 import sqlite3
 
-from fit_sinc.state.store import Store
+from getsync.state.store import Store
 
 
 def _create_v1_db(path: Path) -> None:

@@ -1,8 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "../fit_sinc/web/templates/**/*.html",
-    "../fit_sinc/web/**/*.py",
+    "../getsync/web/templates/**/*.html",
+    "../getsync/web/**/*.py",
   ],
   theme: {
     extend: {

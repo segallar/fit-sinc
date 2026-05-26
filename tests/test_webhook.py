@@ -10,8 +10,8 @@ from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 
-from fit_sinc.state.store import Store
-from fit_sinc.sync.service import SyncResult, resolve_user_for_webhook
+from getsync.state.store import Store
+from getsync.sync.service import SyncResult, resolve_user_for_webhook
 from helpers import isolated_env, webhook_hmac
 
 
@@ -21,7 +21,7 @@ class TestResolveUserForWebhook(unittest.TestCase):
             root = Path(tmp)
             with isolated_env(root):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 store = Store(settings.db_path)
                 store.ensure_default_user(password="x")
@@ -40,7 +40,7 @@ class TestResolveUserForWebhook(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 Store(settings.db_path).ensure_default_user(password="x")
                 ctx = resolve_user_for_webhook("no-such-hh-user")
@@ -51,7 +51,7 @@ class TestWebhookEndpoint(unittest.TestCase):
     def test_rejects_invalid_hmac(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 body = b'{"activityId":"a1"}'
@@ -66,7 +66,7 @@ class TestWebhookEndpoint(unittest.TestCase):
     def test_rejects_invalid_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 body = b"not-json"
@@ -81,7 +81,7 @@ class TestWebhookEndpoint(unittest.TestCase):
     def test_accepts_valid_hmac_without_activity(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 body = b'{"userId":"1"}'
@@ -98,7 +98,7 @@ class TestWebhookEndpoint(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 store = Store(settings.db_path)
                 store.ensure_default_user(password="x")
@@ -114,8 +114,8 @@ class TestWebhookEndpoint(unittest.TestCase):
                 mock_sync = AsyncMock(
                     return_value=SyncResult("act-99", "skipped", "test")
                 )
-                with patch("fit_sinc.web.app.sync_activity", mock_sync):
-                    from fit_sinc.web.app import app
+                with patch("getsync.web.app.sync_activity", mock_sync):
+                    from getsync.web.app import app
 
                     client = TestClient(app)
                     payload = {"activityId": "act-99", "userId": "hh-42"}

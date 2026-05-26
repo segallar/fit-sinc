@@ -1,7 +1,7 @@
 [project]
-name = "fit-sinc"
-version = "0.4.0"
-description = "Sync Hammerhead Karoo workouts to Garmin Connect"
+name = "get-sync"
+version = "0.5.0"
+description = "GetSync — sync workouts across fitness platforms (Hammerhead → Garmin)"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-fit_sinc = "fit_sinc.cli:app"
+getsync = "getsync.cli:app"
 
 [build-system]
 requires = ["setuptools>=75.0"]
@@ -26,7 +26,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["fit_sinc*"]
+include = ["getsync*"]
 
 [tool.setuptools.package-data]
-fit_sinc = ["web/static/*", "web/templates/**/*.html"]
+getsync = ["web/static/*", "web/templates/**/*.html"]

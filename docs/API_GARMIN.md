@@ -1,127 +1,123 @@
-# Garmin Connect API (fit_sinc)
+# Garmin Connect API (GetSync)
 
-> **Неофициальный доступ** через библиотеку [`garth-ng`](https://pypi.org/project/garth-ng/) (`import garth`).  
-> Официальный [Garmin Connect Developer Program](https://developer.garmin.com/gc-developer-program/overview/) **не подходит** для личной загрузки `.fit` — Activity API предназначен для pull данных с устройств партнёров, не для upload от имени пользователя.
+> **Неофициальный доступ** через [`garth-ng`](https://pypi.org/project/garth-ng/) (`import garth`).  
+> Официальный [Garmin Connect Developer Program](https://developer.garmin.com/gc-developer-program/overview/) **не подходит** для личной загрузки `.fit` — Activity API для pull с устройств партнёров, не upload от имени пользователя.
 
 **Риск:** Garmin может менять auth flow — следить за [garth-ng releases](https://pypi.org/project/garth-ng/).
 
 ---
 
-## Что использует fit_sinc
+## Что использует GetSync (v1)
 
-| Операция | Метод garth-ng |
-|----------|----------------|
-| Login | `garth.login(email, password)` |
-| Сохранение сессии | `garth.save(path)` |
-| Восстановление сессии | `garth.resume(path)` |
-| Upload FIT | Playwright browser (`/app/import-data`) → fallback HTTP → garth OAuth |
-| Refresh token | автоматически в `Client.request()` |
+| Операция | Реализация |
+|----------|------------|
+| Login (CLI) | `garth.login` + `garth.save` → `data/users/{id}/garth/` |
+| Web-сессия upload | `JWT_WEB` + `session` в `data/users/{id}/garmin_web/session.json` |
+| Upload FIT | Playwright `/app/import-data` → HTTP → `garth.upload()` |
+| Refresh JWT | HTTP → Playwright → re-login ([`web_refresh.py`](../getsync/garmin/web_refresh.py)) |
 
-Scope fit_sinc v1: **только upload активности**, без чтения wellness/stats.
+Scope v1: **только upload активности**, без чтения wellness/stats.
+
+**Per tenant:** у каждого `user_id` свой `garmin_web/` и `garth/`. Общей сессии на сервер нет ([ARCHITECTURE.md](ARCHITECTURE.md)).
 
 ---
 
-## Аутентификация
+## Аутентификация (garth-ng / OAuth)
 
-### Login (интерактивно, один раз)
+### Login (интерактивно, CLI)
 
 ```python
 import garth
 
 garth.login("user@example.com", "password")
-garth.save("data/garth")
+garth.save("data/users/default/garth")
 ```
 
-**MFA:** если включена двухфакторная аутентификация, `garth.login()` запросит код (или используй `prompt_mfa` callback).
+**MFA:** `garth.login()` запросит код при включённой 2FA.
 
-**Файл сессии:** `data/garth/oauth2_token.json`
-
-```json
-{
-  "access_token": "...",
-  "refresh_token": "...",
-  "expires_in": 86400,
-  "token_type": "Bearer",
-  "expires_at": 1779809941.028
-}
-```
+**Файл сессии:** `data/users/{user_id}/garth/oauth2_token.json`
 
 ### Resume session
 
 ```python
-import garth
-
-garth.resume("data/garth")
-# garth.client.oauth2_token — активен
+garth.resume("data/users/default/garth")
 ```
 
-fit_sinc: [`fit_sinc/garmin/session.py`](../fit_sinc/garmin/session.py)
+Код: [`getsync/garmin/session.py`](../getsync/garmin/session.py)
 
-### CLI fit_sinc
+### CLI
 
 ```bash
-fit_sinc garmin login          # интерактивный login
-fit_sinc garmin status         # проверка сессии
+getsync --user <slug> garmin login
+getsync --user <slug> garmin status      # upload_ready = web JWT valid
+getsync --user <slug> garmin refresh-web
+getsync --user <slug> garmin import-web-cookies '{"JWT_WEB":"...","session":"..."}'
 ```
 
-**Env (опционально):** `GARMIN_EMAIL`, `GARMIN_PASSWORD` — только для CLI login, не обязательны на сервере если session уже скопирован.
+`GARMIN_EMAIL` / `GARMIN_PASSWORD` в `.env` — только fallback при пустой web-сессии; для нескольких Garmin-аккаунтов **не задавать**.
+
+---
+
+## Web-сессия (основной upload)
+
+Garmin блокирует простой programmatic HTTP upload; GetSync использует cookies из браузерной сессии Connect.
+
+| Cookie | Назначение |
+|--------|------------|
+| `JWT_WEB` | Bearer для upload API (~24 ч) |
+| `session` | Долгоживущая Fe26-session для refresh JWT |
+
+Файл: `data/users/{user_id}/garmin_web/session.json`
+
+**Обновление JWT:**
+
+- фоновый цикл в `getsync serve` (`GARMIN_JWT_REFRESH_INTERVAL_SEC`, default 1800)  
+- перед каждым upload (`ensure_web_session`)  
+- вручную: `getsync garmin refresh-web` или кнопка в `/app/settings`  
+
+Цепочка: HTTP через `session` → headless Chromium → `web_login` при необходимости.
+
+**Импорт из Chrome DevTools** (если `session` истёк):
+
+```bash
+getsync --user <slug> garmin import-web-cookies '{"JWT_WEB":"eyJ...","session":"Fe26..."}'
+getsync --user <slug> garmin refresh-web --force
+```
 
 ---
 
 ## Upload activity (FIT)
 
-### Через garth-ng
+### Порядок в коде ([`session.py`](../getsync/garmin/session.py))
 
-```python
-import garth
-import io
+1. `upload_fit_via_browser` — Playwright, страница import-data  
+2. `upload_fit_via_web` — HTTP multipart с `JWT_WEB`  
+3. `garth.upload()` — OAuth fallback  
 
-garth.resume("data/garth")
+FIT передаётся **без модификации** (байты с Hammerhead).
 
-with open("activity.fit", "rb") as f:
-    result = garth.upload(f)
-
-# result — dict от Garmin upload-service
-```
-
-### HTTP-уровень (внутри garth)
+### HTTP (внутри garth, fallback)
 
 ```
 POST https://connectapi.garmin.com/upload-service/upload
 Authorization: Bearer {oauth2_access_token}
 Content-Type: multipart/form-data
-
-file=@activity.fit
 ```
 
-- User-Agent эмулирует мобильный клиент: `GCM-iOS-5.22.1.4`
-- TLS fingerprint: `curl_cffi` с impersonate `chrome120`
-
-**Важно:** передавать FIT **as-is** с Karoo — без модификации.
+User-Agent эмулирует мобильный клиент; TLS — `curl_cffi` (impersonate `chrome120`).
 
 ---
 
-## Connect API (справочно, не используется в v1)
+## Connect API (справочно)
 
-garth-ng умеет вызывать Connect API:
-
-```python
-garth.connectapi("/activitylist-service/activities/search/activities", method="GET")
-garth.connectapi("/userprofile-service/socialProfile")
-```
-
-Base URL: `https://connectapi.garmin.com` (+ domain `.cn` для Китая через `garth.configure(domain="garmin.cn")`).
-
-fit_sinc v1 **не читает** активности из Garmin — только upload.
+garth-ng умеет `garth.connectapi(...)` для списка активностей и профиля.  
+GetSync v1 **не читает** активности из Garmin — только upload. Список в UI строится из Hammerhead + локального SQLite.
 
 ---
 
-## Обновление токена
+## OAuth token refresh (garth)
 
-`garth.client` автоматически обновляет OAuth2 token при 401 через `refresh_oauth2_token()`.  
-Обновлённый token сохраняется если задан `GARTH_HOME` или после явного `garth.save()`.
-
-На сервере fit_sinc загружает session read-only через `garth.resume()` — при Phase 2 добавить `garth.save()` после refresh.
+`garth.client` обновляет OAuth2 при 401. На сервере обычно `garth.resume()` без записи; при длительной эксплуатации может понадобиться периодический `garth.save()` после refresh.
 
 ---
 
@@ -129,24 +125,37 @@ fit_sinc v1 **не читает** активности из Garmin — толь�
 
 | Variable | Описание |
 |----------|----------|
-| `GARTH_HOME` | Авто-resume session из каталога |
-| `GARTH_TOKEN` | Base64-serialized token (альтернатива HOME) |
+| `GARTH_HOME` | Авто-resume из каталога |
+| `GARTH_TOKEN` | Base64 token (альтернатива) |
 
-fit_sinc использует явный path: `DATA_DIR/garth/` через `garth.resume()`.
+GetSync задаёт явный path: `UserContext.garth_dir`.
 
 ---
 
 ## Деплой session на сервер
 
-Session привязана к аккаунту, не к машине — достаточно скопировать каталог:
+Сессия привязана к аккаунту — копируется каталог tenant:
 
 ```bash
-scp -r data/garth root@sirocco.romansegalla.online:/opt/fit_sinc/data/
-ssh root@sirocco.romansegalla.online \
-  'chown -R fit_sinc:fit_sinc /opt/fit_sinc/data/garth'
+# после локального getsync --user default garmin login
+scp -r data/users/default/garth \
+  root@sirocco:/opt/getsync/data/users/default/
+scp data/users/default/garmin_web/session.json \
+  root@sirocco:/opt/getsync/data/users/default/garmin_web/
+
+ssh root@sirocco 'chown -R getsync:getsync /opt/getsync/data'
 ```
 
-При истечении refresh token — повторить `fit_sinc garmin login` локально и скопировать заново.
+При истечении refresh token — повторить login локально и скопировать снова.
+
+---
+
+## Playwright на сервере
+
+Upload через headless Chromium (`/app/import-data`, consent, file input).
+
+- Установка: `playwright install chromium` (в venv пользователя `getsync`)  
+- systemd: `PLAYWRIGHT_BROWSERS_PATH`, `HOME` — [`deploy/getsync.service`](../deploy/getsync.service)
 
 ---
 
@@ -155,42 +164,20 @@ ssh root@sirocco.romansegalla.online \
 | Тема | Детали |
 |------|--------|
 | ToS | Неофициальный клиент; личное использование на свой риск |
-| MFA | Поддерживается, но login только интерактивно |
-| Дубликаты | Garmin может создать duplicate activity — dedup по Hammerhead `activityId` в SQLite (Phase 2) |
-| Rate limits | Не документированы; при backfill — пауза между upload |
+| MFA | Login интерактивно или cookies из браузера |
+| Дубликаты | Дедуп по Hammerhead `activity_id` в SQLite |
+| Rate limits | Не документированы; при backfill — умеренная нагрузка |
 | Поломки | Следить за issues garth-ng при смене Garmin SSO |
-
-**Upload (v0.3.1+):** programmatic HTTP upload blocked by Garmin. fit_sinc uses **headless Chromium (Playwright)**:
-
-1. Cookies `JWT_WEB` + `session` from Chrome DevTools
-2. Open `connect.garmin.com/app/import-data`
-3. Accept consent → select `.fit` → click «Импорт данных»
-
-На сервере нужен Chromium: `playwright install chromium` (уже выполнен на sirocco).
-
-**Env для systemd:** `PLAYWRIGHT_BROWSERS_PATH`, `HOME` — см. [`deploy/fit-sinc.service`](../deploy/fit-sinc.service).
-
-Web-сессия для upload:
-
-JWT_WEB живёт ~24 ч; `session` cookie — дольше. fit_sinc **автоматически обновляет JWT**:
-- фоновая задача в `serve` (каждые 30 мин, env `GARMIN_JWT_REFRESH_INTERVAL_SEC`)
-- перед каждым upload
-- вручную: `fit_sinc garmin refresh-web`
-
-Обновление: HTTP через `session` cookie → fallback Playwright → fallback `web-login` (если нет MFA).
-
-Если `session` истёк — снова импорт из Chrome DevTools:
-
-```bash
-fit_sinc garmin import-web-cookies '{"JWT_WEB":"eyJ...","session":"Fe26..."}'
-fit_sinc garmin refresh-web --force
-```
 
 ---
 
+## Модули
+
 | Модуль | Назначение |
-|--------|----------|
-| [`fit_sinc/garmin/session.py`](../fit_sinc/garmin/session.py) | login, resume, status |
-| Phase 2 | `garth.upload()` в sync service |
+|--------|------------|
+| [`getsync/garmin/session.py`](../getsync/garmin/session.py) | login, status, `upload_fit` orchestration |
+| [`getsync/garmin/web_session.py`](../getsync/garmin/web_session.py) | cookies, HTTP upload |
+| [`getsync/garmin/web_refresh.py`](../getsync/garmin/web_refresh.py) | JWT refresh |
+| [`getsync/garmin/browser_upload.py`](../getsync/garmin/browser_upload.py) | Playwright |
 
 **Зависимость:** `garth-ng>=1.1.0` в [`pyproject.toml`](../pyproject.toml)

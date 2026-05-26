@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}GetSync{% endblock %}</title>
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="min-h-full bg-slate-50 text-slate-900 antialiased">
+  <div class="mx-auto flex min-h-full flex-col px-4 py-6 sm:px-6 lg:px-8 {% block container_class %}max-w-6xl{% endblock %}">
+    <header class="mb-6 flex items-center gap-3">
+      <img src="/static/icon.svg" alt="" width="48" height="48" class="rounded-xl shadow-sm">
+      <div>
+        <p class="text-sm font-medium text-teal-700">Hammerhead → Garmin</p>
+        <h1 class="text-2xl font-semibold tracking-tight">GetSync</h1>
+      </div>
+    </header>
+    {% block header_extra %}{% endblock %}
+    <main class="flex-1">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="mt-10 border-t border-slate-200 pt-4 text-xs text-slate-500">
+      {% block footer %}{% endblock %}
+    </footer>
+  </div>
+</body>
+</html>

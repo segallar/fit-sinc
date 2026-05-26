@@ -1,4 +1,4 @@
-# fit_sinc — compile + smoke tests on push/PR
+# GetSync — compile + smoke tests on push/PR
 
 name: Test
 
@@ -25,7 +25,7 @@ jobs:
         run: pip install -e .
 
       - name: Compile
-        run: python -m compileall -q fit_sinc
+        run: python -m compileall -q getsync
 
       - name: Smoke tests
         run: python -m unittest discover -s tests -p "test_*.py" -v

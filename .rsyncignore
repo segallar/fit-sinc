@@ -16,6 +16,6 @@ dist/
 htmlcov/
 .coverage
 
-# Frontend toolchain — CSS уже в fit_sinc/web/static/app.css
+# Frontend toolchain — CSS уже в getsync/web/static/app.css
 frontend/node_modules/
 node_modules/

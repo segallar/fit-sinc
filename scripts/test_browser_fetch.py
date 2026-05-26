@@ -5,7 +5,7 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-from fit_sinc.garmin.browser_upload import CHROMIUM_ARGS, USER_AGENT, _cookies_for_playwright
+from getsync.garmin.browser_upload import CHROMIUM_ARGS, USER_AGENT, _cookies_for_playwright
 
 JS = """
 async ({ b64, filename }) => {

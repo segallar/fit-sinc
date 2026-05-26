@@ -2,13 +2,13 @@
 
 import unittest
 
-from fit_sinc.users.timezones import (
+from getsync.users.timezones import (
     DEFAULT_TIMEZONE,
     normalize_timezone,
     options_for_select,
     timezone_choices,
 )
-from fit_sinc.web.templating import render_template
+from getsync.web.templating import render_template
 
 
 class TestTimezones(unittest.TestCase):

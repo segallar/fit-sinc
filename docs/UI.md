@@ -1,17 +1,19 @@
 # Web UI (Jinja2 + Tailwind)
 
+> Индекс: [docs/README.md](README.md) · архитектура маршрутов: [ARCHITECTURE.md](ARCHITECTURE.md).
+
 Весь кабинет `/app` и админка `/app/admin` рендерятся через Jinja2-шаблоны и собранный `app.css`.
 
 | Что | Где |
 |-----|-----|
-| Шаблоны | `fit_sinc/web/templates/` |
+| Шаблоны | `getsync/web/templates/` |
 | Layout кабинета | `layouts/cabinet.html` (extends `base.html`) |
 | Layout входа | `layouts/auth.html` |
-| Роуты | `fit_sinc/web/app_routes.py`, `admin_routes.py` |
-| Рендер | `fit_sinc/web/cabinet.py` → `render_cabinet()` |
-| Форматтеры | `fit_sinc/web/html.py` (`esc`, `fmt_*`, `query_string`) |
-| Jinja helpers | `fit_sinc/web/templating.py` |
-| CSS | `frontend/` → `fit_sinc/web/static/app.css` |
+| Роуты | `getsync/web/app_routes.py`, `admin_routes.py` |
+| Рендер | `getsync/web/cabinet.py` → `render_cabinet()` |
+| Форматтеры | `getsync/web/html.py` (`esc`, `fmt_*`, `query_string`) |
+| Jinja helpers | `getsync/web/templating.py` |
+| CSS | `frontend/` → `getsync/web/static/app.css` |
 | HTMX | CDN в `layouts/base.html` |
 
 ## Локальный запуск
@@ -19,7 +21,7 @@
 ```bash
 pip install -e .
 cd frontend && npm install && npm run build:css   # при изменении Tailwind-классов
-uvicorn fit_sinc.web.app:app --reload --port 8080
+uvicorn getsync.web.app:app --reload --port 8080
 # http://127.0.0.1:8080/app/
 ```
 

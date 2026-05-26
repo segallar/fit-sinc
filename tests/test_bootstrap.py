@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from fit_sinc.state.store import Store
-from fit_sinc.users.bootstrap import apply_bootstrap_admin, registration_is_open
+from getsync.state.store import Store
+from getsync.users.bootstrap import apply_bootstrap_admin, registration_is_open
 from helpers import isolated_env
 
 
@@ -16,7 +16,7 @@ class TestBootstrapAdmin(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 store = Store(settings.db_path)
                 store.ensure_default_user(email="owner@test.local", password="x")
@@ -35,7 +35,7 @@ class TestBootstrapAdmin(unittest.TestCase):
                 BOOTSTRAP_ADMIN_EMAIL="ops@test.local",
             ):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 store = Store(settings.db_path)
                 store.create_user(
@@ -55,7 +55,7 @@ class TestBootstrapAdmin(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
-                    "fit_sinc.config", fromlist=["get_settings"]
+                    "getsync.config", fromlist=["get_settings"]
                 ).get_settings()
                 store = Store(settings.db_path)
                 store.create_user(

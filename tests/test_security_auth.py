@@ -10,8 +10,8 @@ from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 
-from fit_sinc.config import get_settings
-from fit_sinc.state.store import Store
+from getsync.config import get_settings
+from getsync.state.store import Store
 from helpers import isolated_env, webhook_hmac
 
 LOGIN_REDIRECT = "/app/login"
@@ -85,7 +85,7 @@ def _make_client(
     settings = _settings()
     store = Store(settings.db_path)
     store.ensure_default_user(email=admin_email, password=admin_password)
-    from fit_sinc.web.app import app
+    from getsync.web.app import app
 
     return TestClient(app), store, settings.default_user_id
 
@@ -137,8 +137,8 @@ class TestAppRoutesRequireSession(unittest.TestCase):
                     client.get("/app/activities/secret-act/fit", follow_redirects=False),
                 )
 
-    @patch("fit_sinc.web.app_routes._run_sync_force", new_callable=AsyncMock)
-    @patch("fit_sinc.web.app_routes.refresh_web_session")
+    @patch("getsync.web.app_routes._run_sync_force", new_callable=AsyncMock)
+    @patch("getsync.web.app_routes.refresh_web_session")
     def test_app_post_allowed_with_session(
         self,
         _mock_refresh,
@@ -276,7 +276,7 @@ class TestTenantIsolation(unittest.TestCase):
                     user_id="bob",
                 )
                 bob_ctx = __import__(
-                    "fit_sinc.users.context", fromlist=["resolve_user_context"]
+                    "getsync.users.context", fromlist=["resolve_user_context"]
                 ).resolve_user_context("bob")
                 bob_ctx.fits_dir.mkdir(parents=True, exist_ok=True)
                 fit_path = bob_ctx.fits_dir / "bob-act.fit"
@@ -318,7 +318,7 @@ class TestWebhookSecurity(unittest.TestCase):
     def test_rejects_missing_hmac_when_secret_configured(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 body = b'{"activityId":"a1"}'
@@ -329,7 +329,7 @@ class TestWebhookSecurity(unittest.TestCase):
     def test_rejects_invalid_hmac(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 body = b'{"activityId":"a1"}'
@@ -340,11 +340,11 @@ class TestWebhookSecurity(unittest.TestCase):
                 )
                 self.assertEqual(r.status_code, 403)
 
-    @patch("fit_sinc.web.app.sync_activity", new_callable=AsyncMock)
+    @patch("getsync.web.app.sync_activity", new_callable=AsyncMock)
     def test_accepts_valid_hmac_without_session(self, _mock_sync: AsyncMock) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
-                from fit_sinc.web.app import app
+                from getsync.web.app import app
 
                 client = TestClient(app)
                 payload = {"activityId": "a1", "userId": "1"}

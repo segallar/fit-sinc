@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 from typing import Iterator
 
-from fit_sinc.config import get_settings
+from getsync.config import get_settings
 
 
 def webhook_hmac(body: bytes, secret: str) -> str:

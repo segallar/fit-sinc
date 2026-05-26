@@ -1,17 +1,18 @@
-# Roadmap fit_sinc
+# Roadmap GetSync
 
-> **Статус (2026-05-26):** MVP (фазы 0–5) в production; **горизонт 1:** **1.1–1.4**, **1.6–1.8** ✅ · открыт **1.5** (GetSync / getsync.me) · далее **2.1**.
+> **Статус (2026-05-26):** MVP (фазы 0–5) в production; **горизонт 1:** **1.1–1.4**, **1.6–1.8**, **1.5 A+B** ✅ · **1.5 C** (DNS/certbot на prod) 🔄 · далее **2.1**.  
+> Продукт: **GetSync** — пакет и CLI **`getsync`** ([1.5-RENAME.md](1.5-RENAME.md)).
 
-**Текущее состояние:** [README](../README.md) · [ARCHITECTURE.md](ARCHITECTURE.md)  
+**Текущее состояние:** [README](../README.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [docs/README.md](README.md)  
 **Операции:** [CI-CD.md](CI-CD.md) · [API Hammerhead](API_HAMMERHEAD.md) · [API Garmin](API_GARMIN.md)
 
-**Репозиторий:** https://github.com/segallar/fit-sinc
+**Репозиторий:** https://github.com/segallar/getsync
 
 ---
 
 ## Идея продукта
 
-**Целевой продукт** — **GetSync** ([getsync.me](https://getsync.me), [1.5](1.5-RENAME.md)); в коде пока *fit_sinc* — **единый хаб для спортивных активностей**:
+**Целевой продукт** — **GetSync** ([getsync.me](https://getsync.me), [1.5](1.5-RENAME.md)); пакет **`getsync`** — **единый хаб для спортивных активностей**:
 
 | Направление | Содержание |
 |-------------|------------|
@@ -37,7 +38,7 @@
 | Фаза | Статус |
 |------|--------|
 | 0a–0c DevOps (sirocco, certbot, nginx) | ✅ |
-| 0d fit_sinc deploy (stub, systemd, HTTPS) | ✅ |
+| 0d getsync deploy (stub, systemd, HTTPS) | ✅ |
 | 1 Hammerhead OAuth + Garmin auth | ✅ |
 | 2 Sync core + webhook sync + UI | ✅ |
 | 3 Garmin upload (web JWT, browser, fallback) | ✅ код / ⚠️ ops на сервере |
@@ -55,7 +56,7 @@
 | 7 Хаб активностей: сбор, хранение, анализ, sync → сервисы | 📋 · **2.8–2.9** · **3.1**, **3.5** |
 | **Modularity** Модули и интерфейсы между ними | 📋 · **3.9** |
 | 8 Маршруты (routes) | 📋 · **3.2** |
-| **9** Переименование → **GetSync** / getsync.me | 🔄 домен ✅ · код **1.5** |
+| **9** Переименование → **GetSync** / getsync.me | 🔄 **A+B** ✅ · **C** DNS/certbot |
 | **10** Внешняя авторизация (OAuth/OIDC) | 📋 · **3.4** |
 | **11** Хранение активностей (объектное хранилище, S3) | 📋 · **3.3** |
 
@@ -288,7 +289,7 @@ flowchart TB
 
 **Логин в кабинет:** `email` + пароль (сессия cookie, HttpOnly). Telegram — не замена пароля на старте, а канал связи и push-уведомлений.
 
-**Часовой пояс:** сейчас в коде всё в MSK ([`timeutil.py`](../fit_sinc/timeutil.py)); в v2 — `format_* (iso, tz=user.timezone)`, «Updated …» и таблицы activities/log в TZ пользователя. UTC хранить в SQLite как сейчас.
+**Часовой пояс:** сейчас в коде всё в MSK ([`timeutil.py`](../getsync/timeutil.py)); в v2 — `format_* (iso, tz=user.timezone)`, «Updated …» и таблицы activities/log в TZ пользователя. UTC хранить в SQLite как сейчас.
 
 #### Модель данных
 
@@ -328,11 +329,11 @@ data/users/{id}/
 #### CLI
 
 ```bash
-fit_sinc user create roman --hammerhead-user-id 192184
-fit_sinc user list
-fit_sinc --user roman hammerhead auth
-fit_sinc --user roman garmin login
-fit_sinc --user roman sync --since 2025-01-01
+getsync user create roman --hammerhead-user-id 192184
+getsync user list
+getsync --user roman hammerhead auth
+getsync --user roman garmin login
+getsync --user roman sync --since 2025-01-01
 ```
 
 #### Админка (`/app/admin/*` — ✅ с 5b.1; legacy `/admin` → 301)
@@ -430,13 +431,13 @@ fit_sinc --user roman sync --since 2025-01-01
 
 > **Крупная задача** (🟡 горизонт 2). Публичная «витрина» на **https://romansegalla.online/** — не путать с кабинетом `/app` (сейчас тот же uvicorn, разные `server_name` в nginx).
 
-**Зачем:** понятная точка входа для гостей и пользователей продукта (fit_sinc); SEO и доверие; единый домен с формой входа вместо заглушки; опционально блок «обо мне» / другие проекты на romansegalla.online.
+**Зачем:** понятная точка входа для гостей и пользователей продукта GetSync; SEO и доверие; единый домен с формой входа вместо заглушки; опционально блок «обо мне» / другие проекты на romansegalla.online.
 
 **Сейчас (MVP):**
 
 | Элемент | Статус |
 |---------|--------|
-| `GET /` — [`site_routes.py`](../fit_sinc/web/site_routes.py), [`home.html`](../fit_sinc/web/templates/pages/site/home.html) | ✅ краткий текст + login |
+| `GET /` — [`site_routes.py`](../getsync/web/site_routes.py), [`home.html`](../getsync/web/templates/pages/site/home.html) | ✅ краткий текст + login |
 | nginx proxy — [`deploy/nginx/romansegalla.conf`](../deploy/nginx/romansegalla.conf) | ✅ |
 | Статический fallback — [`deploy/www/index.html`](../deploy/www/index.html) | ✅ |
 | Сессия: залогиненный user → redirect `/app/` | ✅ |
@@ -483,7 +484,7 @@ fit.romansegalla.online → app: /app/*, /webhooks/*, /health (как сейча
 
 > Регрессия авторизации; функциональные тесты settings/register — **2.2** / **5b.6**.
 
-**Цель:** доступ к кабинету, admin и защищённым действиям — **только** с валидной cookie-сессией (`fit_sinc_session` → `user_id` в `auth.py`); публичные эндпоинты остаются открытыми по явным правилам middleware.
+**Цель:** доступ к кабинету, admin и защищённым действиям — **только** с валидной cookie-сессией (`getsync_session` → `user_id` в `auth.py`); публичные эндпоинты остаются открытыми по явным правилам middleware.
 
 **Модель (уже в коде):**
 
@@ -561,7 +562,7 @@ flowchart TB
 
 **Порядок (актуальный):** [🔴 1.x](#-горизонт-1--срочно-важно-небольшие) → [🟡 2.x](#-горизонт-2--средняя-срочность-и-объём) → [🔵 3.x](#-горизонт-3--далёкое-будущее).
 
-**MVP «можно пользоваться»:** 5b.1 ✅ + **UI** ✅ + **1.1**–**1.4**, **1.7**–**1.8** ✅; открыты **1.5**, **2.1**.
+**MVP «можно пользоваться»:** 5b.1 ✅ + **UI** ✅ + **1.1**–**1.4**, **1.7**–**1.8**, **1.5 A+B** ✅; открыты **1.5 C**, **2.1**.
 
 #### 5b.2 — Settings в nav — ✅ **1.3**
 
@@ -580,15 +581,15 @@ flowchart TB
 | JWT общий? | **Нет** — свой на `user_id`; фоновый цикл в `app.py` обновляет по списку пользователей |
 | N виртуальных браузеров? | **Нет** — headless Chromium **по операции** (refresh/upload), затем `browser.close()` |
 | Refresh JWT | Сначала HTTP (`curl_cffi` + cookie `session`), Playwright — fallback |
-| Первичная привязка Garmin | UI: refresh/disconnect + status (**1.2** ✅); **первый** login — `fit_sinc --user <slug> garmin login` или import cookies |
+| Первичная привязка Garmin | UI: refresh/disconnect + status (**1.2** ✅); **первый** login — `getsync --user <slug> garmin login` или import cookies |
 
 **Чеклист нового пользователя (ops, до Settings UI):**
 
-1. Создать user (админка или `fit_sinc user create`)
+1. Создать user (админка или `getsync user create`)
 2. Заполнить `hammerhead_user_id` (= `userId` в webhook)
-3. `fit_sinc --user <slug> hammerhead auth`
-4. `fit_sinc --user <slug> garmin login` (или import-web-cookies)
-5. `fit_sinc --user <slug> garmin status` → `upload_ready`
+3. `getsync --user <slug> hammerhead auth`
+4. `getsync --user <slug> garmin login` (или import-web-cookies)
+5. `getsync --user <slug> garmin status` → `upload_ready`
 
 **Техдолг:** глобальные `GARMIN_EMAIL` / `GARMIN_PASSWORD` в `.env` используются как fallback при отсутствии сессии — для нескольких разных Garmin-аккаунтов **не подходит**; убрать из prod-сценария после **1.2** (логин только в контексте сессии пользователя).
 
@@ -656,14 +657,14 @@ flowchart TB
 | Элемент | Поведение |
 |---------|-----------|
 | **Поиск** | Одна строка сверху (`q`): имя активности, substring; Enter / debounce → обновить таблицу; сохранять в query string |
-| **Календарь** | Месяц в TZ пользователя; на каждом дне — метки: есть активности, цвет по worst `fit_sinc_status` (synced / error / pending / none) |
+| **Календарь** | Месяц в TZ пользователя; на каждом дне — метки: есть активности, цвет по worst `sync_status` (synced / error / pending / none) |
 | **Клик по дню** | `date_from` = `date_to` = выбранный день → таблица под календарём |
 | **Навигация** | ‹ › месяц; «Сегодня»; опционально неделя |
 | **Связка с фильтрами** | status (error / synced), source (HH/Garmin), type — как сейчас, не сбрасывать при смене дня |
 
 **Данные для календаря:**
 
-- **v6.0 (быстро):** агрегат из SQLite `activities` по `user_id` + `DATE(activity_date)` — counts и max severity (уже синкнутые в fit_sinc)
+- **v6.0 (быстро):** агрегат из SQLite `activities` по `user_id` + `DATE(activity_date)` — counts и max severity (уже синкнутые в GetSync)
 - **v6.1 (полнее):** опционально подгрузка HH/Garmin за месяц для дней «только в облаке, ещё не в SQLite» — тяжелее, по кнопке «Обновить месяц»
 
 **Техника (без SPA):** Jinja2 + HTMX или отдельный `GET /app/activities/calendar?year=&month=` → HTML fragment; клик дня — `GET /app/activities?...&date_from=...`. Стили в `html.py` / static CSS.
@@ -718,16 +719,16 @@ flowchart TB
 | **Профиль** | `users.locale` (`ru` / `en` / …) — главный источник для залогиненного UI |
 | **Настройки** | `/app/settings` → выпадающий список языка (рядом с timezone) |
 | **Регистрация** | **5b.3:** опционально выбор языка; иначе `Accept-Language` браузера → fallback `ru` |
-| **Гость** | `Accept-Language` на `/login`, `/register`; cookie `fit_sinc_lang` на 14 дней |
+| **Гость** | `Accept-Language` на `/login`, `/register`; cookie `getsync_lang` на 14 дней |
 | **Админ** | Тот же `locale` что у пользователя-оператора (не отдельный «язык админки») |
 
 #### Техника (рекомендация)
 
 ```text
-fit_sinc/locale/
+getsync/locale/
   ru.json          # или ru/LC_MESSAGES/messages.po (gettext)
   en.json
-fit_sinc/web/i18n.py   # t("nav.dashboard", locale=...) → str
+getsync/web/i18n.py   # t("nav.dashboard", locale=...) → str
 ```
 
 | Вариант | Плюсы | Минусы |
@@ -735,7 +736,7 @@ fit_sinc/web/i18n.py   # t("nav.dashboard", locale=...) → str
 | **JSON-каталоги** + `t(key)` | Просто, без Babel, удобно в Jinja `{{ t('…') }}` | Нет plural/forms без доп. логики |
 | **gettext (Babel)** | Стандарт, plural, `pybabel extract` | Тяжелее CI, `.po` для редакторов |
 
-**Рекомендация для fit_sinc:** JSON + ключи `section.item` на старте; при росте — миграция на gettext.
+**Рекомендация для GetSync:** JSON + ключи `section.item` на старте; при росте — миграция на gettext.
 
 **Jinja2:** все пользовательские строки в шаблонах (`layouts/app.html`, страницы `/app`, `/app/admin`); в Python — только `t()` для flash/ошибок валидации.
 
@@ -878,7 +879,7 @@ ActivityRecord { user_id, source, external_id, type: activity|route, … }
 
 **Зачем:** сейчас связность высокая (`sync/service.py` знает Hammerhead и Garmin; `web` тянет store и интеграции); новые источники/приёмники без формальных интерфейсов дороже и рискованнее.
 
-**Сейчас (монолит в одном пакете `fit_sinc/`):**
+**Сейчас (монолит в одном пакете `getsync/`):**
 
 | Область | Пакеты / файлы |
 |---------|----------------|
@@ -983,7 +984,7 @@ class StorageBackend(Protocol):
 |----------------|------------|
 | **`docs/MODULES.md`** | Карта модулей, диаграммы, таблица «кто с кем говорит» |
 | **`docs/ARCHITECTURE.md`** | Ссылка на модули; обновить после **3.9.1** |
-| **`fit_sinc/ports/`** | Protocol-файлы (можно начать с **2.8**) |
+| **`getsync/ports/`** | Protocol-файлы (можно начать с **2.8**) |
 | **Правила импорта** | `web` → `pipeline` → `ports` ← `adapters`; запрет `adapters` → `web` (опционально `import-linter` в CI) |
 
 **Подзадачи:**
@@ -1028,7 +1029,7 @@ class StorageBackend(Protocol):
 
 > **Детальный план:** [1.5-RENAME.md](1.5-RENAME.md) — **GetSync**, canonical **getsync.me** / **app.getsync.me**.
 
-**Цель:** смена бренда с *fit_sinc* на **GetSync** — имя продукта, домен, пакет Python, systemd/nginx, GitHub repo, cookie/session.
+**Цель:** смена бренда с legacy fit_sinc на **GetSync** — имя продукта, домен, пакет Python, systemd/nginx, GitHub repo, cookie/session.
 
 > **Приоритет:** [🔴 горизонт 1](#-горизонт-1--срочно-важно-небольшие), задача **1.5** — сразу после **1.4**, как только утверждено имя (до **2.1** регистрации и **3.4** OAuth).
 
@@ -1181,7 +1182,7 @@ StorageBackend          — LocalFS | S3 (boto3)
 - [x] **5b.2 (часть):** user bar, форма пользователя, IANA timezone select, тесты auth/admin form → см. **UI** выше
 - [x] Secret `SSH_PRIVATE_KEY` в GitHub
 - [x] README GitHub + разделение docs (ARCHITECTURE / PLAN)
-- [x] Push в `main` → https://github.com/segallar/fit-sinc
+- [x] Push в `main` → https://github.com/segallar/getsync
 - [x] UI: re-sync в кабинете (Re-sync, force + confirm, retry all errors, redirect `next`)
 
 ### 🔴 Горизонт 1 — срочно (TODO)
@@ -1190,7 +1191,7 @@ StorageBackend          — LocalFS | S3 (boto3)
 - [x] **1.2** 5b.4 — `/app/settings`: профиль, пароль, Hammerhead OAuth; Garmin status (первый login — CLI)
 - [x] **1.3** 5b.2 — пункт **Settings** в nav
 - [x] **1.4** 5b.5 — nginx без Basic Auth; `SESSION_COOKIE_SECURE` (https_only cookie)
-- [ ] **1.5** 9 — **GetSync**, getsync.me — [1.5-RENAME.md](1.5-RENAME.md) (домен ✅; A/B/C после DNS)
+- [x] **1.5** 9 — **GetSync**, пакет `getsync` — [1.5-RENAME.md](1.5-RENAME.md) (**A+B** ✅; **C** DNS/certbot/Hammerhead на prod)
 - [x] **1.6** Docs — ARCHITECTURE: `data/users/{id}/`
 - [x] **1.7** Ops — даты в UI по `users.timezone`
 - [x] **1.8** 6 мин — баннер HH + Garmin на дашборде

@@ -13,9 +13,9 @@ class TestConnectionsBanner(unittest.TestCase):
     def test_dashboard_shows_connections_banner(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
-                from fit_sinc.config import get_settings
-                from fit_sinc.state.store import Store
-                from fit_sinc.web.app import app
+                from getsync.config import get_settings
+                from getsync.state.store import Store
+                from getsync.web.app import app
 
                 store = Store(get_settings().db_path)
                 store.ensure_default_user(
@@ -43,10 +43,10 @@ class TestConnectionsBanner(unittest.TestCase):
     def test_connection_status_structure(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
-                from fit_sinc.config import get_settings
-                from fit_sinc.state.store import Store
-                from fit_sinc.users.context import resolve_user_context
-                from fit_sinc.web.connections import connection_status
+                from getsync.config import get_settings
+                from getsync.state.store import Store
+                from getsync.users.context import resolve_user_context
+                from getsync.web.connections import connection_status
 
                 store = Store(get_settings().db_path)
                 user = store.ensure_default_user(

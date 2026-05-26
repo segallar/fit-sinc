@@ -1,0 +1,18 @@
+[Unit]
+Description=GetSync web app (Hammerhead → Garmin)
+After=network.target
+
+[Service]
+Type=simple
+User=getsync
+Group=getsync
+WorkingDirectory=/opt/getsync
+EnvironmentFile=-/opt/getsync/.env
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/getsync/.cache/ms-playwright
+Environment=HOME=/opt/getsync
+ExecStart=/opt/getsync/.venv/bin/uvicorn getsync.web.app:app --host 127.0.0.1 --port 8080
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

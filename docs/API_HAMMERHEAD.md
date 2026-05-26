@@ -1,10 +1,10 @@
-# Hammerhead API (fit_sinc)
+# Hammerhead API (GetSync)
 
 > **Официальный API** Hammerhead Karoo. OpenAPI: https://api.hammerhead.io/v1/docs/openapi.yml  
 > Developer Portal: https://www.hammerhead.io/pages/developer-platform  
 > Регистрация client: https://support.hammerhead.io/hc/en-us/articles/43558376710683-Creating-a-Developer-Account
 
-fit_sinc использует scope **`activity:read`** — чтение активностей, скачивание FIT и webhook-уведомления.
+GetSync использует scope **`activity:read`** — чтение активностей, скачивание FIT и webhook-уведомления.
 
 ---
 
@@ -30,7 +30,9 @@ GET https://api.hammerhead.io/v1/auth/oauth/authorize
   &state={RANDOM_STATE}
 ```
 
-**Redirect URI fit_sinc (локально):** `http://127.0.0.1:8765/callback`
+**Redirect URI (CLI, локально):** `http://127.0.0.1:8765/callback`  
+**Redirect URI (кабинет, production):** `https://app.getsync.me/app/settings/hammerhead/callback`  
+(задаётся `HAMMERHEAD_WEB_REDIRECT_URI` или совпадает с путём в [`settings_routes.py`](../getsync/web/settings_routes.py))
 
 **Успех:** `{redirect_uri}?code={code}&state={state}`  
 **Отказ:** `{redirect_uri}?error=access_denied&state={state}`
@@ -60,6 +62,8 @@ redirect_uri=...   # must match authorize request
 }
 ```
 
+Поле `user_id` сохраняется в `users.hammerhead_user_id` для маршрутизации webhook.
+
 ### 3. Refresh token
 
 ```
@@ -86,7 +90,7 @@ token={access_token}
 
 | Scope | Описание |
 |-------|----------|
-| `activity:read` | Чтение активностей + webhook (используем) |
+| `activity:read` | Чтение активностей + webhook (**используем**) |
 | `route:read` | Чтение маршрутов |
 | `route:write` | Загрузка маршрутов |
 | `workout:write` | Загрузка workouts |
@@ -149,15 +153,19 @@ GET /activities/{activityId}/file
 
 **Ответ 200:** бинарный FIT (`application/vnd.ant.fit`).
 
+При 404/409/425 GetSync повторяет запрос с задержками 5 / 15 / 30 с ([`sync/service.py`](../getsync/sync/service.py)).
+
 ---
 
-## Webhook (входящий в fit_sinc)
+## Webhook (входящий в GetSync)
 
 Hammerhead **POST** на URL из Developer Portal:
 
 ```
-https://fit.romansegalla.online/webhooks/hammerhead
+https://app.getsync.me/webhooks/hammerhead
 ```
+
+(legacy до cutover: `https://fit.romansegalla.online/webhooks/hammerhead`)
 
 ### Тело запроса
 
@@ -174,42 +182,54 @@ https://fit.romansegalla.online/webhooks/hammerhead
 |--------|----------|
 | `X-Hmac-Signature` | HMAC-SHA256(raw body, webhook_secret) |
 
-fit_sinc проверяет hex- и base64-представление digest. Без валидной подписи → **403**.
+GetSync проверяет hex- и base64-представление digest ([`oauth.py`](../getsync/hammerhead/oauth.py)). Без валидной подписи → **403**.
 
-### Ответ fit_sinc
+### Ответ GetSync
 
 ```json
 {"status": "accepted"}
 ```
 
-Hammerhead **игнорирует ошибки** webhook — idempotency на стороне fit_sinc обязательна (Phase 2).
+Синхронизация выполняется в `BackgroundTasks` после ответа.
+
+Hammerhead **не гарантирует** доставку — idempotency на стороне GetSync (`activities` + `is_synced`).
+
+### Маршрутизация tenant
+
+`payload.userId` → `Store.get_user_by_hammerhead_id()` → `user_id`.  
+Если не найден — tenant `default` ([`resolve_user_for_webhook`](../getsync/sync/service.py)).
 
 ---
 
 ## Developer Portal — что указать
 
-| Поле | Значение fit_sinc |
-|------|-------------------|
-| Redirect URL | `http://127.0.0.1:8765/callback` |
-| Webhook URL | `https://fit.romansegalla.online/webhooks/hammerhead` |
+| Поле | Production (целевое) |
+|------|----------------------|
+| Redirect URL (CLI) | `http://127.0.0.1:8765/callback` |
+| Redirect URL (UI) | `https://app.getsync.me/app/settings/hammerhead/callback` |
+| Webhook URL | `https://app.getsync.me/webhooks/hammerhead` |
 | Webhook secret | → `HAMMERHEAD_WEBHOOK_SECRET` в `.env` |
 
 ---
 
-## Реализация в fit_sinc
+## Реализация в коде
 
 | Модуль | Назначение |
 |--------|------------|
-| [`fit_sinc/hammerhead/oauth.py`](../fit_sinc/hammerhead/oauth.py) | OAuth, refresh, HMAC verify |
-| [`fit_sinc/hammerhead/client.py`](../fit_sinc/hammerhead/client.py) | API client, download FIT |
-| [`fit_sinc/cli.py`](../fit_sinc/cli.py) | `fit_sinc hammerhead auth|status` |
+| [`getsync/hammerhead/oauth.py`](../getsync/hammerhead/oauth.py) | OAuth, refresh, HMAC verify |
+| [`getsync/hammerhead/client.py`](../getsync/hammerhead/client.py) | API client, download FIT |
+| [`getsync/cli.py`](../getsync/cli.py) | `getsync hammerhead auth\|status` |
+| [`getsync/web/settings_routes.py`](../getsync/web/settings_routes.py) | OAuth из кабинета |
 
-**Хранение tokens:** `data/hammerhead_tokens.json`
+**Хранение tokens (per tenant):** `data/users/{user_id}/hammerhead_tokens.json`
 
 **CLI:**
 
 ```bash
-fit_sinc hammerhead auth       # OAuth flow
-fit_sinc hammerhead auth-url   # только URL
-fit_sinc hammerhead status     # JSON статус
+getsync hammerhead auth       # OAuth flow (CLI redirect)
+getsync hammerhead auth-url   # только URL
+getsync hammerhead status     # JSON статус
+getsync --user <slug> hammerhead auth
 ```
+
+См. также [ARCHITECTURE.md](ARCHITECTURE.md), [CI-CD.md](CI-CD.md) (webhook smoke).

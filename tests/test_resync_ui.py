@@ -9,14 +9,14 @@ from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 
-from fit_sinc.state.store import Store
+from getsync.state.store import Store
 from helpers import isolated_env
 
 
 class TestResyncUi(unittest.TestCase):
     def _setup_client(self, tmp: str) -> tuple[TestClient, Store, str]:
         settings = __import__(
-            "fit_sinc.config", fromlist=["get_settings"]
+            "getsync.config", fromlist=["get_settings"]
         ).get_settings()
         store = Store(settings.db_path)
         store.ensure_default_user(email="u@test.local", password="pass")
@@ -33,7 +33,7 @@ class TestResyncUi(unittest.TestCase):
             name="OK ride",
             sync_status="synced",
         )
-        from fit_sinc.web.app import app
+        from getsync.web.app import app
 
         client = TestClient(app)
         client.post(
@@ -43,7 +43,7 @@ class TestResyncUi(unittest.TestCase):
         )
         return client, store, settings.default_user_id
 
-    @patch("fit_sinc.web.app_routes._run_sync_force", new_callable=AsyncMock)
+    @patch("getsync.web.app_routes._run_sync_force", new_callable=AsyncMock)
     def test_retry_redirects_to_next(self, _mock_sync: AsyncMock) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
@@ -57,7 +57,7 @@ class TestResyncUi(unittest.TestCase):
                 loc = r.headers.get("location", "")
                 self.assertIn("status=error", loc)
 
-    @patch("fit_sinc.web.app_routes._run_sync_force", new_callable=AsyncMock)
+    @patch("getsync.web.app_routes._run_sync_force", new_callable=AsyncMock)
     def test_retry_all_errors_queues_and_redirects(self, _mock_sync: AsyncMock) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):

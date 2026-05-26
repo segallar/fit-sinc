@@ -1,10 +1,10 @@
-# fit_sinc — test on MR/push, deploy to sirocco on main
+# GetSync — test on MR/push, deploy to sirocco on main
 # Variables (Settings → CI/CD → Variables):
 #   SSH_PRIVATE_KEY (File, masked) — private key for root@sirocco
 # Optional:
-#   FIT_SINC_SSH_HOST (default: sirocco.romansegalla.online)
-#   FIT_SINC_SSH_USER   (default: root)
-#   FIT_SINC_DEPLOY_PATH (default: /opt/fit_sinc)
+#   GETSYNC_SSH_HOST (default: sirocco.romansegalla.online)
+#   GETSYNC_SSH_USER   (default: root)
+#   GETSYNC_DEPLOY_PATH (default: /opt/getsync)
 
 stages:
   - test
@@ -23,7 +23,7 @@ test:
   extends: .test_base
   stage: test
   script:
-    - python -m compileall -q fit_sinc
+    - python -m compileall -q getsync
     - python -m unittest discover -s tests -p "test_*.py" -v
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"

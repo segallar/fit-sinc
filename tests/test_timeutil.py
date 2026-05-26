@@ -2,10 +2,10 @@
 
 import unittest
 
-from fit_sinc.activities.browse import ActivityBrowseRow, ActivityFilters, _matches_filters
-from fit_sinc.timeutil import format_datetime_parts, format_iso, parse_date_only
-from fit_sinc.web.html import make_formatter
-from fit_sinc.web.templating import render_template
+from getsync.activities.browse import ActivityBrowseRow, ActivityFilters, _matches_filters
+from getsync.timeutil import format_datetime_parts, format_iso, parse_date_only
+from getsync.web.html import make_formatter
+from getsync.web.templating import render_template
 
 
 class TestTimeutil(unittest.TestCase):
@@ -32,8 +32,8 @@ class TestTimeutil(unittest.TestCase):
             distance=None,
             duration=None,
             activity_type=None,
-            fit_sinc_status="synced",
-            fit_sinc_detail=None,
+            sync_status="synced",
+            sync_detail=None,
             hammerhead_id="1",
             garmin_id=None,
             fit_available=False,

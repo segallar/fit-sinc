@@ -1,22 +1,22 @@
 <p align="center">
-  <img src="assets/logo.svg" width="120" alt="fit_sinc logo">
+  <img src="assets/logo.svg" width="120" alt="GetSync logo">
 </p>
 
-<h1 align="center">fit_sinc</h1>
+<h1 align="center">GetSync</h1>
 
 <p align="center">
-  Автоматическая синхронизация велотренировок <strong>Hammerhead Karoo</strong> → <strong>Garmin Connect</strong>
+  <a href="https://getsync.me">getsync.me</a> — синхронизация тренировок <strong>Hammerhead Karoo</strong> → <strong>Garmin Connect</strong>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
-  <a href="https://github.com/segallar/fit-sinc/actions/workflows/test.yml"><img src="https://github.com/segallar/fit-sinc/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
-  <a href="https://github.com/segallar/fit-sinc/actions/workflows/deploy.yml"><img src="https://github.com/segallar/fit-sinc/actions/workflows/deploy.yml/badge.svg" alt="Deploy"></a>
+  <a href="https://github.com/segallar/getsync/actions/workflows/test.yml"><img src="https://github.com/segallar/getsync/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/segallar/getsync/actions/workflows/deploy.yml"><img src="https://github.com/segallar/getsync/actions/workflows/deploy.yml/badge.svg" alt="Deploy"></a>
 </p>
 
 ---
 
-После поездки Karoo загружает активность в Hammerhead Cloud. **fit_sinc** получает webhook, скачивает оригинальный `.fit` через официальный Hammerhead API и загружает его в Garmin Connect — без правок трека (GPS, мощность, пульс, каденс остаются как на Karoo).
+После поездки Karoo загружает активность в Hammerhead Cloud. **GetSync** получает webhook, скачивает оригинальный `.fit` через официальный Hammerhead API и загружает его в Garmin Connect — без правок трека (GPS, мощность, пульс, каденс остаются как на Karoo).
 
 Hammerhead и Garmin не синхронизируют активности между собой. Если история и аналитика ведутся в Garmin Connect, каждую поездку с Karoo приходилось переносить вручную — этот сервис делает это в фоне.
 
@@ -28,17 +28,17 @@ Webhook-сервис на FastAPI: Hammerhead шлёт событие → ска
 sequenceDiagram
     participant Karoo as Karoo
     participant HH as Hammerhead Cloud
-    participant FS as fit_sinc
+    participant GS as GetSync
     participant GC as Garmin Connect
 
     Karoo->>HH: sync activity
-    HH->>FS: POST webhook (HMAC)
-    FS->>FS: verify signature
-    FS->>HH: GET activity .fit
-    HH-->>FS: FIT binary
-    FS->>FS: save data/fits, SQLite
-    FS->>GC: upload (browser → HTTP → garth)
-    FS->>FS: mark synced
+    HH->>GS: POST webhook (HMAC)
+    GS->>GS: verify signature
+    GS->>HH: GET activity .fit
+    HH-->>GS: FIT binary
+    GS->>GS: save data/fits, SQLite
+    GS->>GC: upload (browser → HTTP → garth)
+    GS->>GS: mark synced
 ```
 
 1. Тренировка завершена → Karoo синхронизируется с Hammerhead Cloud  
@@ -56,7 +56,7 @@ sequenceDiagram
 | Hammerhead | OAuth 2.0 API (`activity:read`) |
 | Garmin Connect | Web JWT + Playwright → HTTP upload → garth-ng |
 | Состояние | SQLite |
-| CLI | typer |
+| CLI | typer (`getsync`) |
 | Веб-UI | Jinja2 + HTMX |
 | Деплой | nginx + systemd |
 
@@ -75,7 +75,7 @@ sequenceDiagram
 
 ## Возможности
 
-- Webhook от Hammerhead + ручной backfill (`fit_sinc sync`)
+- Webhook от Hammerhead + ручной backfill (`getsync sync`)
 - Загрузка в Garmin Connect (неофициальный web API + [garth-ng](https://pypi.org/project/garth-ng/))
 - Веб-панель: дашборд, список активностей, лог синхронизации, скачивание `.fit`
 - CLI: OAuth Hammerhead, сессия Garmin, sync, `serve`
@@ -91,8 +91,8 @@ sequenceDiagram
 ## Быстрый старт (локально)
 
 ```bash
-git clone https://github.com/segallar/fit-sinc.git
-cd fit-sinc
+git clone https://github.com/segallar/getsync.git
+cd getsync
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -105,27 +105,27 @@ cp .env.example .env
 ### Hammerhead
 
 ```bash
-fit_sinc hammerhead auth      # OAuth в браузере, токены → data/hammerhead_tokens.json
-fit_sinc hammerhead status
+getsync hammerhead auth      # OAuth в браузере, токены → data/hammerhead_tokens.json
+getsync hammerhead status
 ```
 
 В [Developer Portal](https://www.hammerhead.io/pages/developer-platform) укажите redirect URI: `http://127.0.0.1:8765/callback`.  
-Webhook URL (production): `https://<ваш-домен>/webhooks/hammerhead` — секрет в `HAMMERHEAD_WEBHOOK_SECRET`.
+Webhook URL (production): `https://app.getsync.me/webhooks/hammerhead` — секрет в `HAMMERHEAD_WEBHOOK_SECRET`.
 
 Подробнее: [docs/API_HAMMERHEAD.md](docs/API_HAMMERHEAD.md).
 
 ### Garmin Connect
 
 ```bash
-fit_sinc garmin login           # интерактивный логин (garth-ng)
-fit_sinc garmin status          # upload_ready = валиден web JWT
-fit_sinc garmin refresh-web     # обновить web-сессию для upload
+getsync garmin login           # интерактивный логин (garth-ng)
+getsync garmin status          # upload_ready = валиден web JWT
+getsync garmin refresh-web     # обновить web-сессию для upload
 ```
 
 Для upload без интерактива можно импортировать cookies:
 
 ```bash
-fit_sinc garmin import-web-cookies '{"JWT_WEB":"...","session":"Fe26..."}'
+getsync garmin import-web-cookies '{"JWT_WEB":"...","session":"Fe26..."}'
 ```
 
 Подробнее: [docs/API_GARMIN.md](docs/API_GARMIN.md).
@@ -133,10 +133,10 @@ fit_sinc garmin import-web-cookies '{"JWT_WEB":"...","session":"Fe26..."}'
 ### Синхронизация и сервер
 
 ```bash
-fit_sinc sync --since 2025-01-01
-fit_sinc sync --activity-id <id> [--force]
+getsync sync --since 2025-01-01
+getsync sync --activity-id <id> [--force]
 
-fit_sinc serve                  # http://127.0.0.1:8080 — webhook + UI
+getsync serve                  # http://127.0.0.1:8080 — webhook + UI
 ```
 
 Проверка: `curl -s http://127.0.0.1:8080/health`
@@ -151,33 +151,34 @@ fit_sinc serve                  # http://127.0.0.1:8080 — webhook + UI
 | `GARMIN_EMAIL` / `PASSWORD` | Опционально для CLI |
 | `DATA_DIR` | Каталог данных (по умолчанию `data`) |
 
-Файлы данных (не коммитить): `data/hammerhead_tokens.json`, `data/garth/`, `data/fits/`, `data/fit_sinc.db`.
+Файлы данных (не коммитить): `data/getsync.db` (или legacy `data/fit_sinc.db`), per-tenant `data/users/{id}/` (tokens, `garmin_web/`, `garth/`, `fits/`). При первом старте legacy `data/*` копируется в `data/users/default/`.
 
 ## Веб-интерфейс
 
 | Путь | Описание |
 |------|----------|
-| `/` | Дашборд, последние тренировки |
-| `/activities` | Таблица HH/Garmin, фильтры |
-| `/log` | Лог webhook / download / upload |
-| `/session` | Статус Garmin web-сессии |
-| `/activities/{id}/fit` | Скачать `.fit` |
-| `POST /activities/{id}/retry` | Повторить sync |
+| `/app/` | Дашборд, последние тренировки |
+| `/app/activities` | Таблица HH/Garmin, фильтры |
+| `/app/log` | Лог webhook / download / upload |
+| `/app/settings` | Подключения Hammerhead / Garmin |
+| `/app/login` | Вход (cookie `getsync_session`) |
 
-В production UI за nginx (TLS); вход по email+password в `/app/login`, cookie `SESSION_COOKIE_SECURE=true`. Приложение слушает только `127.0.0.1`.
+В production UI за nginx (TLS); `SESSION_COOKIE_SECURE=true`. Приложение слушает только `127.0.0.1`.
 
 ## Деплой и CI
 
 - **CI:** GitHub Actions — **Tests** (push/PR) и **Deploy** (sirocco после Test на `main`; badges в шапке)
 - **Ручной deploy:** rsync + systemd — [docs/CI-CD.md](docs/CI-CD.md)
-- Юниты: `deploy/fit-sinc.service`, `deploy/nginx/fit.conf`
+- Юниты: `deploy/getsync.service`, `deploy/nginx/getsync.conf`
 
 ## Документация
 
 | Документ | Содержание |
 |----------|------------|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архитектура v1, компоненты, реализованные фазы |
+| [docs/README.md](docs/README.md) | Индекс документации, соглашения, URL production |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архитектура v1, tenants, компоненты, фазы |
 | [docs/PLAN.md](docs/PLAN.md) | Roadmap v2, будущие фазы |
+| [docs/1.5-RENAME.md](docs/1.5-RENAME.md) | Переименование GetSync (1.5) |
 | [docs/5b-DECISIONS.md](docs/5b-DECISIONS.md) | Фаза 5b.0: регистрация, bootstrap admin |
 | [docs/CI-CD.md](docs/CI-CD.md) | Сервер, nginx, certbot, deploy |
 | [docs/API_HAMMERHEAD.md](docs/API_HAMMERHEAD.md) | OAuth, webhook, REST |
@@ -194,13 +195,13 @@ fit_sinc serve                  # http://127.0.0.1:8080 — webhook + UI
 
 ```bash
 pip install -e .
-python -m compileall -q fit_sinc
+python -m compileall -q getsync
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
 ## Статус
 
-MVP (фазы 0–4) в production. Подробности реализации — [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Планы: [docs/PLAN.md](docs/PLAN.md).
+MVP (фазы 0–4) в production. Переименование **GetSync** (1.5): пакет `getsync`, домен [getsync.me](https://getsync.me). Планы: [docs/PLAN.md](docs/PLAN.md).
 
 ---
 
