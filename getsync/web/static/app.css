@@ -42,12 +42,26 @@ body {
   padding-inline: 1.5rem;
 }
 
+/* Bootstrap flex only on .container / .container-fluid — required for navbar */
+.navbar > .getsync-site-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .getsync-site-main {
   padding-block: 2rem 2.5rem;
 }
 
 .getsync-site .getsync-footer {
   padding-bottom: 2rem;
+  padding-inline: 1.5rem;
+}
+
+.getsync-site .getsync-footer > p {
+  max-width: 72rem;
+  margin-inline: auto;
 }
 
 .getsync-faq {
@@ -63,6 +77,10 @@ body {
 .getsync-hero {
   background: linear-gradient(180deg, var(--getsync-primary-50) 0%, #fff 100%);
   border: 1px solid var(--getsync-primary-100);
+}
+
+.getsync-hero-lead {
+  max-width: 42rem;
 }
 
 .getsync-section-muted {
