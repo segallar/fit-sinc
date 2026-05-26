@@ -1,0 +1,15 @@
+{% extends "layouts/cabinet.html" %}
+
+{% block title %}Admin — Sync log — GetSync{% endblock %}
+
+{% block page_content %}
+<h2 class="h5 mb-2">Admin</h2>
+{% include "components/admin_subnav.html" %}
+
+<h3 class="h6 text-primary mb-2">Sync log</h3>
+<p class="text-muted small mb-3">
+  Hammerhead webhook and Garmin upload events for all accounts (newest first).
+</p>
+
+{% include "components/sync_log_section.html" %}
+{% endblock %}

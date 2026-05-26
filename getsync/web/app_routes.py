@@ -466,23 +466,6 @@ def _sync_summary_context(store: Store, user_id: str) -> dict[str, object]:
     }
 
 
-def _sync_log_context(store: Store, user_id: str, log_page: int) -> dict[str, object]:
-    per_page = 50
-    total = store.count_events(user_id=user_id)
-    offset = (log_page - 1) * per_page
-    events = store.list_events(limit=per_page, offset=offset, user_id=user_id)
-    has_next = offset + len(events) < total
-    from_idx = offset + 1 if total else 0
-    to_idx = offset + len(events)
-    return {
-        "log_events": events,
-        "log_page": log_page,
-        "log_prev_page": log_page - 1 if log_page > 1 else None,
-        "log_next_page": log_page + 1 if has_next else None,
-        "log_range_label": f"{from_idx}–{to_idx} of {total}",
-    }
-
-
 @router.get("/", include_in_schema=False)
 async def app_home() -> RedirectResponse:
     """Legacy home URL — Activities is the main screen."""
@@ -493,7 +476,6 @@ async def app_home() -> RedirectResponse:
 async def activities_browser(
     request: Request,
     view: str = Query("list", pattern="^(list|calendar)$"),
-    log_page: int = Query(1, ge=1),
     source: str = Query("", pattern="^(|hammerhead|garmin)$"),
     queued: str = Query(""),
     page: int = Query(1, ge=1),
@@ -571,7 +553,6 @@ async def activities_browser(
     def _sync_panel_context(return_url: str) -> dict[str, object]:
         return {
             **_sync_summary_context(store, ctx.user_id),
-            **_sync_log_context(store, ctx.user_id, log_page),
             "activities_return_url": return_url,
         }
 
@@ -791,9 +772,11 @@ async def activities_rows_fragment(
 
 @router.get("/log", include_in_schema=False)
 async def sync_log_redirect(request: Request, page: int = Query(1, ge=1)) -> RedirectResponse:
-    """Legacy URL — sync log on Activities."""
+    """Legacy URL — sync log in admin."""
     _ctx(request)
-    dest = f"{P}/activities"
+    from getsync.web.auth import APP_ADMIN_PREFIX
+
+    dest = f"{APP_ADMIN_PREFIX}/sync-log"
     if page > 1:
         dest = f"{dest}?{H.query_string({'log_page': page})}"
     return RedirectResponse(f"{dest}#sync-log", status_code=303)

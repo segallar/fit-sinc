@@ -15,7 +15,7 @@
 | ------- | --------- |
 | Sync | Webhook HH → FIT → Garmin; dedup SQLite; re-sync |
 | Tenants | `user_id`, `data/users/{id}/`, session auth, security tests |
-| Кабинет | Activities (List \| Calendar, HH+Garmin, sync log), Settings (profile, connections, garmin-session) |
+| Кабинет | Activities (List \| Calendar, HH+Garmin, sync summary), Settings (profile, connections, garmin-session) |
 | Garmin | **Upload** FIT ✅ · **list** активностей в browse ✅ · **pull** FIT / шаги / сон 📋 [**3.11**](3.11-GARMIN-PULL.md) |
 | Хранение | `StorageBackend` local, `storage_key`, `activities/{source}/` — [STORAGE.md](STORAGE.md) |
 | Регистрация | `/register` при `REGISTRATION_OPEN` — без email verify (**2.6**) |

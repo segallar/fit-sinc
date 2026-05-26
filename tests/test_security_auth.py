@@ -26,6 +26,7 @@ APP_GET_PATHS = (
 
 ADMIN_GET_PATHS = (
     "/app/admin/",
+    "/app/admin/sync-log",
     "/app/admin/log",
     "/app/admin/users/new",
     "/app/admin/users/default/edit",

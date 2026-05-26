@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
 from getsync.config import get_settings
@@ -12,6 +12,7 @@ from getsync.state.store import Store
 from getsync.web.auth import APP_ADMIN_PREFIX
 from getsync.web.cabinet import render_cabinet
 from getsync.web.connections import garmin_refresh_log_context
+from getsync.web.sync_log import sync_log_context
 
 router = APIRouter(prefix=APP_ADMIN_PREFIX, tags=["admin"])
 A = APP_ADMIN_PREFIX
@@ -43,6 +44,26 @@ class UserFormData:
         return "leave empty to keep" if self.edit else "min. 8 characters"
 
 
+@router.get("/sync-log", response_class=HTMLResponse, include_in_schema=False)
+async def admin_sync_log(
+    request: Request,
+    log_page: int = Query(1, ge=1),
+) -> str:
+    store = _store()
+    return render_cabinet(
+        request,
+        "pages/admin/sync_log.html",
+        active=f"{A}/sync-log",
+        admin_section="sync-log",
+        **sync_log_context(
+            store,
+            user_id=None,
+            log_page=log_page,
+            pager_path=f"{A}/sync-log",
+        ),
+    )
+
+
 @router.get("/log", response_class=HTMLResponse, include_in_schema=False)
 async def admin_refresh_log(request: Request) -> str:
     store = _store()
@@ -50,7 +71,7 @@ async def admin_refresh_log(request: Request) -> str:
         request,
         "pages/admin/log.html",
         active=f"{A}/log",
-        admin_section="log",
+        admin_section="garmin-log",
         show_user_column=True,
         **garmin_refresh_log_context(store),
     )

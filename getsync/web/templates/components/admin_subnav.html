@@ -3,6 +3,9 @@
     <a class="nav-link{% if admin_section == 'users' %} active{% endif %}" href="{{ admin_prefix }}/">Users</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link{% if admin_section == 'log' %} active{% endif %}" href="{{ admin_prefix }}/log">Log</a>
+    <a class="nav-link{% if admin_section == 'sync-log' %} active{% endif %}" href="{{ admin_prefix }}/sync-log">Sync log</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link{% if admin_section == 'garmin-log' %} active{% endif %}" href="{{ admin_prefix }}/log">Garmin log</a>
   </li>
 </ul>

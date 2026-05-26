@@ -42,7 +42,8 @@ class TestAppLogin(unittest.TestCase):
 
                 dash = client.get("/app/activities", follow_redirects=False)
                 self.assertEqual(dash.status_code, 200)
-                self.assertIn("Sync log", dash.text)
+                self.assertNotIn("Sync log", dash.text)
+                self.assertIn("in catalog", dash.text)
                 self.assertIn("getsync-app-topbar", dash.text)
                 self.assertIn("owner@test.local", dash.text)
                 self.assertIn("/app/logout", dash.text)
@@ -151,9 +152,13 @@ class TestAdminAccess(unittest.TestCase):
                 self.assertIn("getsync-app-topbar", users.text)
                 self.assertIn("admin@test.local", users.text)
 
-                log_page = client.get("/app/admin/log")
-                self.assertEqual(log_page.status_code, 200)
-                self.assertIn("Garmin JWT refresh log", log_page.text)
+                sync_log = client.get("/app/admin/sync-log")
+                self.assertEqual(sync_log.status_code, 200)
+                self.assertIn("Sync log", sync_log.text)
+
+                garmin_log = client.get("/app/admin/log")
+                self.assertEqual(garmin_log.status_code, 200)
+                self.assertIn("Garmin JWT refresh log", garmin_log.text)
 
                 settings = client.get("/app/settings")
                 self.assertEqual(settings.status_code, 200)
