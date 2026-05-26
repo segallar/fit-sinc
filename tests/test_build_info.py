@@ -83,3 +83,12 @@ class TestBuildInfo(unittest.TestCase):
         r = TestClient(app).get("/")
         self.assertEqual(r.status_code, 200)
         self.assertIn(f"GetSync v{__version__}", r.text)
+
+    def test_jinja_footer_renders_commit_strings(self) -> None:
+        from getsync.web.templating import render_template
+
+        html = render_template("components/build_footer.html")
+        self.assertIn(f"GetSync v{__version__}", html)
+        self.assertNotIn("lru_cache", html)
+        self.assertNotIn("function deploy_number", html)
+        self.assertNotIn("function deploy_time_footer", html)
