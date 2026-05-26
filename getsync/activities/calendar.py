@@ -91,19 +91,6 @@ def aggregate_days_by_local_date(
     return stats
 
 
-def _calendar_cell_filters(filters: ActivityFilters | None) -> ActivityFilters | None:
-    if filters is None:
-        return None
-    return ActivityFilters(
-        q=filters.q,
-        status=filters.status,
-        activity_type=filters.activity_type,
-        date_from="",
-        date_to="",
-        source=filters.source,
-    )
-
-
 def _browse_sort_key(row: ActivityBrowseRow) -> float:
     dt = _parse_iso(row.activity_date or "")
     return -(dt.timestamp() if dt else 0.0)
@@ -121,14 +108,11 @@ def _activities_by_local_day(
     index: dict[str, SyncIndexEntry],
     by_garmin: dict[int, SyncIndexEntry],
 ) -> dict[str, list[ActivityBrowseRow]]:
-    cell_filters = _calendar_cell_filters(filters)
     catalog = store.list_activity_catalog_for_calendar(user_id, source=source)
     by_day: dict[str, list[ActivityBrowseRow]] = {}
     for row in catalog:
         browse = catalog_row_to_browse_row(row, index, by_garmin)
-        if cell_filters and not _matches_filters(
-            browse, cell_filters, display_tz=display_tz
-        ):
+        if filters and not _matches_filters(browse, filters, display_tz=display_tz):
             continue
         dt = _parse_iso(row.activity_date or "", tz=display_tz)
         if dt is None or dt.year != year or dt.month != month:

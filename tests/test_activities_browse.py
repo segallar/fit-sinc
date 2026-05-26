@@ -7,16 +7,43 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from helpers import isolated_env
 
+from datetime import date
+
 from getsync.activities.browse import (
     ActivityBrowseRow,
     ActivityFilters,
     _dedupe_linked_rows,
     _matches_filters,
     _sort_rows_by_date,
+    resolve_activity_filters,
 )
 
 
 class TestActivitiesBrowse(unittest.TestCase):
+    def test_resolve_activity_filters_defaults_to_month(self) -> None:
+        empty = ActivityFilters()
+        eff = resolve_activity_filters(
+            empty,
+            view="list",
+            year=2026,
+            month=5,
+            today=date(2026, 5, 15),
+        )
+        self.assertEqual(eff.date_from, "2026-05-01")
+        self.assertEqual(eff.date_to, "2026-05-31")
+
+        explicit = ActivityFilters(date_from="2026-04-01", date_to="2026-04-30")
+        self.assertEqual(
+            resolve_activity_filters(
+                explicit,
+                view="list",
+                year=2026,
+                month=5,
+                today=date(2026, 5, 15),
+            ),
+            explicit,
+        )
+
     def test_dedupe_linked_rows(self) -> None:
         hh = ActivityBrowseRow(
             source="hammerhead",

@@ -74,8 +74,6 @@ body {
 .getsync-activities-subheader__left {
   flex: 1 1 auto;
   min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: thin;
 }
 
 .getsync-activities-subheader__title {
@@ -95,11 +93,18 @@ body {
   background: none;
   color: var(--getsync-text);
   font-size: inherit;
+  font-family: inherit;
   font-weight: 400;
+  line-height: inherit;
   text-decoration: underline;
   text-underline-offset: 0.15em;
   cursor: pointer;
   vertical-align: baseline;
+}
+
+button.getsync-filter-link:focus-visible {
+  outline: 2px solid var(--getsync-primary-600);
+  outline-offset: 2px;
 }
 
 .getsync-filter-link:hover,
@@ -127,6 +132,7 @@ body {
   min-width: 11rem;
   border: 1px solid var(--getsync-border);
   box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 8%);
+  z-index: 1050;
 }
 
 .getsync-view-toggle .btn {

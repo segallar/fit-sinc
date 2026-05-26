@@ -20,6 +20,7 @@ from getsync.activities.browse import (
     ActivityFilters,
     ActivityBrowseRow,
     fetch_activities_page,
+    resolve_activity_filters,
 )
 from getsync.activities.calendar import attach_calendar_row_views, build_activity_calendar
 from getsync.timeutil import zone_info
@@ -182,18 +183,15 @@ def _activities_subheader_context(
     *,
     view: str,
     filters: ActivityFilters,
+    effective_filters: ActivityFilters,
     cal_year: int,
     cal_month: int,
     per_page: int,
     page: int,
     today: date,
 ) -> dict[str, object]:
-    ref_year, ref_month = (
-        (cal_year, cal_month) if view == "calendar" else (today.year, today.month)
-    )
-    month_start, month_end = _month_date_bounds(ref_year, ref_month)
-    picker_from = filters.date_from or month_start
-    picker_to = filters.date_to or month_end
+    picker_from = effective_filters.date_from
+    picker_to = effective_filters.date_to
 
     type_label = "all types"
     type_links: list[dict[str, object]] = []
@@ -205,8 +203,8 @@ def _activities_subheader_context(
             q=filters.q,
             status=filters.status,
             activity_type=value,
-            date_from=filters.date_from,
-            date_to=filters.date_to,
+            date_from=effective_filters.date_from,
+            date_to=effective_filters.date_to,
             source=filters.source,
         )
         type_links.append(
@@ -535,10 +533,17 @@ async def activities_browser(
     today = datetime.now(zone_info(tz_name)).date()
     cal_year = year if year is not None else today.year
     cal_month = month if month is not None else today.month
+    effective_filters = resolve_activity_filters(
+        filters,
+        view=view,
+        year=cal_year,
+        month=cal_month,
+        today=today,
+    )
 
     base_params = _activities_query_params(
         per_page=per_page,
-        filters=filters,
+        filters=effective_filters,
         view=view,
         year=cal_year if view == "calendar" else None,
         month=cal_month if view == "calendar" else None,
@@ -564,6 +569,7 @@ async def activities_browser(
         **_activities_subheader_context(
             view=view,
             filters=filters,
+            effective_filters=effective_filters,
             cal_year=cal_year,
             cal_month=cal_month,
             per_page=per_page,
@@ -591,9 +597,15 @@ async def activities_browser(
                 view="list",
             )
 
+        cal_nav_filters = ActivityFilters(
+            q=filters.q,
+            status=filters.status,
+            activity_type=filters.activity_type,
+            source=filters.source,
+        )
         cal_return = _activities_return_url(
             per_page=per_page,
-            filters=filters,
+            filters=effective_filters,
             view="calendar",
             year=cal_year,
             month=cal_month,
@@ -607,30 +619,30 @@ async def activities_browser(
                 display_tz=display_tz,
                 prev_href=_activities_return_url(
                     per_page=per_page,
-                    filters=filters,
+                    filters=cal_nav_filters,
                     view="calendar",
                     year=_shift_month(cal_year, cal_month, -1)[0],
                     month=_shift_month(cal_year, cal_month, -1)[1],
                 ),
                 next_href=_activities_return_url(
                     per_page=per_page,
-                    filters=filters,
+                    filters=cal_nav_filters,
                     view="calendar",
                     year=_shift_month(cal_year, cal_month, 1)[0],
                     month=_shift_month(cal_year, cal_month, 1)[1],
                 ),
                 today_href=_activities_return_url(
                     per_page=per_page,
-                    filters=filters,
+                    filters=cal_nav_filters,
                     view="calendar",
                     year=today.year,
                     month=today.month,
                 ),
                 day_list_href=day_list_href,
-                selected_from=filters.date_from,
-                selected_to=filters.date_to,
+                selected_from=effective_filters.date_from,
+                selected_to=effective_filters.date_to,
                 source=src,
-                filters=filters,
+                filters=effective_filters,
             ),
             lambda row: _activity_row_view(row, return_url=cal_return),
         )
@@ -649,7 +661,7 @@ async def activities_browser(
     result = await fetch_activities_page(
         page=page,
         per_page=per_page,
-        filters=filters,
+        filters=effective_filters,
         ctx=ctx,
         display_tz=display_tz,
         refresh=bust_cache,
@@ -657,11 +669,11 @@ async def activities_browser(
     query_params = _activities_query_params(
         page=result.page,
         per_page=per_page,
-        filters=filters,
+        filters=effective_filters,
         view="list",
     )
     list_return = _activities_return_url(
-        page=result.page, per_page=per_page, filters=filters, view="list"
+        page=result.page, per_page=per_page, filters=effective_filters, view="list"
     )
 
     rows = [_activity_row_view(row, return_url=list_return) for row in result.rows]
@@ -678,7 +690,7 @@ async def activities_browser(
 
     tab_base = _activities_query_params(
         per_page=per_page,
-        filters=filters,
+        filters=effective_filters,
         view="list",
         page=result.page,
         year=today.year,
@@ -701,7 +713,9 @@ async def activities_browser(
         params=query_params,
         page=result.page,
         total_pages=result.total_pages,
-        rows_load_url=_activities_rows_load_url(per_page=per_page, filters=filters),
+        rows_load_url=_activities_rows_load_url(
+            per_page=per_page, filters=effective_filters
+        ),
         next_page=result.page + 1,
         has_more_rows=has_more,
         data_source_hint=(
@@ -738,15 +752,27 @@ async def activities_rows_fragment(
         date_to=date_to.strip(),
         source=source.strip().lower(),
     )
+    tz_name = normalize_timezone(display_tz or DEFAULT_TIMEZONE)
+    today = datetime.now(zone_info(tz_name)).date()
+    effective_filters = resolve_activity_filters(
+        filters,
+        view="list",
+        year=today.year,
+        month=today.month,
+        today=today,
+    )
     result = await fetch_activities_page(
         page=page,
         per_page=per_page,
-        filters=filters,
+        filters=effective_filters,
         ctx=ctx,
         display_tz=display_tz,
     )
     list_return = _activities_return_url(
-        page=result.page, per_page=per_page, filters=filters, view="list"
+        page=result.page,
+        per_page=per_page,
+        filters=effective_filters,
+        view="list",
     )
     rows = [_activity_row_view(row, return_url=list_return) for row in result.rows]
     has_more = result.page < result.total_pages

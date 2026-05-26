@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import calendar as cal_mod
 import math
 import time
 from dataclasses import dataclass
+from datetime import date
 from typing import Any, Literal
 
 from getsync.activities.catalog import persist_browse_rows
@@ -98,6 +100,34 @@ class ActivityFilters:
         if s in ("hammerhead", "garmin"):
             return s  # type: ignore[return-value]
         return ""
+
+
+def month_date_bounds_iso(year: int, month: int) -> tuple[str, str]:
+    last = cal_mod.monthrange(year, month)[1]
+    return f"{year}-{month:02d}-01", f"{year}-{month:02d}-{last:02d}"
+
+
+def resolve_activity_filters(
+    filters: ActivityFilters,
+    *,
+    view: str,
+    year: int,
+    month: int,
+    today: date,
+) -> ActivityFilters:
+    """Match subheader month range: filter by visible from/to when URL dates omitted."""
+    if filters.date_from.strip() or filters.date_to.strip():
+        return filters
+    ref_year, ref_month = (year, month) if view == "calendar" else (today.year, today.month)
+    start, end = month_date_bounds_iso(ref_year, ref_month)
+    return ActivityFilters(
+        q=filters.q,
+        status=filters.status,
+        activity_type=filters.activity_type,
+        date_from=start,
+        date_to=end,
+        source=filters.source,
+    )
 
 
 @dataclass(frozen=True)

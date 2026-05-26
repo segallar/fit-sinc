@@ -19,18 +19,18 @@
   {% endif %}
 
   <div class="getsync-activities-subheader__row d-flex flex-nowrap align-items-center justify-content-between gap-2 gap-md-3">
-    <div class="getsync-activities-subheader__left d-flex flex-nowrap align-items-baseline gap-1">
+    <div class="getsync-activities-subheader__left d-flex flex-wrap align-items-baseline gap-1">
       <span class="getsync-activities-subheader__title fw-semibold">Activities</span>
       <span class="getsync-activities-subheader__text text-muted">from</span>
 
       <div class="dropdown getsync-filter-dropdown d-inline-block">
-        <a href="#"
-           class="getsync-filter-link"
-           data-bs-toggle="dropdown"
-           data-bs-auto-close="outside"
-           aria-expanded="false"
-           aria-label="Filter from date"
-           onclick="return false">{{ subheader_date_from }}</a>
+        <button type="button"
+                class="getsync-filter-link"
+                data-bs-toggle="dropdown"
+                data-bs-auto-close="outside"
+                data-bs-popper-config='{"strategy":"fixed"}'
+                aria-expanded="false"
+                aria-label="Filter from date">{{ subheader_date_from }}</button>
         <div class="dropdown-menu getsync-filter-dropdown-menu p-3">
           <label class="form-label small mb-1" for="activities-date-from">From</label>
           <input id="activities-date-from"
@@ -45,13 +45,13 @@
       <span class="getsync-activities-subheader__text text-muted">to</span>
 
       <div class="dropdown getsync-filter-dropdown d-inline-block">
-        <a href="#"
-           class="getsync-filter-link"
-           data-bs-toggle="dropdown"
-           data-bs-auto-close="outside"
-           aria-expanded="false"
-           aria-label="Filter to date"
-           onclick="return false">{{ subheader_date_to }}</a>
+        <button type="button"
+                class="getsync-filter-link"
+                data-bs-toggle="dropdown"
+                data-bs-auto-close="outside"
+                data-bs-popper-config='{"strategy":"fixed"}'
+                aria-expanded="false"
+                aria-label="Filter to date">{{ subheader_date_to }}</button>
         <div class="dropdown-menu getsync-filter-dropdown-menu p-3">
           <label class="form-label small mb-1" for="activities-date-to">To</label>
           <input id="activities-date-to"
@@ -64,12 +64,13 @@
       </div>
 
       <div class="dropdown getsync-filter-dropdown d-inline-block">
-        <a href="#"
-           class="getsync-filter-link"
-           data-bs-toggle="dropdown"
-           aria-expanded="false"
-           aria-label="Activity type filter"
-           onclick="return false">{{ subheader_type_label }}</a>
+        <button type="button"
+                class="getsync-filter-link"
+                data-bs-toggle="dropdown"
+                data-bs-auto-close="outside"
+                data-bs-popper-config='{"strategy":"fixed"}'
+                aria-expanded="false"
+                aria-label="Activity type filter">{{ subheader_type_label }}</button>
         <ul class="dropdown-menu getsync-filter-dropdown-menu">
           {% for link in type_filter_links %}
           <li>
@@ -80,13 +81,13 @@
       </div>
 
       <div class="dropdown getsync-filter-dropdown d-inline-block">
-        <a href="#"
-           class="getsync-filter-link getsync-filter-link--icon"
-           data-bs-toggle="dropdown"
-           data-bs-auto-close="outside"
-           aria-expanded="false"
-           aria-label="More filters"
-           onclick="return false">?</a>
+        <button type="button"
+                class="getsync-filter-link getsync-filter-link--icon"
+                data-bs-toggle="dropdown"
+                data-bs-auto-close="outside"
+                data-bs-popper-config='{"strategy":"fixed"}'
+                aria-expanded="false"
+                aria-label="More filters">?</button>
         <div class="dropdown-menu getsync-filter-dropdown-menu p-3">
           <p class="small text-muted mb-2">Source and sync filters</p>
           <label class="form-label small mb-1" for="activities-source-filter">Source</label>
