@@ -11,7 +11,7 @@
 
 ## Идея продукта
 
-**Целевой продукт** (рабочее имя в коде — *fit_sinc*; бренд — **FitSync**, [1.5](1.5-RENAME.md)) — **единый хаб для спортивных активностей**:
+**Целевой продукт** — **GetSync** ([getsync.me](https://getsync.me), [1.5](1.5-RENAME.md)); в коде пока *fit_sinc* — **единый хаб для спортивных активностей**:
 
 | Направление | Содержание |
 |-------------|------------|
@@ -55,7 +55,7 @@
 | 7 Хаб активностей: сбор, хранение, анализ, sync → сервисы | 📋 · **2.8–2.9** · **3.1**, **3.5** |
 | **Modularity** Модули и интерфейсы между ними | 📋 · **3.9** |
 | 8 Маршруты (routes) | 📋 · **3.2** |
-| **9** Переименование приложения (бренд, пакет, домен) | 📋 · **1.5** |
+| **9** Переименование → **GetSync** / getsync.me | 🔄 домен ✅ · код **1.5** |
 | **10** Внешняя авторизация (OAuth/OIDC) | 📋 · **3.4** |
 | **11** Хранение активностей (объектное хранилище, S3) | 📋 · **3.3** |
 
@@ -77,7 +77,7 @@
 | **1.2** | 5b.4 | `/app/settings` — профиль, пароль, HH/Garmin |
 | **1.3** | 5b.2 | Пункт Settings в nav |
 | **1.4** | 5b.5 | Снять nginx Basic Auth |
-| **1.5** | 9 | Переименование приложения — [1.5-RENAME.md](1.5-RENAME.md) |
+| **1.5** | 9 | **GetSync** — getsync.me, rename — [1.5-RENAME.md](1.5-RENAME.md) |
 | **1.6** | Docs | ARCHITECTURE: `data/users/{id}/` |
 | **1.7** | Ops | Даты в UI по `users.timezone` |
 | **1.8** | 6 мин | Баннер HH + Garmin на дашборде |
@@ -114,7 +114,7 @@
 | **1.2** | **5b.4:** `/app/settings` — профиль, смена пароля, Hammerhead OAuth, Garmin connect/status | 2 вечера | UI ✅ |
 | **1.3** | **5b.2:** пункт **Settings** в nav → `/app/settings` | ✅ | UI ✅ |
 | **1.4** | **5b.5:** снять nginx Basic Auth; `SESSION_SECRET`, `https_only` cookie | ✅ | **1.1** |
-| **1.5** | **9:** переименование — бренд, пакет, домен ([план](1.5-RENAME.md)) | 1–2 дня | **1.4**; имя **R1** |
+| **1.5** | **9:** **GetSync** — бренд, `getsync` package, **getsync.me** ([план](1.5-RENAME.md)) | 1–2 дня | **1.4**; DNS ready |
 | **1.6** | **Docs:** ARCHITECTURE — `data/users/{id}/`, без глобального `garmin_web` | 1–2 ч | — |
 | **1.7** | **Ops:** даты в UI в `users.timezone` (убрать хардкод MSK в подписях) | ½ вечера | **1.2** |
 | **1.8** | **6 (мин):** баннер HH + Garmin `upload_ready` / TTL JWT на дашборде | ½ вечера | **1.2** |
@@ -1037,9 +1037,9 @@ class StorageBackend(Protocol):
 
 ### Фаза 9: Переименование приложения → **1.5**
 
-> **Детальный план:** [1.5-RENAME.md](1.5-RENAME.md) (решения R1–R10, уровни A/B/C, cutover).
+> **Детальный план:** [1.5-RENAME.md](1.5-RENAME.md) — **GetSync**, canonical **getsync.me** / **app.getsync.me**.
 
-**Цель:** смена бренда (рабочее название сейчас *fit_sinc*) — имя продукта, домен, пакет Python, systemd/nginx, GitHub repo, документация, cookie/session prefix при необходимости.
+**Цель:** смена бренда с *fit_sinc* на **GetSync** — имя продукта, домен, пакет Python, systemd/nginx, GitHub repo, cookie/session.
 
 > **Приоритет:** [🔴 горизонт 1](#-горизонт-1--срочно-важно-небольшие), задача **1.5** — сразу после **1.4**, как только утверждено имя (до **2.1** регистрации и **3.4** OAuth).
 
@@ -1201,7 +1201,7 @@ StorageBackend          — LocalFS | S3 (boto3)
 - [x] **1.2** 5b.4 — `/app/settings`: профиль, пароль, Hammerhead/Garmin
 - [x] **1.3** 5b.2 — пункт **Settings** в nav
 - [x] **1.4** 5b.5 — nginx без Basic Auth; `SESSION_COOKIE_SECURE` (https_only cookie)
-- [ ] **1.5** 9 — переименование — [1.5-RENAME.md](1.5-RENAME.md) (бренд R1; после **1.4**)
+- [ ] **1.5** 9 — **GetSync**, getsync.me — [1.5-RENAME.md](1.5-RENAME.md) (домен ✅; A/B/C после DNS)
 - [x] **1.6** Docs — ARCHITECTURE: `data/users/{id}/`
 - [ ] **1.7** Ops — даты в UI по `users.timezone`
 - [ ] **1.8** 6 мин — баннер HH + Garmin на дашборде
