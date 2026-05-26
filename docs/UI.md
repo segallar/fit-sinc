@@ -9,7 +9,7 @@
 | Шаблоны | `getsync/web/templates/` |
 | Layout | `layouts/base.html` — Bootstrap CSS/JS CDN |
 | Кабинет | `layouts/cabinet.html` (nav-pills) |
-| Вход / регистрация | `layouts/auth.html` (card) |
+| Вход / регистрация | `layouts/site_auth.html` (navbar + card, как лендинг) |
 | Лендинг | `layouts/site.html` (navbar) |
 | Тема (цвет primary) | `getsync/web/static/app.css` |
 | HTMX | CDN в `layouts/base.html` |

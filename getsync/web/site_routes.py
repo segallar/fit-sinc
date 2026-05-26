@@ -9,7 +9,7 @@ from getsync.users.bootstrap import registration_is_open
 from getsync.web.auth import user_context_from_session
 from getsync.web.site_i18n import (
     LANG_COOKIE,
-    lang_from_accept_language,
+    lang_from_request,
     landing_strings,
     normalize_lang,
 )
@@ -17,15 +17,6 @@ from getsync.web.templating import render_template
 
 router = APIRouter(tags=["site"])
 APP_PREFIX = "/app"
-
-
-def _lang_from_request(request: Request, query_lang: str | None) -> str:
-    if query_lang:
-        return normalize_lang(query_lang)
-    cookie = request.cookies.get(LANG_COOKIE)
-    if cookie:
-        return normalize_lang(cookie)
-    return lang_from_accept_language(request.headers.get("accept-language"))
 
 
 @router.get("/set-lang", include_in_schema=False)
@@ -55,7 +46,7 @@ async def site_home(
     if user_context_from_session(request):
         return RedirectResponse(f"{APP_PREFIX}/", status_code=303)
 
-    resolved = _lang_from_request(request, lang)
+    resolved = lang_from_request(request, lang)
     response = HTMLResponse(
         render_template(
             "pages/site/home.html",

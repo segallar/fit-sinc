@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from fastapi import Request
 
 SUPPORTED_LANGS = ("en", "ru", "de")
 DEFAULT_LANG = "en"
@@ -31,6 +34,15 @@ def lang_from_accept_language(header: str | None) -> str:
         if code in SUPPORTED_LANGS:
             return code
     return DEFAULT_LANG
+
+
+def lang_from_request(request: Request, query_lang: str | None = None) -> str:
+    if query_lang:
+        return normalize_lang(query_lang)
+    cookie = request.cookies.get(LANG_COOKIE)
+    if cookie:
+        return normalize_lang(cookie)
+    return lang_from_accept_language(request.headers.get("accept-language"))
 
 
 def landing_strings(lang: str) -> dict[str, Any]:
@@ -111,7 +123,8 @@ _EN: dict[str, Any] = {
             "q": "How does registration work?",
             "a": (
                 "When public signup is enabled, use <strong>Sign up</strong> on this page — "
-                "you get a personal slug, timezone, and immediate access to the cabinet. "
+                "you get immediate access to the cabinet. "
+                "Set timezone and language later in Settings. "
                 "Otherwise ask the instance admin for an account."
             ),
         },
@@ -199,7 +212,8 @@ _RU: dict[str, Any] = {
             "q": "Как устроена регистрация?",
             "a": (
                 "Если открыта публичная регистрация — кнопка <strong>Sign up</strong> на этой странице: "
-                "личный slug, часовой пояс и сразу кабинет. Иначе — доступ через администратора."
+                "сразу попадаете в кабинет. Часовой пояс и язык — в настройках. "
+                "Иначе — доступ через администратора."
             ),
         },
         {
@@ -286,7 +300,7 @@ _DE: dict[str, Any] = {
             "q": "Wie funktioniert die Registrierung?",
             "a": (
                 "Ist die öffentliche Anmeldung aktiv, nutzen Sie <strong>Registrieren</strong> auf dieser Seite — "
-                "persönlicher Slug, Zeitzone und sofort Zugang zum Dashboard. "
+                "sofort Zugang zum Dashboard. Zeitzone und Sprache später unter Einstellungen. "
                 "Sonst beim Administrator der Instanz ein Konto anfragen."
             ),
         },

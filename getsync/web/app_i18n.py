@@ -1,19 +1,177 @@
-"""Cabinet UI strings (EN default, RU secondary)."""
+"""Cabinet and auth UI strings (EN default; RU, DE)."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from getsync.users.locale import DEFAULT_LOCALE, normalize_locale
+from getsync.users.locale import normalize_locale
+
+_AUTH: dict[str, dict[str, Any]] = {}
+_REGISTER: dict[str, dict[str, Any]] = {}
+_CABINET: dict[str, dict[str, Any]] = {}
+
+
+def auth_strings(lang: str | None) -> dict[str, Any]:
+    return _AUTH.get(normalize_locale(lang), _AUTH["en"])
+
+
+def register_strings(lang: str | None) -> dict[str, Any]:
+    return _REGISTER.get(normalize_locale(lang), _REGISTER["en"])
 
 
 def cabinet_strings(lang: str | None) -> dict[str, Any]:
-    if normalize_locale(lang) == "ru":
-        return _RU
-    return _EN
+    return _CABINET.get(normalize_locale(lang), _CABINET["en"])
 
 
-_EN: dict[str, Any] = {
+def _register_auth(code: str, data: dict[str, Any]) -> None:
+    _AUTH[code] = data
+
+
+def _register_cabinet(code: str, data: dict[str, Any]) -> None:
+    _CABINET[code] = data
+
+
+def _register_register(code: str, data: dict[str, Any]) -> None:
+    _REGISTER[code] = data
+
+
+_register_register("en", {
+    "html_lang": "en",
+    "page_title": "Sign up — GetSync",
+    "page_title_closed": "Registration closed — GetSync",
+    "sign_up_h2": "Sign up",
+    "intro": "Personal account for workout sync. Created automatically from your email.",
+    "email_label": "Email",
+    "display_name_label": "Display name (optional)",
+    "password_label": "Password",
+    "password_confirm_label": "Confirm password",
+    "submit_button": "Create account",
+    "already_have_account": "Already have an account?",
+    "sign_in_link": "Sign in",
+    "home_link": "Home",
+    "login_link": "Login",
+    "nav_language": "Language",
+    "closed_h2": "Registration closed",
+    "closed_body": (
+        "You cannot create an account on the site right now. "
+        "Ask a GetSync administrator for access, or sign in if you already have an account."
+    ),
+    "closed_sign_in": "Sign in",
+    "closed_home": "Home",
+    "error_rate_limit": "Too many attempts. Wait {wait} s.",
+    "error_invalid_email": "Enter a valid email address.",
+    "error_password_short": "Password must be at least {min_len} characters.",
+    "error_password_mismatch": "Passwords do not match.",
+    "error_email_taken": "An account with this email already exists. Sign in instead.",
+    "error_create_failed": "Could not create the account. Try again later.",
+})
+
+_register_register("ru", {
+    "html_lang": "ru",
+    "page_title": "Регистрация — GetSync",
+    "page_title_closed": "Регистрация недоступна — GetSync",
+    "sign_up_h2": "Регистрация",
+    "intro": "Личный аккаунт для синхронизации тренировок. Создаётся автоматически по email.",
+    "email_label": "Email",
+    "display_name_label": "Имя (необязательно)",
+    "password_label": "Пароль",
+    "password_confirm_label": "Повтор пароля",
+    "submit_button": "Создать аккаунт",
+    "already_have_account": "Уже есть аккаунт?",
+    "sign_in_link": "Войти",
+    "home_link": "Главная",
+    "login_link": "Вход",
+    "nav_language": "Язык",
+    "closed_h2": "Регистрация недоступна",
+    "closed_body": (
+        "Сейчас нельзя создать аккаунт через сайт. "
+        "Попросите администратора GetSync выдать доступ или войдите, если аккаунт уже есть."
+    ),
+    "closed_sign_in": "Войти",
+    "closed_home": "На главную",
+    "error_rate_limit": "Слишком много попыток. Подождите {wait} с.",
+    "error_invalid_email": "Укажите корректный email.",
+    "error_password_short": "Пароль не короче {min_len} символов.",
+    "error_password_mismatch": "Пароли не совпадают.",
+    "error_email_taken": "Аккаунт с таким email уже есть. Войдите или восстановите доступ.",
+    "error_create_failed": "Не удалось создать аккаунт. Попробуйте позже.",
+})
+
+_register_register("de", {
+    "html_lang": "de",
+    "page_title": "Registrieren — GetSync",
+    "page_title_closed": "Registrierung geschlossen — GetSync",
+    "sign_up_h2": "Registrieren",
+    "intro": "Persönliches Konto zur Trainingssynchronisation. Wird automatisch aus Ihrer E-Mail erstellt.",
+    "email_label": "E-Mail",
+    "display_name_label": "Anzeigename (optional)",
+    "password_label": "Passwort",
+    "password_confirm_label": "Passwort bestätigen",
+    "submit_button": "Konto erstellen",
+    "already_have_account": "Bereits ein Konto?",
+    "sign_in_link": "Anmelden",
+    "home_link": "Startseite",
+    "login_link": "Anmelden",
+    "nav_language": "Sprache",
+    "closed_h2": "Registrierung geschlossen",
+    "closed_body": (
+        "Derzeit können Sie kein Konto auf der Website erstellen. "
+        "Wenden Sie sich an einen GetSync-Administrator oder melden Sie sich an, "
+        "wenn Sie bereits ein Konto haben."
+    ),
+    "closed_sign_in": "Anmelden",
+    "closed_home": "Startseite",
+    "error_rate_limit": "Zu viele Versuche. Warten Sie {wait} s.",
+    "error_invalid_email": "Geben Sie eine gültige E-Mail-Adresse ein.",
+    "error_password_short": "Passwort mindestens {min_len} Zeichen.",
+    "error_password_mismatch": "Passwörter stimmen nicht überein.",
+    "error_email_taken": "Diese E-Mail ist bereits registriert. Bitte anmelden.",
+    "error_create_failed": "Konto konnte nicht erstellt werden. Bitte später erneut versuchen.",
+})
+
+_register_auth("en", {
+    "html_lang": "en",
+    "page_title": "Login — GetSync",
+    "sign_in_h2": "Sign in",
+    "email_label": "Email",
+    "password_label": "Password",
+    "sign_in_button": "Sign in",
+    "error_invalid_credentials": "Invalid email or password",
+    "no_account": "No account?",
+    "sign_up_link": "Sign up",
+    "home_link": "Home",
+    "nav_language": "Language",
+})
+
+_register_auth("ru", {
+    "html_lang": "ru",
+    "page_title": "Вход — GetSync",
+    "sign_in_h2": "Войти",
+    "email_label": "Email",
+    "password_label": "Пароль",
+    "sign_in_button": "Войти",
+    "error_invalid_credentials": "Неверный email или пароль",
+    "no_account": "Нет аккаунта?",
+    "sign_up_link": "Регистрация",
+    "home_link": "Главная",
+    "nav_language": "Язык",
+})
+
+_register_auth("de", {
+    "html_lang": "de",
+    "page_title": "Anmelden — GetSync",
+    "sign_in_h2": "Anmelden",
+    "email_label": "E-Mail",
+    "password_label": "Passwort",
+    "sign_in_button": "Anmelden",
+    "error_invalid_credentials": "Ungültige E-Mail oder Passwort",
+    "no_account": "Noch kein Konto?",
+    "sign_up_link": "Registrieren",
+    "home_link": "Startseite",
+    "nav_language": "Sprache",
+})
+
+_register_cabinet("en", {
     "html_lang": "en",
     "nav_dashboard": "Dashboard",
     "nav_activities": "Activities",
@@ -44,9 +202,9 @@ _EN: dict[str, Any] = {
     "flash_hh_disconnected": "Hammerhead disconnected.",
     "flash_garmin_refreshed": "Garmin session refresh requested.",
     "flash_garmin_disconnected": "Garmin sessions removed for this account.",
-}
+})
 
-_RU: dict[str, Any] = {
+_register_cabinet("ru", {
     "html_lang": "ru",
     "nav_dashboard": "Дашборд",
     "nav_activities": "Активности",
@@ -77,7 +235,40 @@ _RU: dict[str, Any] = {
     "flash_hh_disconnected": "Hammerhead отключён.",
     "flash_garmin_refreshed": "Запрошено обновление сессии Garmin.",
     "flash_garmin_disconnected": "Сессии Garmin удалены для этого аккаунта.",
-}
+})
+
+_register_cabinet("de", {
+    "html_lang": "de",
+    "nav_dashboard": "Dashboard",
+    "nav_activities": "Aktivitäten",
+    "nav_log": "Sync-Protokoll",
+    "nav_session": "Garmin-Sitzung",
+    "nav_settings": "Einstellungen",
+    "nav_admin": "Admin",
+    "logout": "Abmelden",
+    "badge_admin": "Admin",
+    "badge_disabled": "deaktiviert",
+    "settings_title": "Einstellungen",
+    "profile_h3": "Profil",
+    "display_name": "Anzeigename",
+    "email": "E-Mail",
+    "telegram": "Telegram",
+    "timezone_label": "Zeitzone",
+    "locale_label": "Sprache",
+    "save_profile": "Profil speichern",
+    "slug_label": "Slug",
+    "password_h3": "Passwort",
+    "current_password": "Aktuelles Passwort",
+    "new_password": "Neues Passwort",
+    "confirm_password": "Passwort bestätigen",
+    "change_password": "Passwort ändern",
+    "flash_profile_saved": "Profil gespeichert.",
+    "flash_password_changed": "Passwort aktualisiert.",
+    "flash_hh_connected": "Hammerhead verbunden.",
+    "flash_hh_disconnected": "Hammerhead getrennt.",
+    "flash_garmin_refreshed": "Garmin-Sitzung wird aktualisiert.",
+    "flash_garmin_disconnected": "Garmin-Sitzungen für dieses Konto entfernt.",
+})
 
 
 def flash_message(lang: str | None, msg_code: str) -> str | None:

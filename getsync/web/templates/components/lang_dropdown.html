@@ -1,0 +1,18 @@
+<div class="dropdown">
+  <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+          id="{{ dropdown_id | default('siteLangDropdown') }}" data-bs-toggle="dropdown"
+          aria-expanded="false" aria-label="{{ t.nav_language }}">
+    {% for opt in landing_lang_options(lang) %}
+    {% if opt.selected %}{{ opt.label }}{% endif %}
+    {% endfor %}
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end"
+      aria-labelledby="{{ dropdown_id | default('siteLangDropdown') }}">
+    {% for opt in landing_lang_options(lang) %}
+    <li>
+      <a class="dropdown-item{% if opt.selected %} active{% endif %}"
+         href="/set-lang?lang={{ opt.value }}&next={{ (lang_next_path | default('/')) | urlencode_path }}">{{ opt.label }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>

@@ -1,0 +1,34 @@
+<header class="navbar navbar-expand-md navbar-light bg-white border-bottom sticky-top mb-0">
+  <div class="getsync-site-inner">
+    <a href="/?lang={{ lang }}" class="navbar-brand d-flex align-items-center gap-2">
+      <img src="/static/icon.svg" alt="" width="36" height="36" class="rounded-2">
+      <span class="fw-semibold">GetSync</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#siteNav"
+            aria-controls="siteNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="siteNav">
+      <ul class="navbar-nav me-auto mb-2 mb-md-0">
+        <li class="nav-item"><a class="nav-link" href="/#benefits">{{ t.nav_benefits }}</a></li>
+        <li class="nav-item"><a class="nav-link" href="/#faq">{{ t.nav_faq }}</a></li>
+      </ul>
+      <div class="d-flex flex-wrap align-items-center gap-2 ms-md-auto">
+        {% include "components/lang_dropdown.html" %}
+        {% if active_nav == 'login' %}
+        <span class="btn btn-link text-decoration-none d-none d-sm-inline pe-none fw-semibold text-body-secondary"
+              aria-current="page">{{ t.nav_login }}</span>
+        {% else %}
+        <a href="/app/login" class="btn btn-link text-decoration-none d-none d-sm-inline">{{ t.nav_login }}</a>
+        {% endif %}
+        {% if registration_open %}
+          {% if active_nav == 'signup' %}
+        <span class="btn btn-primary pe-none" aria-current="page">{{ t.nav_signup }}</span>
+          {% else %}
+        <a href="/register" class="btn btn-primary">{{ t.nav_signup }}</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</header>

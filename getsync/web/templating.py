@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import quote
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -73,6 +74,7 @@ def jinja_env() -> Environment:
         loader=FileSystemLoader(_TEMPLATES_DIR),
         autoescape=select_autoescape(["html", "xml"]),
     )
+    env.filters["urlencode_path"] = lambda s: quote(str(s), safe="")
     defaults = formatter_globals(DEFAULT_TIMEZONE)
     env.globals.update(
         app_version=__version__,

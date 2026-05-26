@@ -72,7 +72,7 @@ class TestSiteI18n(unittest.TestCase):
                 r = TestClient(app).get("/")
                 self.assertIn('id="siteLangDropdown"', r.text)
                 self.assertIn("dropdown-menu", r.text)
-                self.assertIn("/?lang=de", r.text)
+                self.assertIn("/set-lang?lang=de&next=", r.text)
 
     def test_default_lang_constant(self) -> None:
         self.assertEqual(DEFAULT_LANG, "en")
