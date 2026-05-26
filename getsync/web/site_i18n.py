@@ -28,20 +28,14 @@ _EN: dict[str, Any] = {
     "nav_faq": "FAQ",
     "nav_login": "Login",
     "nav_signup": "Sign up",
-    "hero_badge": "Activity hub · Hammerhead → Garmin live today",
     "hero_title": "All your workouts in one place — synced where you need them",
     "hero_lead": (
         "GetSync collects activities from your devices and clouds, keeps a clear catalog "
-        "in your account, and delivers files to the services you already use. "
-        "Today: automatic Hammerhead Karoo → Garmin Connect with original .fit files."
+        "in your account, and delivers files to the services you already use."
     ),
     "hero_cta_signup": "Sign up — free to start",
     "hero_cta_login": "Login",
-    "hero_hint_open": "After signup, connect Hammerhead and Garmin in Settings.",
     "hero_hint_closed": "New accounts are created by an admin. Already have access? Login.",
-    "preview_label": "Product preview",
-    "preview_title": "Cabinet screenshots coming soon",
-    "preview_body": "Dashboard, activity list, and sync log — right here on the landing page.",
     "benefits_title": "Built for athletes who use more than one platform",
     "benefits_lead": (
         "Stop copying files by hand. GetSync is growing into a hub: ingest, storage, "
@@ -70,7 +64,7 @@ _EN: dict[str, Any] = {
         {
             "q": "What is GetSync?",
             "a": (
-                "GetSync is a self-hosted activity hub for athletes: collect workouts, "
+                "GetSync is a <strong>free</strong> activity hub for athletes: collect workouts, "
                 "view status in a web cabinet, and push them to connected services. "
                 "The first production path is Hammerhead Karoo → Garmin Connect."
             ),
@@ -102,9 +96,9 @@ _EN: dict[str, Any] = {
         {
             "q": "How much does it cost?",
             "a": (
-                "GetSync is <strong>free to run for yourself</strong>: deploy on your VPS or home server "
-                "(self-hosted). You pay only for hosting and API access to third-party services. "
-                "There are no GetSync subscription tiers today."
+                "GetSync is a <strong>free service</strong>. We do not charge subscription fees "
+                "or usage tiers for GetSync. Hammerhead, Garmin, and other platforms have their "
+                "own terms — GetSync only connects them for you."
             ),
         },
     ],
@@ -121,20 +115,14 @@ _RU: dict[str, Any] = {
     "nav_faq": "Вопросы",
     "nav_login": "Login",
     "nav_signup": "Sign up",
-    "hero_badge": "Хаб активностей · Hammerhead → Garmin уже в проде",
     "hero_title": "Все ваши тренировки в одном месте — и дальше куда нужно",
     "hero_lead": (
         "GetSync собирает активности с устройств и облаков, ведёт каталог в вашем аккаунте "
-        "и доставляет файлы в нужные сервисы. Сейчас в production: автоматический "
-        "Hammerhead Karoo → Garmin Connect с оригинальными .fit."
+        "и доставляет файлы в нужные сервисы."
     ),
     "hero_cta_signup": "Sign up — бесплатный старт",
     "hero_cta_login": "Login",
-    "hero_hint_open": "После регистрации подключите Hammerhead и Garmin в Settings.",
     "hero_hint_closed": "Новые аккаунты создаёт администратор. Уже есть доступ — Login.",
-    "preview_label": "Превью продукта",
-    "preview_title": "Скриншоты кабинета — скоро",
-    "preview_body": "Дашборд, список активностей и лог синхронизации появятся на этой странице.",
     "benefits_title": "Для спортсменов на нескольких платформах",
     "benefits_lead": (
         "Без ручного копирования файлов. GetSync развивается как хаб: приём, хранение, "
@@ -163,7 +151,7 @@ _RU: dict[str, Any] = {
         {
             "q": "Что такое GetSync?",
             "a": (
-                "GetSync — self-hosted хаб активностей для спортсменов: сбор тренировок, "
+                "GetSync — <strong>бесплатный</strong> хаб активностей для спортсменов: сбор тренировок, "
                 "кабинет со статусами и доставка в подключённые сервисы. "
                 "Первый рабочий сценарий — Hammerhead Karoo → Garmin Connect."
             ),
@@ -194,9 +182,9 @@ _RU: dict[str, Any] = {
         {
             "q": "Сколько это стоит?",
             "a": (
-                "GetSync <strong>бесплатен для self-hosted</strong>: разверните на своём VPS или домашнем сервере. "
-                "Вы платите только за хостинг и доступ к API сторонних сервисов. "
-                "Подписок GetSync сейчас нет."
+                "GetSync — <strong>бесплатный сервис</strong>. Мы не берём плату за подписку "
+                "или использование GetSync. У Hammerhead, Garmin и других платформ — свои условия; "
+                "GetSync только связывает их для вас."
             ),
         },
     ],

@@ -437,7 +437,8 @@ getsync --user roman sync --since 2025-01-01
 
 | Элемент | Статус |
 |---------|--------|
-| `GET /` — [`site_routes.py`](../getsync/web/site_routes.py), [`home.html`](../getsync/web/templates/pages/site/home.html) | ✅ краткий текст + login |
+| `GET /` — [`site_routes.py`](../getsync/web/site_routes.py), [`home.html`](../getsync/web/templates/pages/site/home.html) | ✅ hero, benefits, FAQ, CTA (EN/RU) |
+| Блок **Product preview** (скриншоты кабинета) | 📋 отключён; см. **2.11.4** |
 | nginx proxy — [`deploy/nginx/romansegalla.conf`](../deploy/nginx/romansegalla.conf) | ✅ |
 | Статический fallback — [`deploy/www/index.html`](../deploy/www/index.html) | ✅ |
 | Сессия: залогиненный user → redirect `/app/` | ✅ |
@@ -447,6 +448,7 @@ getsync --user roman sync --since 2025-01-01
 | Секция | Содержание |
 |--------|------------|
 | **Hero** | Заголовок продукта (после **1.5** — финальное имя), value proposition, CTA «Войти» / «Регистрация» (**2.1**) |
+| **Product preview** | Скриншоты dashboard / activities / sync log на лендинге — **2.11.4** (сейчас убрано с `/`) |
 | **Как это работает** | Hammerhead webhook → FIT → Garmin; 3–4 шага с иконками |
 | **Возможности** | Sync, дедуп, кабинет, мультиаккаунт (кратко) |
 | **Для кого** | Велосипедисты с Karoo + Garmin Connect |
@@ -471,8 +473,9 @@ fit.romansegalla.online → app: /app/*, /webhooks/*, /health (как сейча
 | **2.11.1** | Макет лендинга (Figma или HTML-prototype); mobile-first | 1–2 вечера |
 | **2.11.2** | Вёрстка: `layouts/site.html`, страницы в `templates/pages/site/`; отделить от `auth.html` кабинета | 2–4 вечера |
 | **2.11.3** | SEO, OG-image, favicon; тесты `GET /`; обновить [CI-CD.md](CI-CD.md) smoke `curl romansegalla.online` | ½–1 вечера |
+| **2.11.4** | Блок **Product preview**: скриншоты кабинета (dashboard, activities, sync log), EN/RU, mobile | 1 вечер |
 
-**Зависимости:** **2.10.1** (tokens) и **1.5** (бренд) — до **2.11.2**; **2.1** — ссылка «Регистрация»; **1.4** — лендинг без Basic Auth (уже так на romansegalla.online).
+**Зависимости:** **2.10.1** (tokens) и **1.5** (бренд) — до **2.11.2**; **2.11.4** — после **2.10.2** (актуальные экраны) или временные mockup-скрины; **2.1** — ссылка «Регистрация»; **1.4** — лендинг без Basic Auth (уже так на romansegalla.online).
 
 **Связь с 2.10:** дизайн-система общая; лендинг может использовать отдельный layout `site.html` (маркетинг) vs `cabinet.html` (приложение).
 
@@ -1208,7 +1211,7 @@ StorageBackend          — LocalFS | S3 (boto3)
 - [ ] **2.8** 7.0 — ActivityRecord, Source/Sink spike
 - [ ] **2.9** 7.3 — manual FIT upload
 - [ ] **2.10** Design — аудит UX, дизайн-система, редизайн ключевых экранов (2.10.0–2.10.3)
-- [ ] **2.11** Site — главная romansegalla.online: контент, макет, вёрстка, SEO (2.11.0–2.11.3)
+- [ ] **2.11** Site — главная romansegalla.online: контент, макет, вёрстка, SEO (2.11.0–2.11.4; preview — **2.11.4**)
 
 ### 🔵 Горизонт 3 — далёкое будущее (TODO)
 

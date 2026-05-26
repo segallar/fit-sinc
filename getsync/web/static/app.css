@@ -49,6 +49,44 @@ body {
   background-color: var(--getsync-bg-warm);
 }
 
+/* Landing: narrow centered columns (fitsync.io-style feature grid) */
+.getsync-section-narrow {
+  max-width: 48rem;
+  margin-inline: auto;
+  padding-inline: 0.75rem;
+}
+
+.getsync-section-lead {
+  max-width: 36rem;
+}
+
+.getsync-feature-card {
+  border: 1px solid var(--getsync-border);
+  border-radius: 0.75rem;
+  box-shadow: none;
+  transition: box-shadow 0.2s ease;
+}
+
+.getsync-feature-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(31, 45, 31, 0.08);
+}
+
+.getsync-feature-card .card-body {
+  padding: 1.25rem 1.375rem;
+}
+
+.getsync-feature-card .card-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.getsync-feature-card .card-text {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  margin-bottom: 0;
+}
+
 .getsync-cta-dark {
   background-color: var(--getsync-primary-900) !important;
   border: none;

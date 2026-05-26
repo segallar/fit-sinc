@@ -5,7 +5,6 @@
 {% block page_content %}
 <section class="py-5 getsync-hero rounded-3 mb-5">
   <div class="container py-4 text-center">
-    <span class="badge bg-primary mb-3">{{ t.hero_badge }}</span>
     <h2 class="display-5 fw-bold">{{ t.hero_title }}</h2>
     <p class="lead text-muted mx-auto col-lg-10">{{ t.hero_lead }}</p>
     <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center mt-4">
@@ -14,38 +13,30 @@
       {% endif %}
       <a href="/app/login" class="btn btn-outline-primary btn-lg">{{ t.hero_cta_login }}</a>
     </div>
-    <p class="small text-muted mt-3 mb-0">
-      {% if registration_open %}{{ t.hero_hint_open }}{% else %}{{ t.hero_hint_closed }}{% endif %}
-    </p>
-  </div>
-</section>
-
-<section class="mb-5" aria-label="{{ t.preview_label }}">
-  <div class="card border-2 border-dashed text-center py-5">
-    <div class="card-body">
-      <p class="text-primary fw-semibold text-uppercase small">{{ t.preview_label }}</p>
-      <h3 class="h4">{{ t.preview_title }}</h3>
-      <p class="text-muted col-lg-8 mx-auto">{{ t.preview_body }}</p>
-    </div>
+    {% if not registration_open %}
+    <p class="small text-muted mt-3 mb-0">{{ t.hero_hint_closed }}</p>
+    {% endif %}
   </div>
 </section>
 
 <section id="benefits" class="mb-5 scroll-mt-5">
-  <div class="text-center mb-4">
-    <h3 class="h2">{{ t.benefits_title }}</h3>
-    <p class="text-muted col-lg-8 mx-auto">{{ t.benefits_lead }}</p>
-  </div>
-  <div class="row g-4">
-    {% for item in t.benefits %}
-    <div class="col-md-6">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h4 class="h5 card-title">{{ item.title }}</h4>
-          <p class="card-text text-muted">{{ item.body }}</p>
+  <div class="getsync-section-narrow">
+    <div class="text-center mb-4">
+      <h3 class="h2">{{ t.benefits_title }}</h3>
+      <p class="text-muted mx-auto getsync-section-lead">{{ t.benefits_lead }}</p>
+    </div>
+    <div class="row g-3 g-md-4 justify-content-center">
+      {% for item in t.benefits %}
+      <div class="col-12 col-sm-10 col-md-6">
+        <div class="card h-100 getsync-feature-card">
+          <div class="card-body">
+            <h4 class="card-title">{{ item.title }}</h4>
+            <p class="card-text text-muted">{{ item.body }}</p>
+          </div>
         </div>
       </div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </div>
 </section>
 
