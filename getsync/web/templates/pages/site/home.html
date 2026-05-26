@@ -3,7 +3,7 @@
 {% block title %}GetSync — Hammerhead → Garmin{% endblock %}
 
 {% block page_content %}
-<div class="mb-8 text-center sm:text-left">
+<div class="mb-10 text-center sm:text-left">
   <h2 class="text-2xl font-semibold tracking-tight text-slate-900">GetSync</h2>
   <p class="mt-2 text-sm leading-relaxed text-slate-600">
     Автоматическая синхронизация велотренировок с Hammerhead Karoo в Garmin Connect.
@@ -16,30 +16,24 @@
   </ul>
 </div>
 
-<h3 class="mb-4 text-lg font-semibold text-slate-900">Вход в кабинет</h3>
-{% if error %}
-<p class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">Неверный email или пароль</p>
-{% endif %}
-<form method="post" action="{{ prefix }}/login" class="space-y-4">
-  <input type="hidden" name="next" value="/">
-  <label class="block text-sm text-slate-600">
-    <span class="mb-1 block">Email</span>
-    <input type="email" name="email" required autocomplete="username"
-           class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
-  </label>
-  <label class="block text-sm text-slate-600">
-    <span class="mb-1 block">Пароль</span>
-    <input type="password" name="password" required autocomplete="current-password"
-           class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
-  </label>
-  <button type="submit"
-          class="w-full rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
-    Войти
-  </button>
-</form>
+<div class="flex flex-col gap-3 sm:flex-row sm:gap-4">
+  <a href="/app/login"
+     class="inline-flex w-full items-center justify-center rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-800 sm:w-auto">
+    Login
+  </a>
+  <a href="/register"
+     class="inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 sm:w-auto">
+    Sign up
+  </a>
+</div>
+<p class="mt-4 text-xs text-slate-500">
+  После регистрации подключите Hammerhead и Garmin в <strong>Settings</strong> кабинета.
+</p>
 {% endblock %}
 
 {% block footer %}
-<p>Webhook и мониторинг: <code class="text-slate-600">/health</code> ·
-  <a href="https://fit.romansegalla.online/" class="text-teal-700 hover:underline">fit.romansegalla.online</a></p>
+<p>
+  <a href="/health" class="text-teal-700 hover:underline">/health</a> ·
+  <a href="https://getsync.me" class="text-teal-700 hover:underline">getsync.me</a>
+</p>
 {% endblock %}

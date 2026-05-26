@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
-SALT = "fit-sinc-hammerhead-oauth"
+SALT = "getsync-hammerhead-oauth"
 MAX_AGE_SEC = 600
 
 

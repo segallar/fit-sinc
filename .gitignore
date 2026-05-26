@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .env
+**/dns-notify.env
 data/
 *.db
 .DS_Store

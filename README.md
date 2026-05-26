@@ -36,7 +36,7 @@ sequenceDiagram
     GS->>GS: verify signature
     GS->>HH: GET activity .fit
     HH-->>GS: FIT binary
-    GS->>GS: save data/fits, SQLite
+    GS->>GS: save data/users/.../fits, SQLite
     GS->>GC: upload (browser → HTTP → garth)
     GS->>GS: mark synced
 ```
@@ -105,7 +105,7 @@ cp .env.example .env
 ### Hammerhead
 
 ```bash
-getsync hammerhead auth      # OAuth в браузере, токены → data/hammerhead_tokens.json
+getsync hammerhead auth      # OAuth в браузере → data/users/default/hammerhead_tokens.json
 getsync hammerhead status
 ```
 
@@ -151,7 +151,7 @@ getsync serve                  # http://127.0.0.1:8080 — webhook + UI
 | `GARMIN_EMAIL` / `PASSWORD` | Опционально для CLI |
 | `DATA_DIR` | Каталог данных (по умолчанию `data`) |
 
-Файлы данных (не коммитить): `data/getsync.db` (или legacy `data/fit_sinc.db`), per-tenant `data/users/{id}/` (tokens, `garmin_web/`, `garth/`, `fits/`). При первом старте legacy `data/*` копируется в `data/users/default/`.
+Файлы данных (не коммитить): `data/getsync.db`, per-tenant `data/users/{id}/` (tokens, `garmin_web/`, `garth/`, `fits/`). При апгрейде со старой установки возможен файл `fit_sinc.db` — см. [`getsync/config.py`](getsync/config.py); плоский `data/*` копируется в `data/users/default/`.
 
 ## Веб-интерфейс
 
@@ -161,6 +161,8 @@ getsync serve                  # http://127.0.0.1:8080 — webhook + UI
 | `/app/activities` | Таблица HH/Garmin, фильтры |
 | `/app/log` | Лог webhook / download / upload |
 | `/app/settings` | Подключения Hammerhead / Garmin |
+| `/` | Главная: Login / Sign up |
+| `/register` | Регистрация (`REGISTRATION_OPEN=true`) |
 | `/app/login` | Вход (cookie `getsync_session`) |
 
 В production UI за nginx (TLS); `SESSION_COOKIE_SECURE=true`. Приложение слушает только `127.0.0.1`.
@@ -201,7 +203,7 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 ## Статус
 
-MVP (фазы 0–4) в production. Переименование **GetSync** (1.5): пакет `getsync`, домен [getsync.me](https://getsync.me). Планы: [docs/PLAN.md](docs/PLAN.md).
+MVP (фазы 0–5) в production. Пакет и CLI — **getsync**, публичный домен — [getsync.me](https://getsync.me) / [app.getsync.me](https://app.getsync.me). Планы: [docs/PLAN.md](docs/PLAN.md).
 
 ---
 

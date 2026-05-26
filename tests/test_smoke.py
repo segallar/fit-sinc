@@ -38,6 +38,8 @@ class TestImports(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn("GetSync", r.text)
         self.assertIn("/app/login", r.text)
+        self.assertNotIn("fit_sinc", r.text.lower())
+        self.assertNotIn("fit.romansegalla", r.text.lower())
 
     def test_root_redirects_when_logged_in(self) -> None:
         import tempfile

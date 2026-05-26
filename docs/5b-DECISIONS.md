@@ -8,7 +8,7 @@
 | Режим | `REGISTRATION_OPEN` | Кто создаёт пользователей |
 |-------|---------------------|---------------------------|
 | **Invite-only (prod)** | `false` (по умолчанию) | Админ через `/app/admin` или `getsync user create` |
-| **Открытая** | `true` | Саморегистрация на `/register` (реализация в **5b.3**) |
+| **Открытая** | `true` | Саморегистрация на `/register` — [2.1-REGISTER.md](2.1-REGISTER.md) |
 
 На production **app.getsync.me** оставляем `REGISTRATION_OPEN=false` до готовности rate limit и UI регистрации (**2.1**).
 

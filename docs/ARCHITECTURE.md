@@ -144,7 +144,7 @@ getsync --user <slug> garmin status   # upload_ready
 
 Кабинет: user bar, Settings в nav, баннер HH/Garmin на дашборде, re-sync активностей. Вёрстка: [UI.md](UI.md).
 
-**Планируется:** `/register` ([PLAN.md](PLAN.md) **2.1**).
+**Регистрация:** `/register` при `REGISTRATION_OPEN=true` — [2.1-REGISTER.md](2.1-REGISTER.md); подтверждение email — **2.1e**.
 
 FIT на диске: `data/users/{user_id}/fits/{activity_id}.fit` (путь дублируется в SQLite `fit_path`).
 
@@ -179,7 +179,7 @@ getsync serve
 
 ## Ограничения (актуальные)
 
-- Нет публичного `/register` — **2.1** (`REGISTRATION_OPEN=false` по умолчанию)  
+- Подтверждение email не реализовано — **2.1e** (`REGISTRATION_OPEN=false` на prod по умолчанию)  
 - Garmin **первичный** login — CLI; в settings — status/refresh/disconnect  
 - Даты: UTC в SQLite, отображение в `users.timezone`  
 - Только **активности** Hammerhead → Garmin (не routes / workouts)  

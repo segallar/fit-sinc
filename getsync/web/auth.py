@@ -135,6 +135,9 @@ def install_auth_middleware(app: FastAPI) -> None:
         if path == "/":
             return await call_next(request)
 
+        if path == "/register" or path.startswith("/register?"):
+            return await call_next(request)
+
         legacy = (
             "/activities",
             "/log",

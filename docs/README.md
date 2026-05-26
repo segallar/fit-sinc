@@ -18,6 +18,7 @@
 | [PLAN.md](PLAN.md) | Roadmap | Фазы, горизонты 1.x–3.x, реестр задач |
 | [1.5-RENAME.md](1.5-RENAME.md) | Cutover | Бренд GetSync, DNS, cookie, SQLite |
 | [5b-DECISIONS.md](5b-DECISIONS.md) | Auth | Регистрация, bootstrap admin |
+| [2.1-REGISTER.md](2.1-REGISTER.md) | Auth | Саморегистрация `/register`, план email verify (**2.1e**) |
 
 ---
 

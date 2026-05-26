@@ -24,6 +24,7 @@ from getsync.web.auth import (
     warn_insecure_session_config,
 )
 from getsync.web.settings_routes import router as settings_router
+from getsync.web.register_routes import router as register_router
 from getsync.web.site_routes import router as site_router
 logger = logging.getLogger("getsync")
 
@@ -93,6 +94,7 @@ app = FastAPI(title="GetSync", version="0.5.0", lifespan=_lifespan)
 install_auth_middleware(app)
 install_sessions(app)
 app.include_router(site_router)
+app.include_router(register_router)
 app.include_router(settings_router)
 app.include_router(app_router)
 app.include_router(admin_router)

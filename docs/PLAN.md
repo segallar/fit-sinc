@@ -44,7 +44,7 @@
 | 3 Garmin upload (web JWT, browser, fallback) | ✅ код / ⚠️ ops на сервере |
 | 4 CI (GitHub Actions test + deploy main) | ✅ |
 | 5 Мультипользовательность (tenants, `/admin`, `/app`) | ✅ MVP |
-| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | **1.1–1.4**, **1.7–1.8** ✅ · 🟡 **2.1** register · **1.5** rename |
+| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | **1.1–1.4**, **1.7–1.8** ✅ · **2.1** MVP ✅ · **2.1e** email · **1.5** rename |
 | **UI** Новый интерфейс приложения (Jinja2 + Tailwind) | ✅ |
 | **Design** Проектирование и улучшение UI/UX (дизайн-система) | 📋 · **2.10** |
 | **Site** Главная страница [romansegalla.online](https://romansegalla.online) | MVP ✅ · полировка **2.11** |
@@ -1198,7 +1198,7 @@ StorageBackend          — LocalFS | S3 (boto3)
 
 ### 🟡 Горизонт 2 — средний срок (TODO)
 
-- [ ] **2.1** 5b.3 — `/register` + `REGISTRATION_OPEN`
+- [x] **2.1** 5b.3 — `/register` + `REGISTRATION_OPEN` — [2.1-REGISTER.md](2.1-REGISTER.md) · email verify → **2.1e**
 - [ ] **2.2** 5b.6 — тесты register / settings / admin forms
 - [ ] **2.3** 6 — календарь, поиск, failed, sync log
 - [ ] **2.4** 6.1 — Telegram-алерты

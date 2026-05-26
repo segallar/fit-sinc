@@ -1,0 +1,73 @@
+{% extends "layouts/auth.html" %}
+
+{% block title %}{% if closed %}Регистрация недоступна{% else %}Sign up — GetSync{% endif %}{% endblock %}
+
+{% block page_content %}
+{% if closed %}
+<h2 class="mb-4 text-xl font-semibold text-slate-900">Регистрация закрыта</h2>
+<p class="text-sm text-slate-600">
+  Самостоятельная регистрация отключена (<code class="text-slate-500">REGISTRATION_OPEN=false</code>).
+  Обратитесь к администратору сервиса.
+</p>
+<p class="mt-6">
+  <a href="/app/login"
+     class="inline-flex rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
+    Войти
+  </a>
+  <a href="/"
+     class="ml-2 inline-flex rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+    На главную
+  </a>
+</p>
+{% else %}
+<h2 class="mb-2 text-xl font-semibold text-slate-900">Sign up</h2>
+<p class="mb-6 text-sm text-slate-600">
+  Аккаунт для синхронизации Hammerhead → Garmin. Slug для данных создаётся автоматически из email.
+</p>
+{% if error %}
+<p class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">{{ error }}</p>
+{% endif %}
+<form method="post" action="/register" class="space-y-4">
+  <label class="block text-sm text-slate-600">
+    <span class="mb-1 block">Email</span>
+    <input type="email" name="email" required autocomplete="email"
+           value="{{ form.email if form else '' }}"
+           class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
+  </label>
+  <label class="block text-sm text-slate-600">
+    <span class="mb-1 block">Имя (необязательно)</span>
+    <input type="text" name="display_name" autocomplete="name"
+           value="{{ form.display_name if form else '' }}"
+           class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
+  </label>
+  <label class="block text-sm text-slate-600">
+    <span class="mb-1 block">Пароль</span>
+    <input type="password" name="password" required minlength="8" autocomplete="new-password"
+           class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
+  </label>
+  <label class="block text-sm text-slate-600">
+    <span class="mb-1 block">Повтор пароля</span>
+    <input type="password" name="password_confirm" required minlength="8" autocomplete="new-password"
+           class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
+  </label>
+  {% set select_name = 'timezone' %}
+  {% set selected = form.timezone if form else 'Europe/Moscow' %}
+  {% include "components/timezone_select.html" %}
+  <button type="submit"
+          class="w-full rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
+    Создать аккаунт
+  </button>
+</form>
+<p class="mt-4 text-center text-sm text-slate-600">
+  Уже есть аккаунт?
+  <a href="/app/login" class="font-medium text-teal-700 hover:underline">Войти</a>
+</p>
+{% endif %}
+{% endblock %}
+
+{% block footer %}
+<p>
+  <a href="/" class="text-teal-700 hover:underline">Главная</a> ·
+  <a href="/app/login" class="text-teal-700 hover:underline">Login</a>
+</p>
+{% endblock %}
