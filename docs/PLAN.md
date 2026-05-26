@@ -9,6 +9,29 @@
 
 ---
 
+## Идея продукта
+
+**Целевой продукт** (рабочее имя в коде — *fit_sinc*; бренд — **FitSync**, [1.5](1.5-RENAME.md)) — **единый хаб для спортивных активностей**:
+
+| Направление | Содержание |
+|-------------|------------|
+| **Сбор** | Подключение **источников**: велокомпьютеры и облака (Hammerhead, Strava, Wahoo, …), webhook и backfill, ручной импорт FIT/GPX |
+| **Хранение** | Каталог активностей (и маршрутов) per user: метаданные в БД, файлы локально → объектное хранилище (**11**) |
+| **Анализ** | Кабинет: список, календарь, фильтры, статусы доставки, лог синхронизации; обзор без привязки к одному вендору |
+| **Синхронизация** | **Приёмники** по **правилам** пользователя: Garmin Connect, другие API, архив, повторная отправка при ошибках |
+
+```text
+Источники ──► Ingest / нормализация ──► Каталог + хранилище ──► Анализ в UI
+                                              │
+                                              └──► Правила ──► Приёмники (сервисы)
+```
+
+**Сейчас в production (MVP):** один срез цепочки — **Hammerhead Karoo → Garmin Connect** (webhook, FIT, upload). Остальное — roadmap: [фаза 7](#фаза-7-хаб-активностей-источники--правила--приёмники), [11](#фаза-11-хранение-активностей-объектное-хранилище), [модульность 3.9](#модульная-архитектура-39).
+
+**Не в фокусе продукта:** замена TrainingPeaks/Intervals.icu как тренировочный планировщик; полноценная соцсеть. Приоритет — **надёжный ingest + доставка + прозрачный статус** для своих данных.
+
+---
+
 ## Прогресс
 
 | Фаза | Статус |
@@ -29,7 +52,7 @@
 | 6.1 Алерты (Telegram / email) | 📋 · **2.4** |
 | 6.2 Локализация (i18n: ru, en, …) | 📋 · **2.5** · **3.6** |
 | — Ops: README + тесты CI | ✅ README / 📋 **1.7** · deploy CSS ✅ |
-| 7 Хаб активностей: источники → правила → приёмники | 📋 · **2.8–2.9** · **3.1**, **3.5** |
+| 7 Хаб активностей: сбор, хранение, анализ, sync → сервисы | 📋 · **2.8–2.9** · **3.1**, **3.5** |
 | **Modularity** Модули и интерфейсы между ними | 📋 · **3.9** |
 | 8 Маршруты (routes) | 📋 · **3.2** |
 | **9** Переименование приложения (бренд, пакет, домен) | 📋 · **1.5** |
@@ -157,6 +180,8 @@ flowchart LR
 ---
 
 ## Roadmap v2
+
+> Ниже — детализация [идеи продукта](#идея-продукта) по фазам. Порядок работ см. [три горизонта](#приоритеты-три-горизонта).
 
 **Актуальный порядок:** см. [три горизонта](#приоритеты-три-горизонта) и [реестр](#реестр-задач). Кратко: **1.1**–**1.8** → **2.1**–**2.11** → **3.1**–**3.9** (сначала **3.9**, затем хаб **3.1**+).
 
@@ -782,6 +807,7 @@ fit_sinc/web/i18n.py   # t("nav.dashboard", locale=...) → str
 
 ### Фаза 7: Хаб активностей (источники → правила → приёмники)
 
+> Реализация [идеи продукта](#идея-продукта): сбор из разных источников, единый каталог, анализ в UI, синхронизация с выбранными сервисами.  
 > **Крупный рефакторинг.** Цель — не «ещё один if hammerhead», а единая модель: в приложении **список активностей** (и **маршрутов**) из настраиваемых **источников**; доставка в **приёмники** по **правилам** пользователя (Garmin, файловое хранилище, другие API).
 
 **Сейчас:** жёсткая цепочка Hammerhead webhook → download FIT → upload Garmin; метаданные в SQLite `activities`.
@@ -853,7 +879,139 @@ ActivityRecord { user_id, source, external_id, type: activity|route, … }
 
 **Не переписывать сразу:** webhook HMAC, `user_id` tenant, per-user `data/users/{id}/` для секретов — остаются; меняется только `sync/service.py` → оркестратор над адаптерами.
 
-**Зависимости:** **2.7** (settings), **2.3** (единый UI списка), желательно **3.3** (контракт хранения) параллельно с **3.1**.
+**Зависимости:** **2.8** (spike моделей) → **3.9** (модули и интерфейсы) → **3.1** / **3.3**; **2.7**, **2.3** для UI.
+
+---
+
+### Модульная архитектура (3.9)
+
+> **Крупная задача** (🔵 горизонт 3). Подготовка к [хабу **7**](#фаза-7-хаб-активностей-источники--правила--приёмники) и [S3 **3.3**](#фаза-11-хранение-активностей-объектное-хранилище): явные границы модулей и **контракты** между ними, а не «всё импортирует всё».
+
+**Зачем:** сейчас связность высокая (`sync/service.py` знает Hammerhead и Garmin; `web` тянет store и интеграции); новые источники/приёмники без формальных интерфейсов дороже и рискованнее.
+
+**Сейчас (монолит в одном пакете `fit_sinc/`):**
+
+| Область | Пакеты / файлы |
+|---------|----------------|
+| HTTP | `web/` — site, app, admin, auth |
+| Sync | `sync/service.py` |
+| Интеграции | `hammerhead/`, `garmin/` |
+| Состояние | `state/store.py` |
+| Tenants | `users/` |
+| CLI | `cli.py` |
+
+**Целевые модули (логические границы):**
+
+```mermaid
+flowchart TB
+    subgraph delivery [Доставка]
+        WEB[web — HTTP, сессии, шаблоны]
+        CLI[cli — команды ops]
+    end
+    subgraph app [Приложение]
+        ORCH[pipeline — оркестратор sync]
+        RULE[rules — rule engine]
+    end
+    subgraph domain [Домен]
+        DOM[domain — ActivityRecord, статусы, ошибки]
+        TEN[tenants — UserContext]
+    end
+    subgraph ports [Порты — интерфейсы]
+        SRC[ports.sources — Source]
+        SNK[ports.sinks — Sink]
+        STO[ports.persistence — Store]
+        OBJ[ports.storage — StorageBackend]
+    end
+    subgraph adapters [Адаптеры]
+        HH[adapters.hammerhead]
+        GM[adapters.garmin]
+        S3[adapters.storage_s3]
+        SQL[adapters.sqlite_store]
+    end
+    WEB --> ORCH
+    CLI --> ORCH
+    ORCH --> RULE
+    ORCH --> SRC
+    ORCH --> SNK
+    SRC --> HH
+    SNK --> GM
+    SNK --> S3
+    ORCH --> STO
+    STO --> SQL
+    SNK --> OBJ
+    ORCH --> TEN
+    ORCH --> DOM
+```
+
+| Модуль | Ответственность | Не знает о |
+|--------|-----------------|------------|
+| **domain** | `ActivityRecord`, `DeliveryResult`, типы активности/маршрута, коды ошибок | HTTP, SQLite, API HH/Garmin |
+| **tenants** | `UserContext`, пути `data/users/{id}/`, resolve webhook → user | UI, правила маршрутизации |
+| **ports.*** | `Protocol` / ABC: контракты Source, Sink, Store, StorageBackend | Конкретные HTTP-клиенты |
+| **pipeline** | `sync_activity`, очередь, retry, вызов rule engine | Jinja, FastAPI routes |
+| **rules** | Оценка правил пользователя → список sink_id | Детали upload Garmin |
+| **adapters.*** | Реализации портов (HH, Garmin, S3, SQLite) | Шаблоны HTML |
+| **web** | Routes, auth middleware, render; тонкий слой | Playwright, SQL напрямую в handlers |
+| **cli** | Typer → вызов pipeline / admin ops | — |
+
+**Ключевые интерфейсы (черновик контрактов):**
+
+```python
+# ports/sources.py
+class ActivitySource(Protocol):
+    source_id: str
+    async def fetch(self, ctx: UserContext, external_id: str) -> ActivityRecord: ...
+    async def list_pending(self, ctx: UserContext, since: datetime) -> list[str]: ...
+
+# ports/sinks.py
+class ActivitySink(Protocol):
+    sink_id: str
+    async def deliver(self, ctx: UserContext, record: ActivityRecord, artifact: ArtifactRef) -> DeliveryResult: ...
+
+# ports/persistence.py
+class ActivityStore(Protocol):
+    def is_synced(self, user_id: str, source: str, external_id: str) -> bool: ...
+    def save_activity(self, record: ActivityRecord, status: str) -> None: ...
+    def log_delivery(self, user_id: str, event: DeliveryEvent) -> None: ...
+
+# ports/storage.py
+class StorageBackend(Protocol):
+    async def put(self, key: str, data: bytes, content_type: str) -> str: ...
+    async def get_url(self, key: str, ttl_sec: int) -> str: ...
+```
+
+| Граница | Данные на границе |
+|---------|-------------------|
+| Source → pipeline | `ActivityRecord` + `ArtifactRef` (путь или stream FIT/GPX) |
+| pipeline → Sink | тот же `ActivityRecord`; sink сам читает artifact |
+| pipeline → Store | статусы, dedup keys, audit (`sync_events`) |
+| Sink → Storage | опционально: sink `storage_s3` пишет через `StorageBackend` |
+| web → pipeline | `user_id`, `activity_id`, команды (retry, force) — DTO, не ORM |
+
+**Артефакты:**
+
+| Документ / код | Содержание |
+|----------------|------------|
+| **`docs/MODULES.md`** | Карта модулей, диаграммы, таблица «кто с кем говорит» |
+| **`docs/ARCHITECTURE.md`** | Ссылка на модули; обновить после **3.9.1** |
+| **`fit_sinc/ports/`** | Protocol-файлы (можно начать с **2.8**) |
+| **Правила импорта** | `web` → `pipeline` → `ports` ← `adapters`; запрет `adapters` → `web` (опционально `import-linter` в CI) |
+
+**Подзадачи:**
+
+| ID | Содержание | Оценка |
+|----|------------|--------|
+| **3.9.0** | Инвентаризация: граф импортов, hot spots (`sync/service`, `store`) | 1 вечер |
+| **3.9.1** | `docs/MODULES.md` + целевая схема; согласовать с **7** / **3.3** | 1–2 вечера |
+| **3.9.2** | `ports/*` Protocol в коде; типы `ActivityRecord` из **2.8** | 1–2 дня |
+| **3.9.3** | Поэтапный вынос: `pipeline/` оркестратор, HH/Garmin как adapters (без смены поведения) | 3–5 дней |
+| **3.9.4** | Тесты на границах: mock Source/Sink, контрактные тесты | 1 вечер |
+
+**Зависимости:** **2.8** (модель `ActivityRecord`) — до **3.9.2**; **3.1** / **3.3** / **3.5** — опираются на **3.9.1**–**3.9.2**, реализацию адаптеров вести в **3.9.3** параллельно.
+
+**Не в scope v1:** вынос в отдельные pip-пакеты / микросервисы; Celery/Redis (очередь — **3.8**); переписывание БД с нуля.
+
+**Критерий готовности:** новый Source/Sink добавляется реализацией порта + регистрацией в settings (**3.1**), без правок в `web/*.py`.
 
 ---
 
@@ -990,11 +1148,12 @@ StorageBackend          — LocalFS | S3 (boto3)
 | **2.3** UI v2 (календарь, поиск, failed) | **1.2**, UI, **2.10.1** | 2–3 дня |
 | **2.4** алерты Telegram | 5, **2.3** | 0.5–1 день |
 | **2.5** локализация ru/en | UI, **2.3** | 2–3 вечера |
-| **2.8–3.5** хаб активностей | **2.7**, **2.3** | 2–3 недели |
-| **3.2** routes spike | 5, **2.8** | 1–2 недели |
+| **3.9** модули и интерфейсы | **2.8** | 1–2 недели |
+| **2.8–3.5** хаб активностей | **3.9**, **2.7**, **2.3** | 2–3 недели |
+| **3.2** routes spike | 5, **2.8**, **3.9** | 1–2 недели |
 | **1.5** переименование | **1.4**, имя | 1–2 дня |
 | **3.4** OAuth/OIDC | **2.6**, **1.4**, **1.5** | 2–3 вечера |
-| **3.3** хранилище S3 | **2.8** | 3–5 дней |
+| **3.3** хранилище S3 | **2.8**, **3.9.2** | 3–5 дней |
 
 ---
 
@@ -1071,6 +1230,12 @@ StorageBackend          — LocalFS | S3 (boto3)
 - [ ] **3.6** 6.2+ — доп. языки, docs/CLI
 - [ ] **3.7** 10+ — SAML/LDAP enterprise
 - [ ] **3.8** Ops — email-алерты, очередь Playwright
+- [ ] **3.9** Modularity — модули, `docs/MODULES.md`, `ports/*`, вынос pipeline (3.9.0–3.9.4)
+- [ ] **3.9.0** граф импортов и hot spots
+- [ ] **3.9.1** целевая схема модулей в документации
+- [ ] **3.9.2** Protocol Source/Sink/Store/Storage в коде
+- [ ] **3.9.3** рефакторинг: pipeline + adapters без смены поведения
+- [ ] **3.9.4** контрактные тесты на границах
 
 ### Выполнено (справка)
 
