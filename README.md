@@ -10,8 +10,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
-  <a href="https://github.com/segallar/getsync/actions/workflows/test.yml"><img src="https://github.com/segallar/getsync/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
-  <a href="https://github.com/segallar/getsync/actions/workflows/deploy.yml"><img src="https://github.com/segallar/getsync/actions/workflows/deploy.yml/badge.svg" alt="Deploy"></a>
+  <a href="https://github.com/segallar/getsync/actions/workflows/test.yml"><img src="https://github.com/segallar/getsync/actions/workflows/test.yml/badge.svg" alt="CI"></a>
 </p>
 
 ---

@@ -1,6 +1,6 @@
 # CI/CD и деплой GetSync
 
-> Личный сервис на одном VPS. **CI:** GitHub Actions — [`test.yml`](../.github/workflows/test.yml) (push/PR) и [`deploy.yml`](../.github/workflows/deploy.yml) (sirocco после Test на `main`). Badges в [README](../README.md). Альтернатива: [`.gitlab-ci.yml`](../.gitlab-ci.yml).  
+> Личный сервис на одном VPS. **CI:** GitHub Actions — [`test.yml`](../.github/workflows/test.yml) (test + deploy в одном workflow на `main` / `hotfix/*`). Badges в [README](../README.md). Альтернатива: [`.gitlab-ci.yml`](../.gitlab-ci.yml).  
 > Индекс документации: [docs/README.md](README.md).
 
 ## Схема
@@ -147,11 +147,11 @@ rsync -avz --delete --exclude-from=.rsyncignore \
 | `.venv`, `.git` | Создаётся / живёт на VPS |
 | `frontend/node_modules/` | CSS собирается до rsync |
 
-После rsync на сервере:
+После rsync на сервере (в CI делает [`deploy.sh`](../scripts/ci/deploy.sh)):
 
 ```bash
-chown -R getsync:getsync /opt/getsync
-sudo -u getsync bash -c 'cd /opt/getsync && .venv/bin/pip install -e .'
+# rsync от root с --chown=getsync:getsync — отдельный chown -R не нужен
+# pip install -e . — только если изменился pyproject.toml (editable install)
 systemctl restart getsync
 curl -sf http://127.0.0.1:8080/health
 ```
@@ -253,10 +253,23 @@ systemctl restart getsync
 
 | Job | Когда | Действие |
 |-----|--------|----------|
-| `test` | push, PR | `pip install -e .`, `compileall getsync`, unittest |
-| `deploy` | push `main` после успешного test | rsync → `/opt/getsync`, restart, `/health` |
+| `test` | push, PR, `workflow_dispatch` | `pip install -e .`, `compileall getsync`, unittest |
+| `deploy` | push `main` / `master` / `hotfix/*` после `test` | rsync → `/opt/getsync`, restart, `/health` |
 
 Скрипт: [`scripts/ci/deploy.sh`](../scripts/ci/deploy.sh)
+
+### Ускорение deploy
+
+| Оптимизация | Эффект |
+|-------------|--------|
+| **Один workflow** (без `workflow_run`) | Нет второго запуска runner и паузы ~30–90 с между Test и Deploy |
+| **pip cache** в job `test` | Быстрее установка зависимостей в CI |
+| **rsync без tests/docs/.github** | Меньше файлов на wire (см. [`.rsyncignore`](../.rsyncignore)) |
+| **`rsync --chown=getsync:getsync`** | Без `chown -R /opt/getsync` (в т.ч. не трогаем `data/`) |
+| **skip `pip install -e .`** если `pyproject.toml` не менялся | Обычный код-фикс: rsync + restart (~10–30 с на сервере) |
+| **health poll** с 0 с, затем sleep 1 | Быстрее happy-path, чем 6× sleep 2 |
+
+Ручной полный прогон: Actions → **CI** → **Run workflow**. Экстренно без CI: [`scripts/ci/deploy.sh`](../scripts/ci/deploy.sh) с Mac.
 
 ### Secrets / variables
 

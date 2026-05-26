@@ -1,7 +1,7 @@
 # Roadmap GetSync
 
-> **Статус (2026-05-26):** MVP (фазы 0–5) в production на sirocco (`/opt/getsync`, CI Test + Deploy). **Горизонт 1:** **1.1–1.4**, **1.6–1.8**, **1.5 A+B** ✅ · **1.5 C** (DNS/certbot **getsync.me** / **app.getsync.me**) 🔄. **Горизонт 2:** **2.1** `/register` ✅ · **2.2** тесты регистрации ✅ · далее **2.10** / **2.11** / **2.3**. Открыто: **2.1e** (email verify), осознанный `REGISTRATION_OPEN` на prod.  
-> Продукт: **GetSync** — пакет и CLI **`getsync`** ([1.5-RENAME.md](1.5-RENAME.md)) · подвал UI: версия, коммит, deploy #, UTC.
+> **Статус (2026-05-26):** MVP (фазы 0–5) в production на sirocco (`/opt/getsync`, CI Test + Deploy). **Горизонт 1:** **1.1–1.4**, **1.6–1.8**, **1.5 A+B** ✅ · **1.5 C** (DNS/certbot **getsync.me** / **app.getsync.me**) 🔄. **Горизонт 2:** **2.1**–**2.2** ✅ · **2.11** / **2.5** частично ✅ · далее **2.10.1**, **2.3**, **2.11.4**, **2.12**. Открыто: **1.5 C**, **2.1e**, **2.12** (Garmin login в UI), `REGISTRATION_OPEN` на prod.  
+> Продукт: **GetSync** — пакет и CLI **`getsync`** ([1.5-RENAME.md](1.5-RENAME.md)) · лендинг EN (RU/DE в шапке) · `users.locale` · подвал [`build_footer`](../getsync/web/templates/components/build_footer.html): version, commit, deploy #, UTC · **97** тестов.
 
 **Текущее состояние:** [README](../README.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [docs/README.md](README.md)  
 **Операции:** [CI-CD.md](CI-CD.md) · [API Hammerhead](API_HAMMERHEAD.md) · [API Garmin](API_GARMIN.md)
@@ -46,13 +46,13 @@
 | 5 Мультипользовательность (tenants, `/admin`, `/app`) | ✅ MVP |
 | **5b** Единый кабинет, регистрация, настройки, без Basic Auth | **1.1–1.4**, **1.6–1.8** ✅ · **2.1** ✅ · **2.2** ✅ · **2.1e** email · **1.5 C** 🔄 |
 | **UI** Новый интерфейс приложения (Jinja2 + Tailwind) | ✅ |
-| **Design** Проектирование и улучшение UI/UX (дизайн-система) | 📋 · **2.10** |
-| **Site** Главная страница [romansegalla.online](https://romansegalla.online) | MVP ✅ · полировка **2.11** |
+| **Design** Проектирование и улучшение UI/UX (дизайн-система) | 📋 · **2.10** (лендинг indigo ≠ кабинет teal) |
+| **Site** Главная [romansegalla.online](https://romansegalla.online) | **2.11** частично ✅ (hero, benefits, FAQ, EN/RU/DE) · **2.11.3–2.11.4** |
 | **Security** Тесты доступа (session auth, страницы и API) | ✅ **1.1** (`test_security_auth.py`) |
 | 6 UI v2 (календарь, поиск, failed) | 📋 · **2.3** (баннер **1.8** ✅) |
 | 6.1 Алерты (Telegram / email) | 📋 · **2.4** |
-| 6.2 Локализация (i18n: ru, en, …) | 📋 · **2.5** · **3.6** |
-| — Ops: README + тесты CI | ✅ **87** тестов · deploy CSS · подвал build meta (`/health`) |
+| 6.2 Локализация (i18n: ru, en, …) | **2.5** частично ✅ (`users.locale`, nav, settings) · **3.6** |
+| — Ops: README + тесты CI | ✅ **97** тестов · [`build_info.py`](../getsync/build_info.py) + footer · deploy CSS · health retry в deploy |
 | 7 Хаб активностей: сбор, хранение, анализ, sync → сервисы | 📋 · **2.8–2.9** · **3.1**, **3.5** |
 | **Modularity** Модули и интерфейсы между ними | 📋 · **3.9** |
 | 8 Маршруты (routes) | 📋 · **3.2** |
@@ -62,7 +62,7 @@
 
 **Горизонты:** [🔴 1.x](#-горизонт-1--срочно-важно-небольшие) · [🟡 2.x](#-горизонт-2--средняя-срочность-и-объём) · [🔵 3.x](#-горизонт-3--далёкое-будущее) · [Реестр](#реестр-задач)
 
-**Нумерация:** `{горизонт}.{порядок}` — **1.1**…**1.8** (срочно) · **2.1**…**2.11** (средний) · **3.1**…**3.9** (далеко). Старые метки фаз (5b.4, 7.0) сохранены в скобках.
+**Нумерация:** `{горизонт}.{порядок}` — **1.1**…**1.8** (срочно) · **2.1**…**2.12** (средний) · **3.1**…**3.9** (далеко). Старые метки фаз (5b.4, 7.0) сохранены в скобках.
 
 ---
 
@@ -86,13 +86,14 @@
 | **2.2** | 5b.6 | Тесты register / settings / admin | ✅ |
 | **2.3** | 6 | Календарь, поиск, failed, sync log |
 | **2.4** | 6.1 | Telegram-алерты |
-| **2.5** | 6.2 | i18n ru/en, `users.locale` |
+| **2.5** | 6.2 | i18n en/ru, `users.locale` | частично ✅ |
+| **2.12** | Ops | Первичный Garmin login в UI (сейчас CLI) | 📋 |
 | **2.6** | 5b.3+ | Email confirm, invite, captcha |
 | **2.7** | 5b.4+ | Settings: источники / приёмники / правила |
 | **2.8** | 7.0 | Spike ActivityRecord, Source/Sink |
 | **2.9** | 7.3 | Manual FIT upload |
 | **2.10** | Design | Проектирование и улучшение UI/UX, дизайн-система |
-| **2.11** | Site | Главная страница romansegalla.online (лендинг) |
+| **2.11** | Site | Главная romansegalla.online (лендинг) | частично ✅ |
 | **3.1** | 7.1–7.2 | Rule engine, реестр в БД |
 | **3.2** | 7.4, 8 | Маршруты, Garmin courses spike |
 | **3.3** | 11 | S3 / StorageBackend |
@@ -115,8 +116,8 @@
 | **1.2** | **5b.4:** `/app/settings` — профиль, смена пароля, Hammerhead OAuth, Garmin status/refresh | ✅ | UI ✅; первичный Garmin login — CLI |
 | **1.3** | **5b.2:** пункт **Settings** в nav → `/app/settings` | ✅ | UI ✅ |
 | **1.4** | **5b.5:** снять nginx Basic Auth; `SESSION_SECRET`, `https_only` cookie | ✅ | **1.1** |
-| **1.5** | **9:** **GetSync** — бренд, `getsync` package, **getsync.me** ([план](1.5-RENAME.md)) | 1–2 дня | **1.4**; DNS ready |
-| **1.6** | **Docs:** ARCHITECTURE — `data/users/{id}/`, без глобального `garmin_web` | 1–2 ч | — |
+| **1.5** | **9:** **GetSync** — бренд, `getsync` package, **getsync.me** ([план](1.5-RENAME.md)) | A+B ✅ · **C** 🔄 | **1.4**; DNS ready |
+| **1.6** | **Docs:** ARCHITECTURE — `data/users/{id}/`, без глобального `garmin_web` | ✅ | — |
 | **1.7** | **Ops:** даты в UI в `users.timezone` (убрать хардкод MSK в подписях) | ✅ | **1.2** |
 | **1.8** | **6 (мин):** баннер HH + Garmin `upload_ready` / TTL JWT на дашборде | ✅ | **1.2** |
 
@@ -138,15 +139,16 @@
 | **2.2** | **5b.6:** функциональные тесты register / settings / admin forms | ✅ |
 | **2.3** | **6:** календарь + поиск на `/app/activities`; failed-очередь; понятный sync log | 2–3 дня |
 | **2.4** | **6.1:** Telegram-алерты при ошибках sync | 0.5–1 день |
-| **2.5** | **6.2:** i18n `ru`/`en`, `users.locale`, выбор в settings | 2–3 вечера |
+| **2.5** | **6.2:** i18n `en`/`ru`, `users.locale`, весь кабинет | частично ✅ · ~1–2 вечера |
 | **2.6** | **5b.3+:** email confirm, invite-токены, captcha, политика пароля, onboarding | 1–2 вечера |
 | **2.7** | **5b.4+:** settings — заглушки «Источники / Приёмники / Правила» (под **3.1**) | 1–2 вечера |
 | **2.8** | **7.0:** spike `ActivityRecord`, интерфейсы Source/Sink; HH→Garmin без смены UX | 2–3 дня |
 | **2.9** | **7.3:** manual FIT upload в общем списке | 1 вечер |
 | **2.10** | **[Design](#дизайн-uiux-210):** аудит UX, дизайн-система, визуал, вёрстка ключевых экранов | 1–2 недели |
-| **2.11** | **[Site](#главная-romansegallaonline-211):** лендинг romansegalla.online — структура, контент, дизайн, SEO | 1–2 недели |
+| **2.11** | **[Site](#главная-romansegallaonline-211):** лендинг — SEO, **2.11.4** скрины | частично ✅ |
+| **2.12** | Первичный **Garmin login** в UI (не только CLI) | 1–2 вечера |
 
-**Порядок (рекомендация):** ~~**2.1** → **2.2**~~ ✅ → **2.10.0–2.10.1** → **2.11** (после **1.5 C**, параллельно **2.10.2**) → **2.3** → **2.5** → **2.4** → **2.6**–**2.7** → **2.8** → **2.9**.
+**Порядок (рекомендация):** ~~**2.1** → **2.2**~~ ✅ → **1.5 C** → **2.10.1** → **2.11.3–2.11.4** → **2.3** → **2.5** (доделать) → **2.12** → **2.4** → **2.6**–**2.7** → **2.8** → **2.9**.
 
 ---
 
@@ -173,7 +175,7 @@
 ```mermaid
 flowchart LR
     H1["🔴 1.1–1.4, 1.6–1.8 ✅\n1.5 GetSync"]
-    H2["🟡 2.1–2.2 ✅\n2.10–2.11 + 2.3…"]
+    H2["🟡 2.1–2.2 ✅\n2.11/2.5 частично\n2.10.1 + 2.3 + 2.12"]
     H3["🔵 3.1–3.9\nModules + Хаб + S3 + OAuth"]
     H1 --> H2 --> H3
 ```
@@ -184,7 +186,7 @@ flowchart LR
 
 > Ниже — детализация [идеи продукта](#идея-продукта) по фазам. Порядок работ см. [три горизонта](#приоритеты-три-горизонта).
 
-**Актуальный порядок:** см. [три горизонта](#приоритеты-три-горизонта) и [реестр](#реестр-задач). Кратко: **1.5 C** → **2.10** / **2.11** / **2.3** → остальной **2.x** → **3.x** (сначала **3.9**, затем хаб **3.1**+).
+**Актуальный порядок:** см. [три горизонта](#приоритеты-три-горизонта) и [реестр](#реестр-задач). Кратко: **1.5 C** → **2.10.1** + **2.11** (дополировать) → **2.3** → **2.5** + **2.12** → остальной **2.x** → **3.x** (сначала **3.9**, затем хаб **3.1**+).
 
 ```mermaid
 flowchart TB
@@ -395,7 +397,7 @@ getsync --user roman sync --since 2025-01-01
 
 **Зачем:** единый визуальный язык, понятные сценарии (login → settings → sync), доверие к продукту; подготовка к **1.5** (бренд) и публичному **2.1**.
 
-**Сейчас:** функциональный кабинет на Jinja2 + Tailwind; [`assets/logo.svg`](../assets/logo.svg); токены цветов/отступов не формализованы; mobile — best-effort.
+**Сейчас:** функциональный кабинет на Jinja2 + Tailwind (teal); лендинг — indigo/violet ([`layouts/site.html`](../getsync/web/templates/layouts/site.html), [`site_i18n.py`](../getsync/web/site_i18n.py)); токены не унифицированы; mobile — best-effort.
 
 **Целевые артефакты:**
 
@@ -437,7 +439,7 @@ getsync --user roman sync --since 2025-01-01
 
 | Элемент | Статус |
 |---------|--------|
-| `GET /` — [`site_routes.py`](../getsync/web/site_routes.py), [`home.html`](../getsync/web/templates/pages/site/home.html) | ✅ hero, benefits, FAQ, CTA (EN/RU) |
+| `GET /` — [`site_routes.py`](../getsync/web/site_routes.py), [`site_i18n.py`](../getsync/web/site_i18n.py), [`home.html`](../getsync/web/templates/pages/site/home.html) | ✅ hero, benefits, FAQ, CTA (EN/RU/DE) |
 | Блок **Product preview** (скриншоты кабинета) | 📋 отключён; см. **2.11.4** |
 | nginx proxy — [`deploy/nginx/romansegalla.conf`](../deploy/nginx/romansegalla.conf) | ✅ |
 | Статический fallback — [`deploy/www/index.html`](../deploy/www/index.html) | ✅ |
@@ -445,16 +447,16 @@ getsync --user roman sync --since 2025-01-01
 
 **Целевая страница (структура):**
 
-| Секция | Содержание |
-|--------|------------|
-| **Hero** | Заголовок продукта (после **1.5** — финальное имя), value proposition, CTA «Войти» / «Регистрация» (**2.1**) |
-| **Product preview** | Скриншоты dashboard / activities / sync log на лендинге — **2.11.4** (сейчас убрано с `/`) |
-| **Как это работает** | Hammerhead webhook → FIT → Garmin; 3–4 шага с иконками |
-| **Возможности** | Sync, дедуп, кабинет, мультиаккаунт (кратко) |
-| **Для кого** | Велосипедисты с Karoo + Garmin Connect |
-| **Вход** | Форма login (как сейчас) или ссылка на `/app/login`; cookie на домене — см. [CI-CD.md](CI-CD.md) |
-| **Футер** | Health, GitHub, контакт, `fit.romansegalla.online` (поддомен app — по решению **1.5**) |
-| **SEO** | `title`, `description`, Open Graph, `canonical`, `lang`; sitemap опционально |
+| Секция | Содержание | Статус |
+|--------|------------|--------|
+| **Hero** | GetSync, value proposition, CTA login/register (**2.1**) | ✅ |
+| **Benefits** | Сбор, хранение, синхронизация (широкая аудитория) | ✅ |
+| **FAQ** | HH+Garmin в prod; остальное — roadmap; pricing free self-hosted | ✅ |
+| **Product preview** | Скриншоты dashboard / activities / sync log — **2.11.4** | 📋 |
+| **Вход** | Ссылки `/app/login`, `/register` | ✅ |
+| **Футер** | Health, build meta (version, commit, deploy #, UTC) | ✅ |
+| **SEO** | `title`, `description`, OG, `canonical`, `lang` — **2.11.3** | 📋 |
+| **i18n** | EN default; RU/DE в шапке (`getsync_lang`) | ✅ |
 
 **Архитектура доменов (целевая):**
 
@@ -469,17 +471,17 @@ fit.romansegalla.online → app: /app/*, /webhooks/*, /health (как сейча
 
 | ID | Содержание | Оценка |
 |----|------------|--------|
-| **2.11.0** | Контент и IA: тексты, блоки, CTA; согласовать с **1.5** / **2.10** | 1 вечер |
-| **2.11.1** | Макет лендинга (Figma или HTML-prototype); mobile-first | 1–2 вечера |
-| **2.11.2** | Вёрстка: `layouts/site.html`, страницы в `templates/pages/site/`; отделить от `auth.html` кабинета | 2–4 вечера |
-| **2.11.3** | SEO, OG-image, favicon; тесты `GET /`; обновить [CI-CD.md](CI-CD.md) smoke `curl romansegalla.online` | ½–1 вечера |
-| **2.11.4** | Блок **Product preview**: скриншоты кабинета (dashboard, activities, sync log), EN/RU, mobile | 1 вечер |
+| **2.11.0** | Контент и IA: тексты, блоки, CTA; согласовать с **1.5** / **2.10** | ✅ |
+| **2.11.1** | Макет лендинга (Figma или HTML-prototype); mobile-first | ✅ (в коде) |
+| **2.11.2** | Вёрстка: `layouts/site.html`, `home.html`, EN/RU, отделить от `auth.html` | ✅ |
+| **2.11.3** | SEO, OG-image, favicon; тесты `GET /`; smoke в [CI-CD.md](CI-CD.md) | 📋 |
+| **2.11.4** | Блок **Product preview**: скриншоты кабинета (dashboard, activities, sync log), EN/RU | 📋 |
 
 **Зависимости:** **2.10.1** (tokens) и **1.5** (бренд) — до **2.11.2**; **2.11.4** — после **2.10.2** (актуальные экраны) или временные mockup-скрины; **2.1** — ссылка «Регистрация»; **1.4** — лендинг без Basic Auth (уже так на romansegalla.online).
 
 **Связь с 2.10:** дизайн-система общая; лендинг может использовать отдельный layout `site.html` (маркетинг) vs `cabinet.html` (приложение).
 
-**Не в scope v1:** блог, CMS, мультиязычный лендинг (только **2.5** в app); личный портфолио на все подстраницы — отдельно по запросу.
+**Не в scope v1:** блог, CMS; личный портфолио на все подстраницы — отдельно по запросу. Лендинг: EN/RU/DE ✅; кабинет app i18n: **2.5** (`en`/`ru`).
 
 ---
 
@@ -701,17 +703,19 @@ flowchart TB
 
 ---
 
-### Фаза 6.2: Локализация (i18n/l10n)
+### Фаза 6.2: Локализация (i18n/l10n) → **2.5**
 
 **Цель:** интерфейс кабинета и админки на нескольких языках; даты/числа — по `timezone` + `locale` пользователя.
 
-**Когда:** после **[UI](#ui-новый-интерфейс-приложения)** ✅ и основных экранов **6** — иначе дважды выносить строки из шаблонов.
+**Сейчас (частично ✅):** `users.locale` в БД; выбор в `/app/settings`; [`app_i18n.py`](../getsync/web/app_i18n.py) — nav, settings, flash; `<html lang>` в кабинете; лендинг — [`site_i18n.py`](../getsync/web/site_i18n.py) (EN default, RU в шапке). Остаётся: dashboard, activities, admin, login/register, ошибки валидации.
+
+**Когда:** доделать после **2.3** или параллельно **2.10.1** — иначе дважды трогать те же шаблоны.
 
 #### Языки (приоритет)
 
 | Этап | Языки | Примечание |
 |------|--------|------------|
-| **6.2.0** | `ru` (default), `en` | Покрыть весь `/app` + `/app/admin` |
+| **6.2.0** | `en` (default), `ru` | Покрыть весь `/app` + `/app/admin` |
 | **6.2.1+** | `de`, `fr`, `es`, … | По запросу; тот же механизм каталогов |
 | Вне scope v1 | CLI, `docs/`, логи сервера | Остаются EN или RU как сейчас |
 
@@ -721,8 +725,8 @@ flowchart TB
 |----------|-----------|
 | **Профиль** | `users.locale` (`ru` / `en` / …) — главный источник для залогиненного UI |
 | **Настройки** | `/app/settings` → выпадающий список языка (рядом с timezone) |
-| **Регистрация** | **5b.3:** опционально выбор языка; иначе `Accept-Language` браузера → fallback `ru` |
-| **Гость** | `Accept-Language` на `/login`, `/register`; cookie `getsync_lang` на 14 дней |
+| **Регистрация** | **5b.3:** `locale` из cookie `getsync_lang` при signup ✅; опционально поле в форме |
+| **Гость** | Лендинг: EN default, `/?lang=ru`, cookie `getsync_lang` ✅; login/register — **2.5** |
 | **Админ** | Тот же `locale` что у пользователя-оператора (не отдельный «язык админки») |
 
 #### Техника (рекомендация)
@@ -758,10 +762,10 @@ getsync/web/i18n.py   # t("nav.dashboard", locale=...) → str
 
 | Подфаза | Содержание | Оценка |
 |---------|------------|--------|
-| **6.2.0** | `locale` в БД, миграция `default` → `ru`; `t()` + `ru.json` / `en.json` | ½ дня |
-| **6.2.1** | Перенос строк из `html.py` / `app_routes` в каталоги; Jinja filter `t` | 1–2 вечера |
-| **6.2.2** | Выбор языка в settings + cookie для гостя; `lang` в `<html>` | ½ вечера |
-| **6.2.3** | Тесты: `t()` fallback, страница login с `Accept-Language: en` | ½ вечера |
+| **6.2.0** | `locale` в БД (`default` `en`); [`app_i18n.py`](../getsync/web/app_i18n.py) для nav/settings | ✅ |
+| **6.2.1** | Перенос строк dashboard, activities, admin, auth в каталоги / `t` | 1–2 вечера |
+| **6.2.2** | Лендинг EN/RU; cookie sync при save profile ✅; login/register locale | частично ✅ |
+| **6.2.3** | Тесты: [`test_user_locale.py`](../tests/test_user_locale.py), [`test_site_i18n.py`](../tests/test_site_i18n.py); расширить покрытие | частично ✅ |
 
 **Порядок:** **[UI](#ui-новый-интерфейс-приложения)** ✅ → **2.5** (можно параллельно с **2.3**) → выбор языка в settings вместе с **1.2** / **2.7**.
 
@@ -1137,10 +1141,11 @@ StorageBackend          — LocalFS | S3 (boto3)
 | **1.1** Security-тесты | 5b.1, UI | 1 вечер |
 | **1.2–1.4** 5b settings + nginx | 5, UI, **1.1** | 2–4 вечера |
 | **2.10** дизайн UI/UX | UI ✅, **1.5** желательно | 1–2 недели |
-| **2.11** лендинг romansegalla.online | **2.10.1**, **1.5** | 1–2 недели |
+| **2.11** лендинг romansegalla.online | **2.10.1**, **1.5** | частично ✅ · **2.11.3–2.11.4** ~2–3 вечера |
 | **2.3** UI v2 (календарь, поиск, failed) | **1.2**, UI, **2.10.1** | 2–3 дня |
 | **2.4** алерты Telegram | 5, **2.3** | 0.5–1 день |
-| **2.5** локализация ru/en | UI, **2.3** | 2–3 вечера |
+| **2.5** локализация en/ru (кабинет) | UI, **2.3** | частично ✅ · ~1–2 вечера |
+| **2.12** Garmin login в UI | **1.2** | 1–2 вечера |
 | **3.9** модули и интерфейсы | **2.8** | 1–2 недели |
 | **2.8–3.5** хаб активностей | **3.9**, **2.7**, **2.3** | 2–3 недели |
 | **3.2** routes spike | 5, **2.8**, **3.9** | 1–2 недели |
@@ -1180,7 +1185,7 @@ StorageBackend          — LocalFS | S3 (boto3)
 - [x] Документация деплоя → [CI-CD.md](CI-CD.md)
 - [x] Garmin upload: web JWT, refresh, browser/HTTP/garth chain
 - [x] Проверить на sirocco: `garmin status` → `upload_ready`, sync работает (2026-05-25)
-- [x] CI: GitHub Actions [`test.yml`](../.github/workflows/test.yml) + [`deploy.yml`](../.github/workflows/deploy.yml), smoke tests
+- [x] CI: GitHub Actions [`test.yml`](../.github/workflows/test.yml) (test + deploy), smoke tests
 - [x] **UI:** новый интерфейс приложения (Jinja2 + Tailwind, `/app` + `/app/admin`) — [UI.md](UI.md)
 - [x] **5b.2 (часть):** user bar, форма пользователя, IANA timezone select, тесты auth/admin form → см. **UI** выше
 - [x] Secret `SSH_PRIVATE_KEY` в GitHub
@@ -1205,13 +1210,16 @@ StorageBackend          — LocalFS | S3 (boto3)
 - [x] **2.2** register — `tests/test_register.py` · settings — `tests/test_settings.py` · admin — `test_security_auth` / `test_app_auth`
 - [ ] **2.3** 6 — календарь, поиск, failed, sync log
 - [ ] **2.4** 6.1 — Telegram-алерты
-- [ ] **2.5** 6.2 — i18n ru/en, `users.locale`
+- [x] **2.5** 6.2 — частично: `users.locale`, settings, nav, flash, лендинг EN/RU — [`app_i18n.py`](../getsync/web/app_i18n.py), [`site_i18n.py`](../getsync/web/site_i18n.py)
+- [ ] **2.5** 6.2 — доделать: dashboard, activities, log, session, admin, login/register
 - [ ] **2.6** 5b.3+ — email confirm, invite, captcha, onboarding
 - [ ] **2.7** 5b.4+ — settings: источники / правила / приёмники
 - [ ] **2.8** 7.0 — ActivityRecord, Source/Sink spike
 - [ ] **2.9** 7.3 — manual FIT upload
-- [ ] **2.10** Design — аудит UX, дизайн-система, редизайн ключевых экранов (2.10.0–2.10.3)
-- [ ] **2.11** Site — главная romansegalla.online: контент, макет, вёрстка, SEO (2.11.0–2.11.4; preview — **2.11.4**)
+- [ ] **2.10** Design — аудит UX, дизайн-система, редизайн ключевых экранов (2.10.0–2.10.3); выровнять teal кабинета с indigo лендинга
+- [x] **2.11** Site — частично: hero, benefits, FAQ, EN/RU, `layouts/site.html` (2.11.0–2.11.2 ✅)
+- [ ] **2.11** Site — SEO/OG (**2.11.3**), скриншоты кабинета (**2.11.4**)
+- [ ] **2.12** Ops — первичный Garmin login в UI (сейчас CLI)
 
 ### 🔵 Горизонт 3 — далёкое будущее (TODO)
 
