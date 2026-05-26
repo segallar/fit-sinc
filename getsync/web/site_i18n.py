@@ -1,24 +1,45 @@
-"""Landing page copy (EN default, RU secondary)."""
+"""Landing page copy (EN default, RU, DE)."""
 
 from __future__ import annotations
 
 from typing import Any
 
-SUPPORTED_LANGS = ("en", "ru")
+SUPPORTED_LANGS = ("en", "ru", "de")
 DEFAULT_LANG = "en"
 LANG_COOKIE = "getsync_lang"
+LANG_LABELS: dict[str, str] = {
+    "en": "English",
+    "ru": "Русский",
+    "de": "Deutsch",
+}
 
 
 def normalize_lang(value: str | None) -> str:
-    if value and value.lower().startswith("ru"):
-        return "ru"
-    return "en"
+    if not value:
+        return DEFAULT_LANG
+    code = value.strip().lower().split("-", 1)[0]
+    if code in SUPPORTED_LANGS:
+        return code
+    return DEFAULT_LANG
+
+
+def lang_from_accept_language(header: str | None) -> str:
+    if not header:
+        return DEFAULT_LANG
+    for part in header.split(","):
+        code = part.split(";", 1)[0].strip().lower().split("-", 1)[0]
+        if code in SUPPORTED_LANGS:
+            return code
+    return DEFAULT_LANG
 
 
 def landing_strings(lang: str) -> dict[str, Any]:
-    if lang == "ru":
-        return _RU
-    return _EN
+    return _COPY.get(normalize_lang(lang), _EN)
+
+
+def landing_lang_options(selected: str | None = None) -> list[tuple[str, str, bool]]:
+    sel = normalize_lang(selected)
+    return [(LANG_LABELS[code], code, code == sel) for code in SUPPORTED_LANGS]
 
 
 _EN: dict[str, Any] = {
@@ -28,6 +49,7 @@ _EN: dict[str, Any] = {
     "nav_faq": "FAQ",
     "nav_login": "Login",
     "nav_signup": "Sign up",
+    "nav_language": "Language",
     "hero_title": "All your workouts in one place — synced where you need them",
     "hero_lead": (
         "GetSync collects activities from your devices and clouds, keeps a clear catalog "
@@ -115,6 +137,7 @@ _RU: dict[str, Any] = {
     "nav_faq": "Вопросы",
     "nav_login": "Login",
     "nav_signup": "Sign up",
+    "nav_language": "Язык",
     "hero_title": "Все ваши тренировки в одном месте — и дальше куда нужно",
     "hero_lead": (
         "GetSync собирает активности с устройств и облаков, ведёт каталог в вашем аккаунте "
@@ -192,4 +215,98 @@ _RU: dict[str, Any] = {
     "cta_lead_open": "Создайте аккаунт, подключите Hammerhead и Garmin — следующая поездка может синхронизироваться сама.",
     "cta_lead_closed": "Войдите в кабинет или запросите доступ у администратора.",
     "footer_health": "Проверка /health",
+}
+
+_DE: dict[str, Any] = {
+    "html_lang": "de",
+    "page_title": "GetSync — Aktivitäten-Hub für Sportler",
+    "nav_benefits": "Vorteile",
+    "nav_faq": "FAQ",
+    "nav_login": "Anmelden",
+    "nav_signup": "Registrieren",
+    "nav_language": "Sprache",
+    "hero_title": "Alle Trainings an einem Ort — synchronisiert, wohin Sie es brauchen",
+    "hero_lead": (
+        "GetSync sammelt Aktivitäten von Geräten und Clouds, führt ein klares Verzeichnis "
+        "in Ihrem Konto und liefert Dateien an die Dienste, die Sie bereits nutzen."
+    ),
+    "hero_cta_signup": "Registrieren — kostenlos starten",
+    "hero_cta_login": "Anmelden",
+    "hero_hint_closed": "Neue Konten legt ein Administrator an. Bereits Zugang? Anmelden.",
+    "benefits_title": "Für Sportler mit mehr als einer Plattform",
+    "benefits_lead": (
+        "Kein manuelles Kopieren von Dateien. GetSync wächst zu einem Hub: Import, Speicher, "
+        "Status in der Oberfläche und Regeln, wohin jedes Training gehen soll."
+    ),
+    "benefits": [
+        {
+            "title": "Eine Pipeline, viele Ziele",
+            "body": "Roadmap: Quellen (Hammerhead, Strava, Wahoo, …) und Ziele (Garmin, Archiv, …) mit Regeln pro Nutzer.",
+        },
+        {
+            "title": "Jetzt live: Karoo → Garmin",
+            "body": "Webhook nach der Fahrt, Original-.fit laden, Upload zu Garmin Connect — ohne doppelte Aktivitäten.",
+        },
+        {
+            "title": "Ihre Daten, Ihr Konto",
+            "body": "Mandantenfähiges Dashboard: OAuth pro Nutzer, isolierte Ablage unter data/users/{id}/, HTTPS-Sessions.",
+        },
+        {
+            "title": "Transparenter Sync-Status",
+            "body": "Erfolg, Überspringen und Fehler im Log. Bei Fehlern erneut aus der UI senden.",
+        },
+    ],
+    "faq_title": "Häufige Fragen",
+    "faq": [
+        {
+            "q": "Was ist GetSync?",
+            "a": (
+                "GetSync ist ein <strong>kostenloser</strong> Aktivitäten-Hub für Sportler: Trainings sammeln, "
+                "Status im Web-Dashboard sehen und an verbundene Dienste senden. "
+                "Der erste produktive Weg: Hammerhead Karoo → Garmin Connect."
+            ),
+        },
+        {
+            "q": "Welche Geräte und Dienste werden unterstützt?",
+            "a": (
+                "<strong>Jetzt in Production:</strong> Hammerhead (Karoo) als Quelle, Garmin Connect als Ziel. "
+                "<strong>Auf der Roadmap:</strong> Strava, Wahoo, manueller FIT-Upload, weitere Ziele — siehe Projektplan. "
+                "Wir versprechen keine Integrationen, die noch nicht ausgeliefert sind."
+            ),
+        },
+        {
+            "q": "Wie verbinde ich Hammerhead und Garmin?",
+            "a": (
+                "Registrieren, im Dashboard <strong>Settings</strong> öffnen, Hammerhead-OAuth abschließen, "
+                "dann Garmin verknüpfen (erster Garmin-Login kann noch per CLI auf dem Server laufen — siehe Docs). "
+                "Hammerhead-Webhook auf diese GetSync-Instanz zeigen."
+            ),
+        },
+        {
+            "q": "Wie funktioniert die Registrierung?",
+            "a": (
+                "Ist die öffentliche Anmeldung aktiv, nutzen Sie <strong>Registrieren</strong> auf dieser Seite — "
+                "persönlicher Slug, Zeitzone und sofort Zugang zum Dashboard. "
+                "Sonst beim Administrator der Instanz ein Konto anfragen."
+            ),
+        },
+        {
+            "q": "Was kostet es?",
+            "a": (
+                "GetSync ist ein <strong>kostenloser Dienst</strong>. Wir erheben keine Abo- "
+                "oder Nutzungsgebühren für GetSync. Hammerhead, Garmin und andere Plattformen "
+                "haben eigene Bedingungen — GetSync verbindet sie nur für Sie."
+            ),
+        },
+    ],
+    "cta_title": "Schluss mit manuellem .fit-Verschieben?",
+    "cta_lead_open": "Konto anlegen, Hammerhead und Garmin verbinden — die nächste Fahrt kann von selbst synchronisieren.",
+    "cta_lead_closed": "Im Dashboard anmelden oder beim Administrator Zugang anfragen.",
+    "footer_health": "Health-Check",
+}
+
+_COPY: dict[str, dict[str, Any]] = {
+    "en": _EN,
+    "ru": _RU,
+    "de": _DE,
 }

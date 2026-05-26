@@ -18,10 +18,7 @@
         <li class="nav-item"><a class="nav-link" href="#faq">{{ t.nav_faq }}</a></li>
       </ul>
       <div class="d-flex flex-wrap align-items-center gap-2">
-        <div class="btn-group btn-group-sm" role="group" aria-label="Language">
-          <a href="/?lang=en" class="btn btn-outline-secondary {% if lang == 'en' %}active{% endif %}">EN</a>
-          <a href="/?lang=ru" class="btn btn-outline-secondary {% if lang == 'ru' %}active{% endif %}">RU</a>
-        </div>
+        {% include "components/site_lang_dropdown.html" %}
         <a href="/app/login" class="btn btn-link text-decoration-none d-none d-sm-inline">{{ t.nav_login }}</a>
         {% if registration_open %}
         <a href="/register" class="btn btn-primary">{{ t.nav_signup }}</a>

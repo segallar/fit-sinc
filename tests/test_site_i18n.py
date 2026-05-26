@@ -1,4 +1,4 @@
-"""Landing page language (EN default, RU optional)."""
+"""Landing page language (EN default, RU, DE)."""
 
 from __future__ import annotations
 
@@ -53,6 +53,26 @@ class TestSiteI18n(unittest.TestCase):
                 r = client.get("/set-lang?lang=ru&next=/", follow_redirects=False)
                 self.assertEqual(r.status_code, 303)
                 self.assertEqual(r.cookies.get(LANG_COOKIE), "ru")
+
+    def test_home_german_via_query(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(Path(tmp)):
+                from getsync.web.app import app
+
+                r = TestClient(app).get("/?lang=de", follow_redirects=False)
+                self.assertEqual(r.status_code, 200)
+                self.assertIn("Alle Trainings an einem Ort", r.text)
+                self.assertEqual(r.cookies.get(LANG_COOKIE), "de")
+
+    def test_home_lang_dropdown(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(Path(tmp)):
+                from getsync.web.app import app
+
+                r = TestClient(app).get("/")
+                self.assertIn('id="siteLangDropdown"', r.text)
+                self.assertIn("dropdown-menu", r.text)
+                self.assertIn("/?lang=de", r.text)
 
     def test_default_lang_constant(self) -> None:
         self.assertEqual(DEFAULT_LANG, "en")

@@ -11,8 +11,16 @@ from getsync.build_info import deploy_number, deploy_time_footer, git_commit_sho
 from getsync.users.locale import options_for_select as locale_options_for_select
 from getsync.users.timezones import DEFAULT_TIMEZONE, options_for_select
 from getsync.web import html as H
+from getsync.web.site_i18n import landing_lang_options as site_lang_options_for_select
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
+
+
+def landing_lang_options(selected: str | None = None) -> list[dict[str, object]]:
+    return [
+        {"label": label, "value": value, "selected": is_sel}
+        for label, value, is_sel in site_lang_options_for_select(selected)
+    ]
 
 
 def locale_options(selected: str | None = None) -> list[dict[str, object]]:
@@ -78,6 +86,7 @@ def jinja_env() -> Environment:
         fmt_ttl=H.fmt_ttl,
         query_string=H.query_string,
         locale_options=locale_options,
+        landing_lang_options=landing_lang_options,
         timezone_options=timezone_options,
         pager_items=pager_items,
         pager_query=pager_query,

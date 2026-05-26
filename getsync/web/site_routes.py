@@ -8,8 +8,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from getsync.users.bootstrap import registration_is_open
 from getsync.web.auth import user_context_from_session
 from getsync.web.site_i18n import (
-    DEFAULT_LANG,
     LANG_COOKIE,
+    lang_from_accept_language,
     landing_strings,
     normalize_lang,
 )
@@ -25,10 +25,7 @@ def _lang_from_request(request: Request, query_lang: str | None) -> str:
     cookie = request.cookies.get(LANG_COOKIE)
     if cookie:
         return normalize_lang(cookie)
-    accept = request.headers.get("accept-language", "")
-    if accept.lower().startswith("ru") or ",ru" in accept.lower():
-        return "ru"
-    return DEFAULT_LANG
+    return lang_from_accept_language(request.headers.get("accept-language"))
 
 
 @router.get("/set-lang", include_in_schema=False)
