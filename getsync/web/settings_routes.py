@@ -18,7 +18,10 @@ from getsync.users.context import UserContext
 from getsync.web import html as H
 from getsync.web.auth import user_context_from_session
 from getsync.web.connections import connection_settings_view
+from getsync.users.locale import normalize_locale
+from getsync.web.app_i18n import flash_message
 from getsync.web.cabinet import render_cabinet
+from getsync.web.site_i18n import LANG_COOKIE
 from getsync.web.oauth_state import sign_hammerhead_oauth_state, verify_hammerhead_oauth_state
 
 router = APIRouter(prefix="/app/settings", tags=["settings"])
@@ -47,22 +50,14 @@ def _redirect(msg: str = "", *, error: str = "") -> RedirectResponse:
     return RedirectResponse(url, status_code=303)
 
 
-def _flash_from_query(request: Request) -> dict[str, str]:
+def _flash_from_query(request: Request, lang: str) -> dict[str, str]:
     flash: dict[str, str] = {}
     msg = request.query_params.get("msg", "").strip()
     err = request.query_params.get("error", "").strip()
-    if msg == "profile_saved":
-        flash["ok"] = "Profile saved."
-    elif msg == "password_changed":
-        flash["ok"] = "Password updated."
-    elif msg == "hh_connected":
-        flash["ok"] = "Hammerhead connected."
-    elif msg == "hh_disconnected":
-        flash["ok"] = "Hammerhead disconnected."
-    elif msg == "garmin_refreshed":
-        flash["ok"] = "Garmin session refresh requested."
-    elif msg == "garmin_disconnected":
-        flash["ok"] = "Garmin sessions removed for this account."
+    if msg:
+        text = flash_message(lang, msg)
+        if text:
+            flash["ok"] = text
     if err == "hh_not_configured":
         flash["error"] = "Hammerhead OAuth is not configured on the server."
     elif err == "hh_state":
@@ -107,7 +102,7 @@ async def settings_page(request: Request) -> str:
         "pages/app/settings.html",
         active=f"{P}/",
         user=user,
-        flash=_flash_from_query(request),
+        flash=_flash_from_query(request, user.locale),
         conn=connection_settings_view(ctx, user),
     )
 
@@ -119,9 +114,11 @@ async def settings_profile(
     email: str = Form(...),
     telegram: str = Form(""),
     timezone: str = Form("Europe/Moscow"),
+    locale: str = Form("en"),
 ) -> RedirectResponse:
     ctx = _ctx(request)
     store = _store()
+    loc = normalize_locale(locale)
     try:
         store.update_user(
             ctx.user_id,
@@ -129,10 +126,19 @@ async def settings_profile(
             email=email.strip(),
             telegram=telegram.strip() or None,
             timezone=timezone,
+            locale=loc,
         )
     except Exception as exc:
         return _redirect(error=str(exc))
-    return _redirect("profile_saved")
+    response = _redirect("profile_saved")
+    response.set_cookie(
+        LANG_COOKIE,
+        loc,
+        max_age=365 * 24 * 3600,
+        httponly=False,
+        samesite="lax",
+    )
+    return response
 
 
 @router.post("/password", include_in_schema=False)

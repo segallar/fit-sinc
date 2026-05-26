@@ -259,11 +259,10 @@ class TestRegisterRoutes(unittest.TestCase):
 
                 client = TestClient(app)
                 home = client.get("/")
-                self.assertNotIn("Sign up", home.text)
+                self.assertNotIn('href="/register"', home.text)
 
                 login = client.get("/app/login")
-                self.assertNotIn("Sign up", login.text)
-                self.assertNotIn("/register", login.text)
+                self.assertNotIn('href="/register"', login.text)
 
 
 if __name__ == "__main__":

@@ -1,9 +1,9 @@
 {% extends "layouts/cabinet.html" %}
 
-{% block title %}Settings — GetSync{% endblock %}
+{% block title %}{{ t.settings_title }} — GetSync{% endblock %}
 
 {% block page_content %}
-<h2 class="mb-6 text-lg font-semibold">Settings</h2>
+<h2 class="mb-6 text-lg font-semibold">{{ t.settings_title }}</h2>
 
 {% if flash.ok %}
 <p class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{{ flash.ok }}</p>
@@ -14,57 +14,64 @@
 
 <div class="grid gap-8 lg:grid-cols-1">
   <section class="max-w-2xl rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-    <h3 class="mb-4 text-base font-semibold text-teal-800">Profile</h3>
+    <h3 class="mb-4 text-base font-semibold text-teal-800">{{ t.profile_h3 }}</h3>
     <form method="post" action="{{ prefix }}/settings/profile" class="flex flex-col gap-4">
       <label class="flex flex-col gap-1 text-sm text-slate-600">
-        <span>Display name</span>
+        <span>{{ t.display_name }}</span>
         <input name="display_name" value="{{ user.display_name }}" required
                class="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm">
       </label>
       <label class="flex flex-col gap-1 text-sm text-slate-600">
-        <span>Email</span>
+        <span>{{ t.email }}</span>
         <input type="email" name="email" value="{{ user.email }}" required
                class="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm">
       </label>
       <label class="flex flex-col gap-1 text-sm text-slate-600">
-        <span>Telegram</span>
+        <span>{{ t.telegram }}</span>
         <input name="telegram" value="{{ user.telegram or '' }}" placeholder="@username"
                class="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm">
       </label>
       <div>
+        {% set select_name = 'locale' %}
+        {% set selected = user.locale %}
+        {% set label = t.locale_label %}
+        {% include "components/locale_select.html" %}
+      </div>
+      <div>
         {% set select_name = 'timezone' %}
         {% set selected = user.timezone %}
+        {% set label = t.timezone_label %}
         {% include "components/timezone_select.html" %}
       </div>
-      <p class="text-xs text-slate-500">Slug: <code class="rounded bg-slate-100 px-1">{{ user.slug }}</code></p>
+      <p class="text-xs text-slate-500">{{ t.slug_label }}: <code class="rounded bg-slate-100 px-1">{{ user.slug }}</code></p>
       <button type="submit"
               class="w-fit rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">
-        Save profile
+        {{ t.save_profile }}
       </button>
     </form>
   </section>
 
   <section class="max-w-2xl rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-    <h3 class="mb-4 text-base font-semibold text-teal-800">Password</h3>
+    <h3 class="mb-4 text-base font-semibold text-teal-800">{{ t.password_h3 }}</h3>
     <form method="post" action="{{ prefix }}/settings/password" class="flex flex-col gap-4">
       <label class="flex flex-col gap-1 text-sm text-slate-600">
-        <span>Current password</span>
+        <span>{{ t.current_password }}</span>
         <input type="password" name="current_password" required autocomplete="current-password"
                class="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm">
       </label>
       <label class="flex flex-col gap-1 text-sm text-slate-600">
-        <span>New password</span>
+        <span>{{ t.new_password }}</span>
         <input type="password" name="new_password" required minlength="8" autocomplete="new-password"
                class="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm">
       </label>
       <label class="flex flex-col gap-1 text-sm text-slate-600">
-        <span>Confirm new password</span>
+        <span>{{ t.confirm_password }}</span>
         <input type="password" name="new_password_confirm" required minlength="8" autocomplete="new-password"
                class="rounded-lg border border-slate-200 px-3 py-2 text-sm shadow-sm">
       </label>
       <button type="submit"
               class="w-fit rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-        Change password
+        {{ t.change_password }}
       </button>
     </form>
   </section>

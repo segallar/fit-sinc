@@ -12,7 +12,9 @@ from getsync.config import get_settings
 from getsync.state.store import Store
 from getsync.users.bootstrap import registration_is_open
 from getsync.users.slug import allocate_unique_slug, slug_from_email
+from getsync.users.locale import DEFAULT_LOCALE, normalize_locale
 from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
+from getsync.web.site_i18n import LANG_COOKIE
 from getsync.web.auth import login_user, user_context_from_session
 from getsync.web.rate_limit import register_attempt_allowed, register_retry_after_sec
 from getsync.web.templating import render_template
@@ -125,6 +127,8 @@ async def register_submit(
             status_code=400,
         )
 
+    reg_locale = normalize_locale(request.cookies.get(LANG_COOKIE, DEFAULT_LOCALE))
+
     store = _store()
     if store.get_user_by_email(email_clean):
         return HTMLResponse(
@@ -147,6 +151,7 @@ async def register_submit(
             email=email_clean,
             password=password,
             timezone=tz,
+            locale=reg_locale,
             is_admin=False,
         )
     except ValueError as exc:

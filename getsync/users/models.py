@@ -9,6 +9,7 @@ class UserRow:
     email: str
     telegram: str | None
     timezone: str
+    locale: str
     hammerhead_user_id: str | None
     disabled: bool
     is_admin: bool

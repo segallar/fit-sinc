@@ -30,6 +30,7 @@ class UserFormData:
     display_name: str = ""
     email: str = ""
     timezone: str = "Europe/Moscow"
+    locale: str = "en"
     telegram: str = ""
     hammerhead_user_id: str = ""
     disabled: bool = False
@@ -71,6 +72,7 @@ async def admin_user_create(
     email: str = Form(...),
     password: str = Form(...),
     timezone: str = Form("Europe/Moscow"),
+    locale: str = Form("en"),
     telegram: str = Form(""),
     hammerhead_user_id: str = Form(""),
 ) -> Response:
@@ -82,6 +84,7 @@ async def admin_user_create(
             email=email,
             password=password,
             timezone=timezone,
+            locale=locale,
             telegram=telegram or None,
             hammerhead_user_id=hammerhead_user_id or None,
         )
@@ -94,6 +97,7 @@ async def admin_user_create(
             display_name=display_name,
             email=email,
             timezone=timezone,
+            locale=locale,
             telegram=telegram,
             hammerhead_user_id=hammerhead_user_id,
         )
@@ -127,6 +131,7 @@ async def admin_user_edit(request: Request, user_id: str) -> str:
         display_name=user.display_name,
         email=user.email,
         timezone=user.timezone,
+        locale=user.locale,
         telegram=user.telegram or "",
         hammerhead_user_id=user.hammerhead_user_id or "",
         disabled=user.disabled,
@@ -147,6 +152,7 @@ async def admin_user_update(
     display_name: str = Form(...),
     email: str = Form(...),
     timezone: str = Form("Europe/Moscow"),
+    locale: str = Form("en"),
     telegram: str = Form(""),
     hammerhead_user_id: str = Form(""),
     password: str = Form(""),
@@ -159,6 +165,7 @@ async def admin_user_update(
         display_name=display_name,
         email=email,
         timezone=timezone,
+        locale=locale,
         telegram=telegram or None,
         hammerhead_user_id=hammerhead_user_id or None,
         password=password or None,

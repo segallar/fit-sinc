@@ -4,26 +4,29 @@ from __future__ import annotations
 
 from fastapi import Request
 
+from getsync.users.locale import DEFAULT_LOCALE, normalize_locale
 from getsync.users.timezones import DEFAULT_TIMEZONE
+from getsync.web.app_i18n import cabinet_strings
 from getsync.web.auth import user_row_from_session
 from getsync.web.templating import render_template
 
 APP_PREFIX = "/app"
 ADMIN_PREFIX = "/app/admin"
 
-CABINET_NAV = (
-    (f"{APP_PREFIX}/", "Dashboard"),
-    (f"{APP_PREFIX}/activities", "Activities"),
-    (f"{APP_PREFIX}/log", "Sync log"),
-    (f"{APP_PREFIX}/session", "Garmin session"),
-    (f"{APP_PREFIX}/settings", "Settings"),
+_NAV_KEYS = (
+    ("nav_dashboard", f"{APP_PREFIX}/"),
+    ("nav_activities", f"{APP_PREFIX}/activities"),
+    ("nav_log", f"{APP_PREFIX}/log"),
+    ("nav_session", f"{APP_PREFIX}/session"),
+    ("nav_settings", f"{APP_PREFIX}/settings"),
 )
 
 
-def nav_items_for(user) -> list[tuple[str, str]]:
-    items = list(CABINET_NAV)
+def nav_items_for(user, lang: str) -> list[tuple[str, str]]:
+    t = cabinet_strings(lang)
+    items = [(href, t[key]) for key, href in _NAV_KEYS]
     if user and user.is_admin:
-        items.append((f"{ADMIN_PREFIX}/", "Admin"))
+        items.append((f"{ADMIN_PREFIX}/", t["nav_admin"]))
     return items
 
 
@@ -37,13 +40,17 @@ def _normalize_active(active: str, prefix: str) -> str:
 
 def cabinet_context(request: Request, *, active: str, wide: bool = False) -> dict:
     user = user_row_from_session(request)
+    lang = normalize_locale(user.locale if user else DEFAULT_LOCALE)
     display_tz = user.timezone if user else DEFAULT_TIMEZONE
+    t = cabinet_strings(lang)
     return {
         "active_nav": _normalize_active(active, APP_PREFIX),
-        "nav_items": nav_items_for(user),
+        "nav_items": nav_items_for(user, lang),
         "current_user": user,
         "user_timezone": display_tz,
         "display_timezone": display_tz,
+        "lang": lang,
+        "t": t,
         "prefix": APP_PREFIX,
         "admin_prefix": ADMIN_PREFIX,
         "wide": wide,

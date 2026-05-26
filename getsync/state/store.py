@@ -9,6 +9,7 @@ from typing import Any, Iterator
 
 from getsync.users.models import UserRow
 from getsync.users.passwords import hash_password
+from getsync.users.locale import DEFAULT_LOCALE, normalize_locale
 from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{1,62}$")
@@ -103,6 +104,7 @@ class Store:
                     email TEXT NOT NULL UNIQUE,
                     telegram TEXT,
                     timezone TEXT NOT NULL DEFAULT 'Europe/Moscow',
+                    locale TEXT NOT NULL DEFAULT 'en',
                     hammerhead_user_id TEXT UNIQUE,
                     password_hash TEXT NOT NULL,
                     disabled INTEGER NOT NULL DEFAULT 0,
@@ -113,6 +115,7 @@ class Store:
                 """
             )
             self._ensure_users_admin_column(conn)
+            self._ensure_users_locale_column(conn)
             self._ensure_activities_table(conn)
             self._ensure_sync_events_table(conn)
             self._ensure_session_refresh_table(conn)
@@ -139,6 +142,12 @@ class Store:
         if not self._table_has_column(conn, "users", "is_admin"):
             conn.execute(
                 "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"
+            )
+
+    def _ensure_users_locale_column(self, conn: sqlite3.Connection) -> None:
+        if not self._table_has_column(conn, "users", "locale"):
+            conn.execute(
+                "ALTER TABLE users ADD COLUMN locale TEXT NOT NULL DEFAULT 'en'"
             )
 
     def count_admins(self) -> int:
@@ -285,6 +294,7 @@ class Store:
             email=r["email"],
             telegram=r["telegram"],
             timezone=r["timezone"],
+            locale=normalize_locale(r["locale"] if "locale" in r.keys() else DEFAULT_LOCALE),
             hammerhead_user_id=r["hammerhead_user_id"],
             disabled=bool(r["disabled"]),
             is_admin=bool(r["is_admin"]),
@@ -328,6 +338,7 @@ class Store:
         email: str,
         password: str,
         timezone: str = "Europe/Moscow",
+        locale: str = DEFAULT_LOCALE,
         telegram: str | None = None,
         hammerhead_user_id: str | None = None,
         user_id: str | None = None,
@@ -337,16 +348,17 @@ class Store:
         if not _SLUG_RE.match(slug):
             raise ValueError("slug: 2–63 chars, a-z, 0-9, _, -")
         tz = normalize_timezone(timezone)
+        loc = normalize_locale(locale)
         uid = (user_id or slug).strip()
         now = _utcnow()
         with self._conn() as conn:
             conn.execute(
                 """
                 INSERT INTO users (
-                    id, slug, display_name, email, telegram, timezone,
+                    id, slug, display_name, email, telegram, timezone, locale,
                     hammerhead_user_id, password_hash, disabled, is_admin,
                     created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
                 """,
                 (
                     uid,
@@ -355,6 +367,7 @@ class Store:
                     email.strip().lower(),
                     telegram.strip() if telegram else None,
                     tz,
+                    loc,
                     hammerhead_user_id,
                     hash_password(password),
                     1 if is_admin else 0,
@@ -375,6 +388,7 @@ class Store:
         email: str | None = None,
         telegram: str | None = None,
         timezone: str | None = None,
+        locale: str | None = None,
         hammerhead_user_id: str | None = None,
         password: str | None = None,
         disabled: bool | None = None,
@@ -383,11 +397,13 @@ class Store:
         fields: list[str] = ["updated_at = ?"]
         values: list[Any] = [_utcnow()]
         tz_val = normalize_timezone(timezone) if timezone is not None else None
+        loc_val = normalize_locale(locale) if locale is not None else None
         for col, val in (
             ("display_name", display_name),
             ("email", email.strip().lower() if email else None),
             ("telegram", telegram),
             ("timezone", tz_val),
+            ("locale", loc_val),
             ("hammerhead_user_id", hammerhead_user_id),
             ("disabled", 1 if disabled else 0 if disabled is False else None),
             ("is_admin", 1 if is_admin else 0 if is_admin is False else None),
