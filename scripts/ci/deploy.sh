@@ -66,9 +66,24 @@ set -euo pipefail
 chown -R ${SERVICE_USER}:${SERVICE_USER} ${DEPLOY_PATH}
 sudo -u ${SERVICE_USER} bash -c 'cd ${DEPLOY_PATH} && .venv/bin/pip install -e .'
 systemctl restart ${SERVICE_UNIT}
-sleep 2
-systemctl is-active ${SERVICE_UNIT}
+ok=0
+for attempt in 1 2 3 4 5 6; do
+  sleep 2
+  if systemctl is-active --quiet ${SERVICE_UNIT} \
+     && curl -sf http://127.0.0.1:8080/health >/dev/null; then
+    ok=1
+    break
+  fi
+  echo "waiting for ${SERVICE_UNIT} (attempt \${attempt}/6)..." >&2
+done
+if [[ "\$ok" != 1 ]]; then
+  echo "Deploy health check failed" >&2
+  systemctl status ${SERVICE_UNIT} --no-pager >&2 || true
+  journalctl -u ${SERVICE_UNIT} -n 40 --no-pager >&2 || true
+  exit 1
+fi
 curl -sf http://127.0.0.1:8080/health
+echo ""
 EOF
 
 echo "Deploy OK: ${SSH_USER}@${HOST}:${DEPLOY_PATH}"
