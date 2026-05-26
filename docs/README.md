@@ -21,6 +21,7 @@
 | [design/README.md](design/README.md) | Frontend | Дизайн-индекс, статус **2.10** / **2.3** |
 | [CONNECTIONS.md](CONNECTIONS.md) | Product / FE | Sources и destinations в Settings |
 | [STORAGE.md](STORAGE.md) | Backend | FIT, `storage_key`, `StorageBackend` |
+| [DATABASE.md](DATABASE.md) | Backend | SQLite: таблицы, индексы, tenant, журналы |
 | [PLAN.md](PLAN.md) | Roadmap | Открытые задачи, горизонты H1–H3 |
 | [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md) | Roadmap | История фаз 0–5 / выполненное (до 2026-05-26) |
 | [1.5-RENAME.md](1.5-RENAME.md) | Cutover | Бренд GetSync, DNS, cookie, SQLite |
@@ -60,7 +61,7 @@
 
 ```text
 data/
-  getsync.db              # SQLite (или legacy fit_sinc.db)
+  getsync.db              # SQLite — см. DATABASE.md (или legacy fit_sinc.db)
   users/
     {user_id}/
       activities/           # FIT: hammerhead/, garmin/, …

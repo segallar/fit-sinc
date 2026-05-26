@@ -1,7 +1,7 @@
 # Архитектура GetSync
 
 > **Статус (2026-05-26):** production — фазы 0–5; кабинет **5b** + **2.3** (unified activities, calendar, local storage) — [PLAN.md](PLAN.md).  
-> UI-спека: [APP-UI.md](APP-UI.md) · connections: [CONNECTIONS.md](CONNECTIONS.md) · FIT: [STORAGE.md](STORAGE.md)  
+> UI-спека: [APP-UI.md](APP-UI.md) · connections: [CONNECTIONS.md](CONNECTIONS.md) · FIT: [STORAGE.md](STORAGE.md) · БД: [DATABASE.md](DATABASE.md)  
 > Быстрый старт — [README](../README.md) · индекс — [docs/README.md](README.md).
 
 **GetSync** — сервис автоматической синхронизации велотренировок с **Hammerhead Karoo** в **Garmin Connect**.
@@ -78,7 +78,7 @@ data/
     fits/                       # legacy; миграция → activities/
 ```
 
-Каталог в SQLite: `activities(user_id, source, activity_id)` + `storage_key`, `activity_type`, … — см. [STORAGE.md](STORAGE.md).  
+Каталог в SQLite: `activities(user_id, source, activity_id)` + `storage_key`, `activity_type`, … — [DATABASE.md](DATABASE.md) · файлы — [STORAGE.md](STORAGE.md).  
 Бэкенд: `getsync.storage.StorageBackend` — **local** ✅; S3 — roadmap **3.3**.
 
 **Миграция v1:** плоские `data/hammerhead_tokens.json`, `data/garth/`, … → `data/users/default/` ([`getsync/users/migrate.py`](../getsync/users/migrate.py)). Legacy `fits/` → `activities/hammerhead/` — [`storage/migrate.py`](../getsync/storage/migrate.py).
@@ -251,6 +251,7 @@ Cutover DNS и legacy host: [1.5-RENAME.md](1.5-RENAME.md), [CI-CD.md](CI-CD.md)
 | [APP-UI.md](APP-UI.md) | Страницы `/app`, компоненты |
 | [CONNECTIONS.md](CONNECTIONS.md) | Sources / destinations |
 | [STORAGE.md](STORAGE.md) | FIT, `storage_key`, backends |
+| [DATABASE.md](DATABASE.md) | SQLite: `users`, `activities`, журналы |
 | [CI-CD.md](CI-CD.md) | Деплой |
 | [API_HAMMERHEAD.md](API_HAMMERHEAD.md) | OAuth, webhook |
 | [API_GARMIN.md](API_GARMIN.md) | JWT, upload |

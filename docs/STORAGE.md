@@ -35,7 +35,7 @@ data/users/{user_id}/
 
 ## SQLite
 
-Таблица `activities`:
+Таблица `activities` (полная схема — [DATABASE.md](DATABASE.md)):
 
 - `(user_id, source, activity_id)` — каталог (метаданные + статус sync).
 - `storage_key` — ссылка на FIT в `StorageBackend`.
