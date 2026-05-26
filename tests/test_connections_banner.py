@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from tests.helpers import isolated_env
+from helpers import isolated_env
 
 
 class TestConnectionsBanner(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestConnectionsBanner(unittest.TestCase):
                 )
                 self.assertEqual(r.status_code, 303)
 
-                dash = client.get("/app/", follow_redirects=False)
+                dash = client.get("/app/", follow_redirects=True)
                 self.assertEqual(dash.status_code, 200)
                 self.assertIn('aria-label="Connections"', dash.text)
                 self.assertIn("Hammerhead", dash.text)
