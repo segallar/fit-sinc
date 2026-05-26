@@ -27,7 +27,7 @@ Node.js **не нужен** для UI (Bootstrap с jsDelivr).
 ## Стили
 
 - Основа: [Bootstrap 5.3](https://getbootstrap.com/) в `layouts/base.html`
-- Бренд teal: переменные в `static/app.css` (`--bs-primary`)
+- Бренд mint (как [fitsync.io](https://www.fitsync.io/)): `#29917d` / `#237d6c` в `static/app.css`
 - Классы: `btn`, `card`, `table`, `nav-pills`, `alert`, `badge`, `form-control`
 
 ## Компоненты

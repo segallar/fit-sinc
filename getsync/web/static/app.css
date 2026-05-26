@@ -1,21 +1,79 @@
-/* GetSync — Bootstrap 5 theme overrides (teal brand) */
+/* GetSync — palette aligned with fitsync.io (mint green SaaS) */
 
-:root {
-  --bs-primary: #0f766e;
-  --bs-primary-rgb: 15, 118, 110;
-  --bs-link-color: #0f766e;
-  --bs-link-hover-color: #115e59;
-  --bs-focus-ring-color: rgba(15, 118, 110, 0.25);
+:root,
+[data-bs-theme="light"] {
+  --getsync-primary-50: #e6f4f1;
+  --getsync-primary-100: #c0e4dc;
+  --getsync-primary-600: #29917d;
+  --getsync-primary-700: #237d6c;
+  --getsync-primary-900: #14473d;
+  --getsync-text: #1f2d1f;
+  --getsync-text-muted: #4b554b;
+  --getsync-bg-warm: #fdfaf7;
+  --getsync-border: #f3f4f3;
+
+  --bs-primary: var(--getsync-primary-600);
+  --bs-primary-rgb: 41, 145, 125;
+  --bs-primary-text-emphasis: var(--getsync-primary-900);
+  --bs-primary-bg-subtle: var(--getsync-primary-50);
+  --bs-primary-border-subtle: var(--getsync-primary-100);
+
+  --bs-link-color: var(--getsync-primary-700);
+  --bs-link-hover-color: var(--getsync-primary-900);
+  --bs-focus-ring-color: rgba(41, 145, 125, 0.25);
+
+  --bs-body-color: var(--getsync-text);
+  --bs-body-color-rgb: 31, 45, 31;
+  --bs-body-bg: #ffffff;
+  --bs-secondary-color: var(--getsync-text-muted);
+  --bs-border-color: var(--getsync-border);
 }
 
 body {
   min-height: 100vh;
+  color: var(--getsync-text);
 }
 
 .getsync-brand-sub {
   font-size: 0.875rem;
-  color: var(--bs-primary);
+  color: var(--getsync-primary-700);
   font-weight: 500;
+}
+
+.getsync-hero {
+  background: linear-gradient(180deg, var(--getsync-primary-50) 0%, #fff 100%);
+  border: 1px solid var(--getsync-primary-100);
+}
+
+.getsync-section-muted {
+  background-color: var(--getsync-bg-warm);
+}
+
+.getsync-cta-dark {
+  background-color: var(--getsync-primary-900) !important;
+  border: none;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--getsync-primary-600);
+  --bs-btn-border-color: var(--getsync-primary-600);
+  --bs-btn-hover-bg: var(--getsync-primary-700);
+  --bs-btn-hover-border-color: var(--getsync-primary-700);
+  --bs-btn-active-bg: var(--getsync-primary-700);
+  --bs-btn-active-border-color: var(--getsync-primary-700);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--getsync-primary-700);
+  --bs-btn-border-color: var(--getsync-primary-600);
+  --bs-btn-hover-bg: var(--getsync-primary-600);
+  --bs-btn-hover-border-color: var(--getsync-primary-600);
+  --bs-btn-active-bg: var(--getsync-primary-700);
+  --bs-btn-active-border-color: var(--getsync-primary-700);
+}
+
+.text-muted {
+  color: var(--getsync-text-muted) !important;
 }
 
 .table-actions .btn + .btn,
