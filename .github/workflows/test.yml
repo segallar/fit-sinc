@@ -12,6 +12,10 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Org/repo may default GITHUB_TOKEN to read-only; explicit scopes avoid checkout 403.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -42,6 +46,8 @@ jobs:
        startsWith(github.ref, 'refs/heads/hotfix/'))
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
