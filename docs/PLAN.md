@@ -1,7 +1,7 @@
 # Roadmap GetSync
 
 > **Обновлено:** 2026-05-26 · **Фокус сейчас:** [дизайн-ревью кабинета → вёрстка **2.10**](#фокус-сейчас-тестирование-и-кабинет-app) · замечания → [DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md).  
-> Выполненное (фазы 0–5, 5b, ядро **2.3**) — [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md). **~117** тестов · prod: HH→Garmin.
+> Выполненное (фазы 0–5, 5b, ядро **2.3**) — [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md). **~124** тестов · prod: HH→Garmin.
 
 **Документы:** [APP-UI.md](APP-UI.md) · [design/SCREENS.md](design/SCREENS.md) · [CONNECTIONS.md](CONNECTIONS.md) · [STORAGE.md](STORAGE.md) · [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md)
 
@@ -15,7 +15,7 @@
 | ------- | --------- |
 | Sync | Webhook HH → FIT → Garmin; dedup SQLite; re-sync |
 | Tenants | `user_id`, `data/users/{id}/`, session auth, security tests |
-| Кабинет | Activities (List \| Calendar, HH+Garmin, sync summary), Settings (profile, connections, garmin-session) |
+| Кабинет | Activities (List \| Calendar, HH+Garmin, sync summary + retry), Settings; Admin: users, sync log, Garmin JWT log |
 | Garmin | **Upload** FIT ✅ · **list** активностей в browse ✅ · **pull** FIT / шаги / сон 📋 [**3.11**](3.11-GARMIN-PULL.md) |
 | Хранение | `StorageBackend` local, `storage_key`, `activities/{source}/` — [STORAGE.md](STORAGE.md) |
 | Регистрация | `/register` при `REGISTRATION_OPEN` — без email verify (**2.6**) |
@@ -46,14 +46,14 @@
 
 | Экран | URL | Роль |
 | ----- | --- | ---- |
-| **Activities** | `/app/activities` | Главный: `view=list\|calendar`, unified sources |
-| **Dashboard** | `/app/` | Сводка sync + `#sync-log` |
+| **Activities** | `/app/activities` | Главный: `view=list\|calendar`, unified sources, **sync summary** внизу |
 | **Settings** | `/app/settings` | Profile, connections, `#garmin-session`, password |
-| **Admin** | `/app/admin/` | Users CRUD |
+| **Admin** | `/app/admin/` | Users CRUD · **Sync log** (все tenants) · **Garmin log** (JWT refresh) |
 
 **Layout кабинета (2026-05):** все страницы `/app` и `/app/admin` — **на всю ширину экрана**, контент **к левому краю** (без центрированной колонки 64rem). Спека: [APP-UI.md §1](APP-UI.md#1-принятые-решения-qa-2026-05).
 
-Редиректы: `/app/log` → `/?#sync-log` · `/app/session` → `/settings#garmin-session`.
+Редиректы: `/app/` → `/app/activities` · `/app/log` → `/app/admin/sync-log` · `/app/session` → `/settings#garmin-session`.  
+**Убрано (2026-05):** отдельный Dashboard и sync log на Activities — журнал только в admin.
 
 ---
 
@@ -69,10 +69,10 @@
 
 | Критерий | Проверка |
 | -------- | -------- |
-| Все экраны без регрессий | Activities (list+calendar), Dashboard, Settings, Admin |
+| Все экраны без регрессий | Activities (list+calendar), Settings, Admin (users + logs) |
 | Сценарии из [SCREENS.md](design/SCREENS.md) проходят вручную | login → activities → day filter → re-sync → settings |
 | Автотесты зелёные | CI + новые тесты на routes/calendar/browse |
-| Известные UX-долги закрыты или в backlog с приоритетом | sync log, sidebar, Garmin login UI |
+| Известные UX-долги закрыты или в backlog с приоритетом | sync log UX (фильтры), sidebar, Garmin login UI |
 | [APP-UI.md](APP-UI.md) §11 чеклист | 2.10.1–2.10.2 минимум для prod |
 
 ### План волны (порядок)
@@ -90,8 +90,8 @@ flowchart TB
 | Этап | ID | Содержание | Оценка |
 | ---- | -- | ---------- | ------ |
 | **0** | — | Сбор замечаний → [DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md) | пока идёт |
-| **1** | **2.10** | Sidebar prod + правки по замечаниям (dashboard, activities, settings) | 4–7 дней |
-| **2** | **2.3a** | Sync log UX (если в замечаниях / P1) | 0.5 вечера |
+| **1** | **2.10** | Sidebar prod + правки по замечаниям (activities, settings, admin) | 4–7 дней |
+| **2** | **2.3a** | Sync log UX: фильтры duplicate/error (лог в admin ✅) | 0.5 вечера |
 | **3** | **2.12** | Garmin login в UI | 1–2 вечера |
 | **4** | **2.13** | Автотесты + регрессия **после** дизайна | 2–4 дня |
 | **5** | **2.5** | i18n (опционально) | 1–2 вечера |
@@ -134,8 +134,8 @@ flowchart LR
 | ID | Приоритет | Задача | Оценка | Зависимости |
 | -- | --------- | ------ | ------ | ----------- |
 | **—** | **▶** | **Сбор замечаний к дизайну** — [DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md) | сейчас | — |
-| **2.10** | **P0** | Вёрстка по замечаниям: sidebar + dashboard/activities/settings — [APP-UI.md](APP-UI.md) §11 | 4–7 дней | после шага 0 |
-| **2.3a** | **P1** | Sync log UX (если в замечаниях) | 0.5 вечера | — |
+| **2.10** | **P0** | Вёрстка по замечаниям: sidebar + activities/settings/admin — [APP-UI.md](APP-UI.md) §11 | 4–7 дней | после шага 0 |
+| **2.3a** | **P1** | Sync log UX: фильтры/типы (таблица в `/app/admin/sync-log` ✅) | 0.5 вечера | — |
 | **2.13** | **P1** | Тесты и регрессия **после** 2.10 | 2–4 дня | **2.10** |
 | **2.12** | **P1** | Garmin login в Settings (не CLI) | 1–2 вечера | **2.10.2** |
 | **2.5** | **P2** | i18n тел страниц кабинета; lang в шапке | 1–2 вечера | лучше с **2.10** |
@@ -159,7 +159,7 @@ flowchart LR
 | **3.10** | 🔵 | Расширенные метрики тренировок, карты | backlog | **3.5** |
 | **3.11** | 🔵 | Garmin pull: FIT, шаги, сон — [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) | 5–8 вечеров | **2.12**, browse ✅ |
 
-**Admin (в H2):** подменю Users / Statistics / Logs — 📋 (сейчас только users list).
+**Admin:** Users · Sync log (все tenants) · Garmin JWT log ✅ · Statistics — 📋 H2.
 
 ---
 
@@ -188,15 +188,16 @@ flowchart LR
 См. [таблицу выше](#213--тестирование-кабинета-новая-задача-волны). Приоритетные автотесты:
 
 - `GET /app/activities?view=calendar&year=&month=`
-- redirects `/app/log`, `/app/session`
+- redirects `/app/`, `/app/log`, `/app/session`
 - `test_activities_calendar`, browse/catalog (расширить)
 - smoke: login → activities → settings (TestClient)
 
 ### 2.3a — Sync log UX
 
-| Задача | Приоритет |
-| ------ | --------- |
-| **2.3a** | **P0** |
+| Задача | Статус |
+| ------ | ------ |
+| Перенос журнала в admin (`/app/admin/sync-log`, все tenants, колонка User) | ✅ 2026-05 |
+| Фильтры / визуал duplicate vs error | 📋 **2.3a** |
 | **2.3b** Calendar облачные дни | **P3** |
 
 ### 2.10 — Дизайн UI/UX
@@ -206,7 +207,7 @@ flowchart LR
 | Подзадача | Содержание | Оценка |
 | --------- | ---------- | ------ |
 | **2.10.1** | Перенос `cabinet.html` → `cabinet_sidebar.html` на все `/app` | 1–2 вечера |
-| **2.10.2** | Полировка dashboard, activities, settings; **2.12** в Connections; infinite scroll; **?** кэш — [реестр](#реестр-открытых-задач) | 3–5 дней |
+| **2.10.2** | Полировка activities, settings, admin; **2.12** в Connections; infinite scroll; **?** кэш — [реестр](#реестр-открытых-задач) | 3–5 дней |
 | **2.10.3** | Admin, mobile, a11y | 2–3 дня |
 
 Прототип: `/app/ui-preview` · [design/README.md](design/README.md).
@@ -318,7 +319,7 @@ Garmin как **source** (FIT archive, wellness) — [**3.11**](#311--garmin-pul
 | ------ | -- | ---------- |
 | Garmin upload на sirocco: `upload_ready` в мониторинге | ops | Код ✅, проверка на VPS |
 | Убрать prod-зависимость от `GARMIN_EMAIL` в `.env` | ops | Multi-tenant |
-| Admin: Statistics / Logs | H2 | Отдельные страницы |
+| Admin: Statistics | H2 | Отдельная страница (sync/Garmin logs ✅) |
 
 Закрыто (не трекать): CI smoke, security tests, build footer, legacy cookie — см. [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md).
 
@@ -357,6 +358,7 @@ Garmin как **source** (FIT archive, wellness) — [**3.11**](#311--garmin-pul
 | ID | Задача | Статус |
 | -- | ------ | ------ |
 | **2.10**–**2.13** | Кабинет: дизайн, Garmin login UI, тесты | ▶ волна |
+| — | Sync log в admin (не на Activities) | ✅ |
 | **1.5 C** | DNS getsync.me | ⏸ H1 |
 | **2.6** | Email verify | ⏸ [2.1e-EMAIL.md](2.1e-EMAIL.md) |
 | **3.11** | Garmin pull: FIT, шаги, сон | 📋 [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) |

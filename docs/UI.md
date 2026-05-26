@@ -49,11 +49,12 @@ Node.js **не нужен** (Bootstrap с jsDelivr). `frontend/tailwind.config.j
 
 | Экран | Шаблон |
 |-------|--------|
-| Activities | `pages/app/activities.html` + `activities_tabs`, `activity_calendar` |
-| Dashboard | `pages/app/dashboard.html` + `sync_log_section` |
+| Activities | `pages/app/activities.html` + `activities_tabs`, `activity_calendar`, `activities_sync_panel` |
 | Settings | `pages/app/settings.html` + `settings_subnav`, `connection_card`, `garmin_session_section` |
+| Admin sync log | `pages/admin/sync_log.html` + `sync_log_section` |
+| Admin Garmin log | `pages/admin/log.html` + `garmin_refresh_log_table` |
 
-Nav: Activities → Dashboard → Settings ([`cabinet.py`](../getsync/web/cabinet.py)).
+Nav: Activities → Settings ([`cabinet.py`](../getsync/web/cabinet.py)). `/app/` → redirect Activities.
 
 ## Компоненты
 
@@ -66,7 +67,8 @@ Nav: Activities → Dashboard → Settings ([`cabinet.py`](../getsync/web/cabine
 | Datetime | `datetime_cell.html` | Activities (TZ user) |
 | Activities tabs | `activities_tabs.html` | List \| Calendar |
 | Activity calendar | `activity_calendar.html` | `view=calendar` |
-| Sync log | `sync_log_section.html` | Dashboard |
+| Sync summary | `activities_sync_panel.html` | Activities (без таблицы лога) |
+| Sync log | `sync_log_section.html` | Admin `/app/admin/sync-log` |
 | Connections | `connection_card.html` | Settings `#connections` |
 | Garmin session | `garmin_session_section.html` | Settings `#garmin-session` |
 | Settings subnav | `settings_subnav.html` | Settings |

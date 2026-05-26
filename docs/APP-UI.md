@@ -3,7 +3,7 @@
 > **Назначение:** один документ для всех страниц `/app` и `/app/admin` — layout, компоненты, плотность, поведение.  
 > **Roadmap:** [PLAN.md](PLAN.md) **2.10** · **Стек:** [UI.md](UI.md) · **Карта URL / flows:** [design/SCREENS.md](design/SCREENS.md)
 
-**Статус (2026-05-26):** **функциональная IA и 2.3** в prod-layout (`cabinet.html`, nav-pills) — unified Activities, вкладки List/Calendar, dashboard sync log, Settings connections. 🔄 визуальный редизайн (**2.10**, sidebar) и i18n тел страниц (**2.5**). Снимок IA — [PLAN.md § снимок кабинета](PLAN.md#снимок-кабинета-app).
+**Статус (2026-05-26):** **функциональная IA и 2.3** в prod (`cabinet.html`, nav-pills) — Activities (List/Calendar + sync summary), Settings connections, Admin sync log (все tenants). Dashboard снят. 🔄 **2.10** sidebar · **2.5** i18n. Снимок — [PLAN.md § снимок кабинета](PLAN.md#снимок-кабинета-app).
 
 ---
 
@@ -13,7 +13,7 @@
 |------|---------|
 | **Визуал** | Та же **mint**-палитра, что лендинг ([`tokens.css`](../getsync/web/static/tokens.css)), но кабинет **плотнее** («рабочий» SaaS: меньше воздуха, чётче таблицы) |
 | **Навигация** | **Боковое меню** слева (desktop); на mobile — collapse / offcanvas |
-| **Первая волна** | Пакетом: **Dashboard + Settings + Activities** |
+| **Первая волна** | Пакетом: **Activities + Settings + Admin** |
 | **Scope v1** | `/app/*` + `/app/admin/*` в **одном** стиле |
 | **i18n** | Сначала **EN**-вёрстка и тексты в шаблонах; перевод **2.5** отдельным проходом |
 | **Login/register** | Пока `site_auth` (как лендинг); выравнивание с app — после v1 кабинета |
@@ -23,9 +23,10 @@
 | Тема | Решение |
 |------|---------|
 | **Sidebar** | Пункты nav + внизу **блок user** (display/email, slug, Logout). Пункт **Admin** в nav только если `is_admin` |
-| **HH / Garmin** | **Только Settings** → `#connections` (+ `#garmin-session` внутри) — **нет** `connections_banner` на dashboard |
-| **Activities** | **Главный экран**; вкладки **List \| Calendar** (`?view=`); unified HH+Garmin; календарь ✅ **2.3** |
-| **Dashboard** | Сводка sync + CTA на Activities; **sync log** внизу (`#sync-log`); отдельного `/app/log` нет |
+| **HH / Garmin** | **Только Settings** → `#connections` (+ `#garmin-session` внутри) — **нет** `connections_banner` на Activities |
+| **Activities** | **Главный экран**; List \| Calendar; unified HH+Garmin; внизу **sync summary** + retry errors (без таблицы лога) |
+| **Sync log** | **Только admin** → `/app/admin/sync-log` (все tenants, колонка User); legacy `/app/log` → redirect |
+| **Dashboard** | **Снят** — `/app/` → `/app/activities` |
 | **Settings** | Одна страница: `#profile` · `#connections` · `#password` — `settings_subnav.html` ✅ |
 | **Garmin login** | Status/refresh в карточке Garmin; **первичный login** — CLI (**2.12** 📋 UI в Connections) |
 | **Ширина кабинета** | **На всю ширину viewport**, контент **прижат к левому краю** — без `max-width` и без `margin: auto` по центру (`getsync-app-main` в [`app.css`](../getsync/web/static/app.css)). Лендинг и `/app/login` — отдельно (узкая колонка допустима). |
@@ -44,17 +45,18 @@
 
 ```text
 ┌──────────────────────────────────────────────────────────────────┐
-│ [ico] GetSync   Activities  Dashboard  Settings   [Admin]  user  │
+│ [ico] GetSync   Activities  Settings   [Admin]  user              │
 ├──────────────────────────────────────────────────────────────────┤
 │  page_header · main content (full width, left-aligned)              │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-**Сейчас в коде** ([`cabinet.py`](../getsync/web/cabinet.py)): nav-pills + topbar · порядок: **Activities** → Dashboard → Settings · Admin — если `is_admin`. **Main:** full width, left edge (см. §1 «Ширина кабинета»).
+**Сейчас в коде** ([`cabinet.py`](../getsync/web/cabinet.py)): nav-pills + topbar · **Activities** → **Settings** · Admin в topbar если `is_admin`. **Main:** full width, left edge (см. §1 «Ширина кабинета»).
 
 | URL legacy | Куда |
 |------------|------|
-| `/app/log` | `303` → `/?#sync-log` |
+| `/app/` | `303` → `/app/activities` |
+| `/app/log` | `303` → `/app/admin/sync-log` |
 | `/app/session` | `303` → `/settings#garmin-session` |
 
 HH/Garmin — **Settings → Connections**; монитор сессии — **`#garmin-session`** под карточками destinations.
@@ -148,11 +150,12 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 | **Activities tabs** | `components/activities_tabs.html` | List \| Calendar; сохраняет фильтры в query |
 | **Activity calendar** | `components/activity_calendar.html` | `view=calendar`; SQLite aggregate; клик дня → `view=list&date_from=&date_to=` |
 | **Filter card** | класс `.getsync-filter-card` | Под вкладками; на Calendar — только **source** (+ hidden year/month) |
-| **Sync log** | `components/sync_log_section.html` | Только на dashboard `#sync-log` |
+| **Sync summary** | `components/activities_sync_panel.html` | Activities: counts, errors link, bulk retry |
+| **Sync log** | `components/sync_log_section.html` | Admin `/app/admin/sync-log` (`show_user_column`) |
 | **Connection card** | `components/connection_card.html` | Settings → sources / destinations |
 | **Garmin session** | `components/garmin_session_section.html` | Settings `#garmin-session` (внутри Connections) |
 | **Status badge** | `status_badge` macro | Только macro для sync status |
-| **Connections** | секция в Settings | HH OAuth + Garmin status/login; **не** на dashboard |
+| **Connections** | секция в Settings | HH OAuth + Garmin status/login |
 | **Settings subnav** | `components/settings_subnav.html` *(цель)* | Якоря Profile \| Connections \| Password |
 | **Re-sync** | `resync_form.html` | POST + confirm для force |
 | **Pager** | `pager.html` | Log, activities |
@@ -198,19 +201,7 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 
 ## 6. Спецификация по страницам
 
-### 6.1 Dashboard — `/app/`
-
-| Блок | Содержание | Компоненты |
-|------|------------|------------|
-| Header | Title «Dashboard», lead: sync summary + ссылка на **Activities** + errors | `page_header` |
-| Actions | «Re-sync all errors (N)» если `error_count` | `btn-outline-secondary btn-sm` |
-| Main | Карточка sync status (SQLite counts) + CTA «Open activities» | `getsync-data-card` |
-| **Sync log** | Секция `#sync-log` внизу: таблица событий + pager `?log_page=` | `sync_log_section.html` |
-| Footer meta | `Updated … · TZ …` | `small text-muted` |
-
-**Нет** таблицы активностей и **нет** `connections_banner` — полный каталог на Activities. Отдельного пункта меню «Sync log» **нет**; `/app/log` → redirect на dashboard.
-
-### 6.2 Activities — `/app/activities` (основной экран) ✅
+### 6.1 Activities — `/app/activities` (основной экран) ✅
 
 | Блок | Содержание |
 |------|------------|
@@ -221,6 +212,9 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 | **List view** | `?view=list` — meta, table, pager |
 | Table | **Source** (badge), Date, Name, Type, Distance, Duration, GetSync, Linked, Actions |
 | Pager | `pager.html` (только List) |
+| **Sync summary** | Строка внизу: HH sync counts, catalog total, link errors, «Re-sync all errors» | `activities_sync_panel.html` |
+
+**Нет** таблицы sync log на этой странице — журнал в admin.
 
 **Query (основное):**
 
@@ -242,7 +236,7 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 
 Вкладок Hammerhead/Garmin **нет** — `source` обычная колонка и фильтр.
 
-### 6.3 Settings — `/app/settings` ✅
+### 6.2 Settings — `/app/settings` ✅
 
 Одна прокручиваемая страница · subnav: Profile \| Connections \| Password.
 
@@ -257,17 +251,19 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 
 **Garmin:** status/refresh/disconnect в карточке destination; **первичный login** — CLI (**2.12** 📋).
 
-### 6.4 Sync log — на Dashboard (`#sync-log`) ✅
+### 6.3 Sync log — Admin `/app/admin/sync-log` ✅
 
 | Блок | Содержание |
 |------|------------|
-| Заголовок | «Sync log», `log_range_label` |
-| Table | Time, Event, Activity, Message — `table-sm` |
-| Pager | `/?log_page=N#sync-log` — Prev / Next |
+| Subnav | Users · **Sync log** · Garmin log — `admin_subnav.html` |
+| Заголовок | «Sync log», lead: все tenants |
+| Table | Time, **User**, Event, Activity, Message — `sync_log_section.html` |
+| Pager | `/app/admin/sync-log?log_page=N#sync-log` |
 
-Legacy `/app/log` → **303** на `/?#sync-log`. **Осталось (2.3 📋):** стили/фильтры duplicate vs error — [SCREENS.md](design/SCREENS.md).
+Данные: `sync_events` в SQLite, `list_events(user_id=None)` — общий журнал.  
+Legacy `/app/log` → **303** сюда (нужен `is_admin`). **Осталось (2.3a 📋):** фильтры duplicate vs error — [SCREENS.md](design/SCREENS.md).
 
-### 6.5 Admin — `/app/admin/`
+### 6.4 Admin — `/app/admin/`
 
 Тот же sidebar + **Admin** section.
 
@@ -289,9 +285,13 @@ Legacy `/app/log` → **303** на `/?#sync-log`. **Осталось (2.3 📋):
 
 Legends: `h6 text-primary` — как в settings.
 
-### 6.6 Forbidden — `/app/forbidden` (403)
+#### Garmin JWT log — `/app/admin/log`
 
-Минимальная card по центру; те же tokens; ссылка на `/app/`.
+Таблица refresh-событий JWT для всех аккаунтов — `garmin_refresh_log_table.html` (не путать с sync log).
+
+### 6.5 Forbidden — `/app/forbidden` (403)
+
+Минимальная card по центру; те же tokens; ссылка на `/app/activities`.
 
 ---
 
@@ -340,7 +340,7 @@ Legends: `h6 text-primary` — как в settings.
 ## 10. i18n (порядок работ)
 
 1. **Редизайн v1:** строки на **английском** в шаблоне или `app_i18n.py` (`cabinet_strings`)
-2. **2.5:** вынести hardcoded (dashboard, activities list+calendar, sync log, connections, admin)
+2. **2.5:** вынести hardcoded (activities list+calendar, sync summary, admin sync log, connections, admin)
 3. Не смешивать языки на одной странице
 
 Уже в i18n: nav, settings (часть), login/register.
@@ -360,14 +360,14 @@ Legends: `h6 text-primary` — как в settings.
 
 - [x] Activities — unified list (HH+Garmin), SQLite catalog, re-sync
 - [x] Activities — вкладки List \| Calendar, `activity_calendar.html`
-- [x] Dashboard — sync log section; `/app/log` redirect
+- [x] Sync log в admin (`/app/admin/sync-log`, все tenants); `/app/log` redirect
+- [x] Activities — sync summary (`activities_sync_panel`); Dashboard снят; `/app/` → activities
 - [x] Settings — connections list, `#garmin-session`; `/app/session` redirect
 - [ ] Sync log — UX duplicate vs error (фильтры / badge по типу события)
 - [ ] Calendar v6.1 — дни только в облаке (опционально)
 
 ### Страницы **2.10.2b** (визуал, один PR / волна)
 
-- [ ] Dashboard — data card polish (banner не возвращать)
 - [ ] Settings — sidebar shell; **Garmin login UI** (**2.12**)
 - [ ] Activities — sidebar + calendar CSS polish
 - [ ] Admin users + user form
@@ -408,4 +408,4 @@ Legends: `h6 text-primary` — как в settings.
 |------|-----------|
 | 2026-05-26 | Документ создан; Q&A блок 1 |
 | 2026-05-26 | Q&A блок 2: sidebar+user, connections только Settings, calendar+activities, settings anchors, Garmin UI v1 |
-| 2026-05-26 | Синхронизация с кодом: List/Calendar tabs, unified activities, dashboard log, connections+garmin-session, legacy redirects |
+| 2026-05-26 | Dashboard снят; sync log → admin; Activities sync summary; List/Calendar; connections+garmin-session |

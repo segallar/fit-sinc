@@ -151,14 +151,16 @@ getsync --user <slug> garmin status   # upload_ready
 | `/webhooks/hammerhead` | Hammerhead | Приём событий |
 | `/health` | Мониторинг | `{"service":"getsync","version":"0.5.0"}` |
 | `/app/login` | Гость | Вход email + password |
-| `/app/activities` | Пользователь | **Главный экран:** List \| Calendar, unified sources |
-| `/app/` | Пользователь | Dashboard: sync summary + **sync log** (`#sync-log`) |
+| `/app/activities` | Пользователь | **Главный экран:** List \| Calendar, unified sources; sync summary внизу |
+| `/app/` | Пользователь | **303** → `/app/activities` |
 | `/app/settings` | Пользователь | Profile, Connections, Password, `#garmin-session` |
-| `/app/log` | — | **303** → `/?#sync-log` |
+| `/app/log` | — | **303** → `/app/admin/sync-log` |
 | `/app/session` | — | **303** → `/settings#garmin-session` |
-| `/app/admin/*` | `is_admin` | CRUD users |
+| `/app/admin/` | `is_admin` | Users CRUD |
+| `/app/admin/sync-log` | `is_admin` | Sync events (все tenants, `#sync-log`) |
+| `/app/admin/log` | `is_admin` | Garmin JWT refresh log |
 
-**Nav:** Activities · Dashboard · Settings (+ Admin). Спека экранов: [APP-UI.md](APP-UI.md). Вёрстка: [UI.md](UI.md).
+**Nav (app):** Activities · Settings (+ Admin в topbar). Спека: [APP-UI.md](APP-UI.md). Вёрстка: [UI.md](UI.md).
 
 **Регистрация:** `/register` при `REGISTRATION_OPEN=true` — [2.1-REGISTER.md](2.1-REGISTER.md); email verify — **2.1e**.
 
@@ -235,7 +237,7 @@ Cutover DNS и legacy host: [1.5-RENAME.md](1.5-RENAME.md), [CI-CD.md](CI-CD.md)
 | **4** | GitHub Actions test + deploy |
 | **5** | Tenants, `user_id`, `/app`, `/app/admin`, webhook routing |
 | **5b** | Settings, security tests, без nginx Basic Auth |
-| **2.3** (часть) | Unified activities, SQLite catalog, calendar tab, dashboard sync log, connections UI |
+| **2.3** (часть) | Unified activities, SQLite catalog, calendar tab, sync summary, admin sync log, connections UI |
 | **11.0** (часть) | `StorageBackend` local, `storage_key`, per-user `activities/{source}/` |
 | **1.5** | Rename GetSync — A+B в коде; **C** DNS/certbot на prod |
 

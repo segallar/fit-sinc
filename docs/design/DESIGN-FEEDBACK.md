@@ -62,7 +62,7 @@
 | -- | - | --- | --------- | ----------- | ------ |
 | | | | | | |
 
-Порядок пунктов: Activities · Dashboard · Settings · Admin · mobile menu.
+Порядок пунктов: Activities · Settings · Admin (users, sync log, Garmin log) · mobile menu.
 
 ---
 
@@ -94,13 +94,23 @@
 
 ---
 
-## Dashboard (`/app/`)
+## Activities — sync summary (низ страницы)
 
 | ID | P | тип | Замечание | Предложение | статус |
 | -- | - | --- | --------- | ----------- | ------ |
 | | | | | | |
 
-Sync summary card · re-sync all errors · **#sync-log** таблица.
+Строка Sync · catalog · errors · bulk retry. **Таблица лога** — только admin → `/app/admin/sync-log`.
+
+---
+
+## Admin — Sync log (`/app/admin/sync-log`)
+
+| ID | P | тип | Замечание | Предложение | статус |
+| -- | - | --- | --------- | ----------- | ------ |
+| | | | | | |
+
+Журнал всех tenants · колонка User · pager `log_page`.
 
 ---
 
