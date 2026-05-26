@@ -12,12 +12,25 @@
 set -euo pipefail
 
 TEST_SMTP=0
-if [[ "${1:-}" == "--test-smtp" ]]; then
-  TEST_SMTP=1
-elif [[ -n "${1:-}" ]]; then
-  echo "Usage: $0 [--test-smtp]" >&2
-  exit 1
-fi
+VERBOSE=0
+for arg in "$@"; do
+  case "$arg" in
+    --test-smtp) TEST_SMTP=1 ;;
+    -v|--verbose) VERBOSE=1 ;;
+    -h|--help)
+      echo "Usage: $0 [--test-smtp] [-v|--verbose]" >&2
+      exit 0
+      ;;
+    *)
+      echo "Usage: $0 [--test-smtp] [-v|--verbose]" >&2
+      exit 1
+      ;;
+  esac
+done
+
+log() {
+  [[ "$VERBOSE" -eq 1 ]] && echo "$*" >&2
+}
 
 ENV_FILE="${GETSYNC_DNS_ENV_FILE:-$HOME/.config/getsync/dns-notify.env}"
 
@@ -46,6 +59,9 @@ load_env_file() {
 
 if [[ -f "$ENV_FILE" ]]; then
   load_env_file "$ENV_FILE"
+  log "Loaded $ENV_FILE"
+else
+  log "No env file: $ENV_FILE"
 fi
 
 DOMAIN="${GETSYNC_DNS_DOMAIN:-getsync.me}"
@@ -103,7 +119,11 @@ try:
         if use_tls:
             smtp.starttls()
         smtp.login(user, password)
-        smtp.send_message(msg)
+        refused = smtp.send_message(msg)
+        if refused:
+            print(f"SMTP refused recipients: {refused}", file=sys.stderr)
+            sys.exit(1)
+        print(f"SMTP accept from={from_addr} to={to} subject={subject!r}", file=sys.stderr)
 except smtplib.SMTPAuthenticationError as e:
     hint = ""
     if "Application-specific password" in str(e) or e.smtp_code == 534:
@@ -131,12 +151,16 @@ Current DNS (for info):
   $APP_DOMAIN $(dig +short "$APP_DOMAIN" A 2>/dev/null | head -1 || echo '<empty>')
 EOF
   )
+  log "SMTP user=$GETSYNC_DNS_SMTP_USER host=$GETSYNC_DNS_SMTP_HOST port=${GETSYNC_DNS_SMTP_PORT:-587} → $TO"
   send_smtp "$subject" "$body"
-  echo "Test email sent to $TO"
+  echo "Test email accepted by Gmail for: $TO"
+  echo "  • Inbox/Spam at $TO (not necessarily the Gmail login inbox)"
+  echo "  • Sent folder of ${GETSYNC_DNS_SMTP_FROM:-$GETSYNC_DNS_SMTP_USER}"
   exit 0
 fi
 
 if [[ -f "$STATE" ]]; then
+  log "Already notified ($STATE), exit"
   exit 0
 fi
 
@@ -148,8 +172,11 @@ root_ip="$(resolve "$DOMAIN")"
 app_ip="$(resolve "$APP_DOMAIN")"
 
 if [[ -z "$root_ip" && -z "$app_ip" ]]; then
+  log "No public DNS yet for $DOMAIN / $APP_DOMAIN (dig empty), no email"
   exit 0
 fi
+
+log "DNS live: $DOMAIN=$root_ip $APP_DOMAIN=$app_ip"
 
 warn=""
 if [[ -n "$EXPECTED" ]]; then
