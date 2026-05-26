@@ -149,6 +149,10 @@ rsync -avz --delete --exclude-from=.rsyncignore \
 
 После rsync на сервере (в CI делает [`deploy.sh`](../scripts/ci/deploy.sh)):
 
+- при первом деплое или отсутствии `.playwright-chromium.ok` — `playwright install chromium` под пользователем `getsync` в `/opt/getsync/.cache/ms-playwright` (см. `PLAYWRIGHT_BROWSERS_PATH` в unit);
+- однократно на VPS при ошибках запуска браузера: `sudo .venv/bin/playwright install-deps chromium` (системные lib).
+
+
 ```bash
 # rsync от root с --chown=getsync:getsync — отдельный chown -R не нужен
 # pip install -e . — только если изменился pyproject.toml (editable install)

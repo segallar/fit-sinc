@@ -17,6 +17,7 @@ DEPLOY_PATH="$GETSYNC_DEPLOY_PATH"
 SERVICE_USER=getsync
 SERVICE_UNIT=getsync
 DEPS_MARKER=".pyproject.sha256"
+PLAYWRIGHT_MARKER=".playwright-chromium.ok"
 SSH_OPTS=(-o StrictHostKeyChecking=accept-new -o BatchMode=yes)
 
 log() {
@@ -97,6 +98,7 @@ DEPLOY_PATH="${DEPLOY_PATH}"
 SERVICE_USER="${SERVICE_USER}"
 SERVICE_UNIT="${SERVICE_UNIT}"
 DEPS_MARKER="${DEPS_MARKER}"
+PLAYWRIGHT_MARKER="${PLAYWRIGHT_MARKER}"
 
 # Права только на код (не data/, .venv/, .env) — fallback если rsync без --chown (macOS openrsync)
 while IFS= read -r -d '' item; do
@@ -106,12 +108,41 @@ done < <(find "\${DEPLOY_PATH}" -mindepth 1 -maxdepth 1 \
 
 new_hash=\$(sha256sum "\${DEPLOY_PATH}/pyproject.toml" | awk '{print \$1}')
 old_hash=\$(cat "\${DEPLOY_PATH}/\${DEPS_MARKER}" 2>/dev/null || true)
+pip_changed=0
 if [[ "\$new_hash" != "\$old_hash" ]]; then
   echo "pyproject.toml changed — pip install -e ."
   sudo -u \${SERVICE_USER} bash -c "cd \${DEPLOY_PATH} && .venv/bin/pip install -e ."
   echo "\$new_hash" > "\${DEPLOY_PATH}/\${DEPS_MARKER}"
+  pip_changed=1
 else
   echo "pyproject.toml unchanged — skip pip (editable install)"
+fi
+
+playwright_ok=0
+if [[ -f "\${DEPLOY_PATH}/\${PLAYWRIGHT_MARKER}" ]]; then
+  playwright_ok=1
+fi
+if [[ "\$pip_changed" == "1" ]] || [[ "\$playwright_ok" != "1" ]]; then
+  echo "Playwright — install Chromium to \${DEPLOY_PATH}/.cache/ms-playwright"
+  mkdir -p "\${DEPLOY_PATH}/.cache"
+  chown "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/.cache"
+  if ! sudo -u \${SERVICE_USER} env \
+      HOME="\${DEPLOY_PATH}" \
+      PLAYWRIGHT_BROWSERS_PATH="\${DEPLOY_PATH}/.cache/ms-playwright" \
+      bash -c "cd '\${DEPLOY_PATH}' && .venv/bin/playwright install chromium"; then
+    echo "playwright install chromium failed — trying install-deps (needs apt libraries)" >&2
+    "\${DEPLOY_PATH}/.venv/bin/playwright" install-deps chromium || true
+    sudo -u \${SERVICE_USER} env \
+      HOME="\${DEPLOY_PATH}" \
+      PLAYWRIGHT_BROWSERS_PATH="\${DEPLOY_PATH}/.cache/ms-playwright" \
+      bash -c "cd '\${DEPLOY_PATH}' && .venv/bin/playwright install chromium"
+  fi
+  chown -R "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/.cache"
+  pw_ver=\$(sudo -u \${SERVICE_USER} "\${DEPLOY_PATH}/.venv/bin/python" -c "import playwright; print(playwright.__version__)" 2>/dev/null || echo "unknown")
+  echo "playwright=\${pw_ver} chromium_ok" > "\${DEPLOY_PATH}/\${PLAYWRIGHT_MARKER}"
+  chown "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/\${PLAYWRIGHT_MARKER}"
+else
+  echo "Playwright Chromium already installed — skip"
 fi
 
 systemctl restart \${SERVICE_UNIT}
