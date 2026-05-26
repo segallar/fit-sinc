@@ -91,7 +91,7 @@ Garmin часто блокирует чистый `garth.upload()`; основн
 | «N виртуальных браузеров на N users» | Нет — cookies на диске, браузер только при refresh/upload |
 | «Один JWT на сервер» | Нет — per `data/users/{id}/garmin_web/` |
 
-**Первичная настройка (сейчас CLI, UI в 5b.4):**
+**Настройка подключений (5b.4 / 1.2 ✅):** `/app/settings` — профиль, пароль, Hammerhead OAuth в UI; Garmin status/refresh/disconnect. **Первичный** Garmin login — CLI.
 
 ```bash
 fit_sinc --user <slug> garmin login
@@ -119,6 +119,7 @@ fit_sinc --user <slug> garmin status   # upload_ready
 | `web/app.py` | FastAPI, webhook, JWT refresh loop |
 | `web/app_routes.py` | Кабинет `/app/*` |
 | `web/admin_routes.py` | Админка `/app/admin/*` (`is_admin`) |
+| `web/settings_routes.py` | `/app/settings` — профиль, HH/Garmin |
 | `web/auth.py` | Сессия cookie, guard |
 
 **Hammerhead API:** [API_HAMMERHEAD.md](API_HAMMERHEAD.md).  
@@ -131,13 +132,14 @@ fit_sinc --user <slug> garmin status   # upload_ready
 | `/webhooks/hammerhead` | Hammerhead | Приём событий |
 | `/health` | Мониторинг | Health check |
 | `/app/login` | Гость | Вход email + password |
+| `/app/settings` | Пользователь | Профиль, пароль, Hammerhead/Garmin (**1.2** ✅) |
 | `/app/*` | Пользователь | Дашборд, activities, log, session |
 | `/app/admin/*` | `is_admin` | CRUD users |
 | `/admin/*` | — | 301 → `/app/admin/*` |
 
-Кабинет: user bar (имя, email, slug, logout), re-sync активностей, статус HH/Garmin.
+Кабинет: user bar, **Settings** в nav, баннер HH/Garmin на дашборде (**1.8**), re-sync активностей.
 
-**Планируется (5b):** `/register`, `/app/settings` (профиль, HH/Garmin без CLI).
+**Планируется:** `/register` (**2.1**).
 
 FIT: `data/users/{user_id}/fits/{activity_id}.fit` (или путь из SQLite).
 
@@ -170,11 +172,12 @@ fit_sinc serve
 
 ## Ограничения (актуальные)
 
-- Дашборд: баннер HH + Garmin (`upload_ready`, JWT TTL) — [`connections.py`](../fit_sinc/web/connections.py)
-- Нет `/app/settings` и `/register` — HH/Garmin через CLI или админку (5b.3–5b.4)
-- Даты в кабинете: UTC в SQLite, отображение и фильтры `date_from`/`date_to` в `users.timezone`
-- Только активности Hammerhead → Garmin (не routes)
+- Нет `/register` — **2.1**
+- Garmin **первичный** login в UI — только CLI; в settings — status/refresh/disconnect
+- Даты: UTC в SQLite, отображение в `users.timezone` (**1.7** ✅)
+- Только Hammerhead → Garmin (не routes)
 - Неофициальный Garmin API (web + garth-ng)
+- Публичный домен **getsync.me** — **1.5** (в коде пока `fit.romansegalla.online`)
 
 ## Реализованные фазы
 
@@ -186,7 +189,7 @@ fit_sinc serve
 | **3** | Web JWT, Playwright / HTTP / garth |
 | **4** | CI: [test.yml](../.github/workflows/test.yml), [deploy.yml](../.github/workflows/deploy.yml) |
 | **5** | Tenants, `user_id`, `/app`, `/app/admin`, webhook routing |
-| **5b** | Единый кабинет, settings, без Basic Auth — в работе — [PLAN.md](PLAN.md) |
+| **5b** | Settings, security tests, без Basic Auth — [PLAN.md](PLAN.md) горизонт **1** (открыт **1.5**) |
 
 **Production (Hammerhead portal):**
 

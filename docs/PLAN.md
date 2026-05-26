@@ -1,6 +1,6 @@
 # Roadmap fit_sinc
 
-> **Статус (2026-05-26):** MVP (фазы 0–5) в production; **5b** горизонт 1: **1.1–1.8** ✅; далее **2.1**, **1.5**.
+> **Статус (2026-05-26):** MVP (фазы 0–5) в production; **горизонт 1:** **1.1–1.4**, **1.6–1.8** ✅ · открыт **1.5** (GetSync / getsync.me) · далее **2.1**.
 
 **Текущее состояние:** [README](../README.md) · [ARCHITECTURE.md](ARCHITECTURE.md)  
 **Операции:** [CI-CD.md](CI-CD.md) · [API Hammerhead](API_HAMMERHEAD.md) · [API Garmin](API_GARMIN.md)
@@ -43,15 +43,15 @@
 | 3 Garmin upload (web JWT, browser, fallback) | ✅ код / ⚠️ ops на сервере |
 | 4 CI (GitHub Actions test + deploy main) | ✅ |
 | 5 Мультипользовательность (tenants, `/admin`, `/app`) | ✅ MVP |
-| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | **1.1–1.4** ✅ · 🟡 **2.1** register |
+| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | **1.1–1.4**, **1.7–1.8** ✅ · 🟡 **2.1** register · **1.5** rename |
 | **UI** Новый интерфейс приложения (Jinja2 + Tailwind) | ✅ |
 | **Design** Проектирование и улучшение UI/UX (дизайн-система) | 📋 · **2.10** |
 | **Site** Главная страница [romansegalla.online](https://romansegalla.online) | MVP ✅ · полировка **2.11** |
 | **Security** Тесты доступа (session auth, страницы и API) | ✅ **1.1** (`test_security_auth.py`) |
-| 6 UI v2 (календарь, поиск, баннер, failed) | 📋 · **2.3** (+ **1.8**) |
+| 6 UI v2 (календарь, поиск, failed) | 📋 · **2.3** (баннер **1.8** ✅) |
 | 6.1 Алерты (Telegram / email) | 📋 · **2.4** |
 | 6.2 Локализация (i18n: ru, en, …) | 📋 · **2.5** · **3.6** |
-| — Ops: README + тесты CI | ✅ README / 📋 **1.7** · deploy CSS ✅ |
+| — Ops: README + тесты CI | ✅ README / **1.7** ✅ · deploy CSS ✅ |
 | 7 Хаб активностей: сбор, хранение, анализ, sync → сервисы | 📋 · **2.8–2.9** · **3.1**, **3.5** |
 | **Modularity** Модули и интерфейсы между ними | 📋 · **3.9** |
 | 8 Маршруты (routes) | 📋 · **3.2** |
@@ -74,7 +74,7 @@
 | ID | Фаза (справка) | Кратко |
 |----|----------------|--------|
 | **1.1** | Security | Тесты session auth, tenant, webhook HMAC |
-| **1.2** | 5b.4 | `/app/settings` — профиль, пароль, HH/Garmin |
+| **1.2** | 5b.4 | `/app/settings` — профиль, пароль, HH OAuth, Garmin status | ✅ |
 | **1.3** | 5b.2 | Пункт Settings в nav |
 | **1.4** | 5b.5 | Снять nginx Basic Auth |
 | **1.5** | 9 | **GetSync** — getsync.me, rename — [1.5-RENAME.md](1.5-RENAME.md) |
@@ -111,7 +111,7 @@
 | ID | Задача | Оценка | Зависимости |
 |----|--------|--------|-------------|
 | **1.1** | **[Security](#security-тесты-доступа-session-auth):** тесты session auth, tenant isolation, webhook HMAC | ✅ | 5b.1 ✅ |
-| **1.2** | **5b.4:** `/app/settings` — профиль, смена пароля, Hammerhead OAuth, Garmin connect/status | 2 вечера | UI ✅ |
+| **1.2** | **5b.4:** `/app/settings` — профиль, смена пароля, Hammerhead OAuth, Garmin status/refresh | ✅ | UI ✅; первичный Garmin login — CLI |
 | **1.3** | **5b.2:** пункт **Settings** в nav → `/app/settings` | ✅ | UI ✅ |
 | **1.4** | **5b.5:** снять nginx Basic Auth; `SESSION_SECRET`, `https_only` cookie | ✅ | **1.1** |
 | **1.5** | **9:** **GetSync** — бренд, `getsync` package, **getsync.me** ([план](1.5-RENAME.md)) | 1–2 дня | **1.4**; DNS ready |
@@ -121,7 +121,7 @@
 
 **Порядок выполнения:** **1.1** → **1.2**+**1.3** → **1.4** → **1.5** (сразу, если имя готово) → **1.7**–**1.8** параллельно → **1.6**.
 
-**MVP «можно жить» после горизонта 1:** **1.1**–**1.4** + **1.2**/**1.3**; **1.5** — до публичного **2.1** / **3.4**, если меняется домен.
+**MVP «можно жить» после горизонта 1:** **1.1**–**1.4** + **1.2**/**1.3** ✅ (без CLI для HH; Garmin — refresh/status в UI, **первый** login через CLI). **1.5** — до публичного **getsync.me** и **2.1** / **3.4**.
 
 ---
 
@@ -171,7 +171,7 @@
 
 ```mermaid
 flowchart LR
-    H1["🔴 1.1–1.8\nSecurity + Settings + rename"]
+    H1["🔴 1.1–1.4, 1.6–1.8 ✅\n1.5 GetSync"]
     H2["🟡 2.1–2.11\nRegister + Design + Site + UI"]
     H3["🔵 3.1–3.9\nModules + Хаб + S3 + OAuth"]
     H1 --> H2 --> H3
@@ -231,12 +231,13 @@ flowchart TB
 
 **Сделано (2026-05):** `user_id` в БД и sync; `data/users/{id}/`; webhook → tenant; `/app/login` + кабинет; CRUD users (сейчас `/app/admin`); сессии cookie; CLI `--user`.
 
-**Ограничения MVP (ещё открыты в 5b):**
+**Ограничения MVP (ещё открыты):**
 
-- ~~nginx Basic Auth~~ — снят (**1.4**)
+- ~~nginx Basic Auth~~ — снят (**1.4** ✅)
+- ~~`/app/settings`~~ — есть (**1.2** ✅): профиль, пароль, Hammerhead OAuth; Garmin status/refresh/disconnect; **первичный** Garmin — CLI (`garmin login`)
+- ~~Settings в nav, TZ в UI, баннер HH/Garmin~~ — **1.3**, **1.7**, **1.8** ✅
 - Нет `/register` — **2.1** (5b.3)
-- Нет `/app/settings` — профиль и HH/Garmin только через админку / CLI — **1.2** (5b.4)
-- Даты в кабинете в `users.timezone` ([`timeutil.py`](../fit_sinc/timeutil.py), `DateFormatter` в [`html.py`](../fit_sinc/web/html.py))
+- Нет публичного **getsync.me** — **1.5**
 
 **Уже сделано в 5b.1:** один логин; админка `/app/admin/*` по `users.is_admin`; legacy `/admin/*` → 301; `ADMIN_PASSWORD` убран.
 
@@ -379,7 +380,7 @@ fit_sinc --user roman sync --since 2025-01-01
 
 | Элемент | Фаза |
 |---------|------|
-| Пункт **Settings** в nav → `/app/settings` | **1.3** |
+| Пункт **Settings** в nav → `/app/settings` | ✅ **1.3** |
 | Полировка UX (календарь, баннер, failed-очередь) | **2.3**, **1.8** |
 | Дизайн-система, визуал, UX-потоки | **[2.10](#дизайн-uiux-210)** |
 
@@ -478,9 +479,9 @@ fit.romansegalla.online → app: /app/*, /webhooks/*, /health (как сейча
 
 ---
 
-### Security: тесты доступа (session auth)
+### Security: тесты доступа (session auth) — **1.1** ✅
 
-> **Отдельный пункт roadmap** — регрессия авторизации; не смешивать с функциональными тестами register/settings (**5b.6**).
+> Регрессия авторизации; функциональные тесты settings/register — **2.2** / **5b.6**.
 
 **Цель:** доступ к кабинету, admin и защищённым действиям — **только** с валидной cookie-сессией (`fit_sinc_session` → `user_id` в `auth.py`); публичные эндпоинты остаются открытыми по явным правилам middleware.
 
@@ -494,33 +495,21 @@ fit.romansegalla.online → app: /app/*, /webhooks/*, /health (как сейча
 | `/`, `/health`, `/static/*` | ✅ | ✅ | ✅ |
 | `/webhooks/*` | HMAC (не session) | — | — |
 
-**Уже есть (`tests/test_app_auth.py`):**
+**Покрыто (`tests/test_app_auth.py`, `tests/test_security_auth.py`):**
 
-| Проверка | Статус |
-|----------|--------|
-| login ok / неверный пароль | ✅ |
-| `GET /app/activities` без cookie → redirect | ✅ |
-| admin → `/app/admin/` 200; non-admin → 403 | ✅ |
-| legacy `/admin/` → 301 `/app/admin/` | ✅ |
+| Область | Статус |
+|---------|--------|
+| login ok / неверный пароль; legacy `/admin/` → 301 | ✅ |
+| GET/POST `/app/*`, `/app/settings`, FIT download — без cookie → redirect | ✅ |
+| Admin GET/POST — login / 403 | ✅ |
+| Невалидная/disabled сессия | ✅ |
+| Tenant isolation (FIT, dashboard) | ✅ |
+| Публично: `/`, `/health`, `/app/login`, `/static` | ✅ |
+| Webhook HMAC | ✅ |
 
-**Нужно покрыть:**
+**Реализация:** `tests/test_security_auth.py`; dual read cookie — см. [1.5-RENAME.md](1.5-RENAME.md) **R7**.
 
-| Область | Проверки |
-|---------|----------|
-| **Страницы `/app/*`** | GET без cookie → 303 `/app/login`: `/`, activities, log, session; после **1.2** — `/app/settings` |
-| **POST `/app/*`** | `session/refresh`, `activities/.../retry`, `retry-errors` — без сессии → redirect; с сессией → ok |
-| **Скачивание FIT** | `GET /app/activities/{id}/fit` без сессии → redirect |
-| **Admin** | все GET/POST `/app/admin/*` (users, new, edit) — без сессии → login; с обычным user → 403 |
-| **Невалидная сессия** | несуществующий `user_id`, disabled user, пустая cookie → не попадает в кабинет |
-| **Изоляция tenant** | user A не получает activities/log/FIT другого user (404 или пусто, не чужие данные) |
-| **Публично** | `/`, `/health`, `/app/login`, `/static/app.css` — 200 без session |
-| **Webhook API** | без/неверный HMAC при `HAMMERHEAD_WEBHOOK_SECRET` → 403 (дополнить `test_webhook.py`) |
-
-**Реализация:** `tests/test_security_auth.py` — table-driven список `(method, path, expect_status|redirect)`; общий helper login/logout.
-
-**Когда:** параллельно **1.2**; **блокер для 1.4** (снятие nginx Basic Auth).
-
-**Оценка:** 1 вечер.
+**Оценка:** ✅ (2026-05).
 
 ---
 
@@ -562,23 +551,23 @@ flowchart TB
 |---------|------------|--------|
 | **5b.0** | Решения: открытая регистрация / invite-only; bootstrap первого admin (`BOOTSTRAP_ADMIN_EMAIL` или CLI `user promote-admin`) | ✅ [5b-DECISIONS.md](5b-DECISIONS.md) |
 | **5b.1** | `users.is_admin`; один логин; убрать `SESSION_ADMIN_KEY` + `/admin/login`; guard `/app/admin/*`; legacy `/admin` → 301 | ✅ |
-| **5b.2** → **1.3** | Пункт **Settings** в nav → `/app/settings` | ⏳ с **1.2** |
+| **5b.2** → **1.3** | Пункт **Settings** в nav → `/app/settings` | ✅ |
 | **5b.3** → **2.1** | `/register`: slug/email/password/timezone, rate limit, auto-login | 1 вечер |
 | **5b.3+** → **2.6** | Доработка регистрации: email, invite, captcha, onboarding | 1–2 вечера |
-| **5b.4** → **1.2** | `/app/settings`: профиль + пароль; HH/Garmin OAuth | 2 вечера |
+| **5b.4** → **1.2** | `/app/settings`: профиль + пароль; HH OAuth; Garmin status | ✅ |
 | **5b.4+** → **2.7** | Settings: источники / правила / приёмники (заглушки → **3.1**) | 1–2 вечера |
-| **5b.5** → **1.4** | nginx: снять Basic Auth; `https_only` | ½ дня |
+| **5b.5** → **1.4** | nginx: без Basic Auth; `SESSION_COOKIE_SECURE` | ✅ |
 | **5b.6** → **2.2** | Функциональные тесты: register, settings, admin | 1 вечер |
 
 **Порядок (актуальный):** [🔴 1.x](#-горизонт-1--срочно-важно-небольшие) → [🟡 2.x](#-горизонт-2--средняя-срочность-и-объём) → [🔵 3.x](#-горизонт-3--далёкое-будущее).
 
-**MVP «можно пользоваться»:** 5b.1 ✅ + **UI** ✅ + задачи **1.1**–**1.4** (минимум **1.1**–**1.3**).
+**MVP «можно пользоваться»:** 5b.1 ✅ + **UI** ✅ + **1.1**–**1.4**, **1.7**–**1.8** ✅; открыты **1.5**, **2.1**.
 
-#### 5b.2 — остаток (Settings в nav)
+#### 5b.2 — Settings в nav — ✅ **1.3**
 
 | Элемент | Статус |
 |---------|--------|
-| Пункт **Settings** в nav → `/app/settings` | ⏳ **1.3** (с **1.2**) |
+| Пункт **Settings** в nav → `/app/settings` | ✅ |
 
 > User bar, формы, Jinja layout, Tailwind — перенесены в раздел **[UI: Новый интерфейс приложения](#ui-новый-интерфейс-приложения)** ✅.
 
@@ -591,7 +580,7 @@ flowchart TB
 | JWT общий? | **Нет** — свой на `user_id`; фоновый цикл в `app.py` обновляет по списку пользователей |
 | N виртуальных браузеров? | **Нет** — headless Chromium **по операции** (refresh/upload), затем `browser.close()` |
 | Refresh JWT | Сначала HTTP (`curl_cffi` + cookie `session`), Playwright — fallback |
-| Первичная привязка | На пользователя: `fit_sinc --user <slug> garmin login` или import cookies (до **1.2** — только CLI) |
+| Первичная привязка Garmin | UI: refresh/disconnect + status (**1.2** ✅); **первый** login — `fit_sinc --user <slug> garmin login` или import cookies |
 
 **Чеклист нового пользователя (ops, до Settings UI):**
 
@@ -795,7 +784,7 @@ fit_sinc/web/i18n.py   # t("nav.dashboard", locale=...) → str
 | README на GitHub | ops | ✅ | — |
 | Тесты: webhook HMAC endpoint, `sync_activity` с моками HH/Garmin | ops | ✅ | webhook, tenant, /app login, sync skip |
 | **Security-тесты:** session auth на все `/app/*`, `/app/admin/*`, webhook HMAC | **1.1** | 📋 | 5b.1 ✅; блокер **1.4** |
-| **Баннер статуса** на дашборде | 6 | 📋 | лучше после 5 (`/app`) |
+| **Баннер статуса** на дашборде | 6 / **1.8** | ✅ | `connections_banner.html` |
 | **Очередь failed** — фильтр `status=error`, retry | 6 | 📋 | retry уже в коде |
 | Понятный sync log (`duplicate` ≠ error) | 6 | 📋 | — |
 | **Алерты Telegram** при `sync_status=error` или N ошибок подряд | **6.1** | 📋 | поле `telegram` из Фазы 5 |
@@ -1198,7 +1187,7 @@ StorageBackend          — LocalFS | S3 (boto3)
 ### 🔴 Горизонт 1 — срочно (TODO)
 
 - [x] **1.1** Security — session auth, POST `/app/*`, admin 403, tenant isolation, webhook HMAC
-- [x] **1.2** 5b.4 — `/app/settings`: профиль, пароль, Hammerhead/Garmin
+- [x] **1.2** 5b.4 — `/app/settings`: профиль, пароль, Hammerhead OAuth; Garmin status (первый login — CLI)
 - [x] **1.3** 5b.2 — пункт **Settings** в nav
 - [x] **1.4** 5b.5 — nginx без Basic Auth; `SESSION_COOKIE_SECURE` (https_only cookie)
 - [ ] **1.5** 9 — **GetSync**, getsync.me — [1.5-RENAME.md](1.5-RENAME.md) (домен ✅; A/B/C после DNS)
