@@ -20,7 +20,7 @@ class TestTimeutil(unittest.TestCase):
         iso = "2025-01-01T22:30:00+00:00"
         msk_date, msk_time = format_datetime_parts(iso, tz="Europe/Moscow")
         ny_date, ny_time = format_datetime_parts(iso, tz="America/New_York")
-        self.assertEqual((msk_date, msk_time), ("01.01.2025", "01:30:00"))
+        self.assertEqual((msk_date, msk_time), ("02.01.2025", "01:30:00"))
         self.assertEqual((ny_date, ny_time), ("01.01.2025", "17:30:00"))
 
     def test_date_filter_respects_timezone_boundary(self) -> None:
