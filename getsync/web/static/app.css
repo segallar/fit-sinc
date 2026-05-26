@@ -140,10 +140,35 @@ body {
   max-width: 36rem;
 }
 
+.getsync-site {
+  /* Controls (inputs, buttons, dropdown) — same radius as feature cards (0.75rem) */
+  --bs-border-radius: 0.75rem;
+  --bs-border-radius-sm: 0.75rem;
+  --bs-border-radius-lg: 0.75rem;
+}
+
+.getsync-site .form-control:focus,
+.getsync-site .form-select:focus {
+  border-color: var(--getsync-primary-600);
+  box-shadow: 0 0 0 0.25rem var(--bs-focus-ring-color);
+}
+
+.getsync-site .btn-outline-secondary {
+  --bs-btn-border-color: var(--getsync-primary-100);
+  --bs-btn-color: var(--getsync-text);
+  --bs-btn-hover-bg: var(--getsync-primary-50);
+  --bs-btn-hover-border-color: var(--getsync-primary-100);
+  --bs-btn-hover-color: var(--getsync-text);
+}
+
 .getsync-auth-card {
-  border: 1px solid var(--getsync-border);
+  border: 1px solid var(--getsync-primary-100);
   border-radius: 0.75rem;
   box-shadow: none;
+}
+
+.getsync-auth-card .card-body {
+  padding: 1.25rem 1.375rem;
 }
 
 .getsync-auth-shell .card-title,
