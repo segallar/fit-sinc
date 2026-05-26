@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import calendar as cal_mod
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import quote
@@ -145,6 +146,74 @@ def _shift_month(year: int, month: int, delta: int) -> tuple[int, int]:
         m -= 12
         y += 1
     return y, m
+
+
+def _month_date_bounds(year: int, month: int) -> tuple[str, str]:
+    last = cal_mod.monthrange(year, month)[1]
+    return f"{year}-{month:02d}-01", f"{year}-{month:02d}-{last:02d}"
+
+
+def _format_filter_date_display(iso: str) -> str:
+    try:
+        return date.fromisoformat(iso).strftime("%d.%m.%Y")
+    except ValueError:
+        return iso
+
+
+def _activities_subheader_context(
+    *,
+    view: str,
+    filters: ActivityFilters,
+    cal_year: int,
+    cal_month: int,
+    per_page: int,
+    page: int,
+    today: date,
+) -> dict[str, object]:
+    ref_year, ref_month = (
+        (cal_year, cal_month) if view == "calendar" else (today.year, today.month)
+    )
+    month_start, month_end = _month_date_bounds(ref_year, ref_month)
+    picker_from = filters.date_from or month_start
+    picker_to = filters.date_to or month_end
+
+    type_label = "all types"
+    type_links: list[dict[str, object]] = []
+    for value, label in ACTIVITY_TYPE_FILTER_CHOICES:
+        active = (filters.activity_type or "") == value
+        if active:
+            type_label = label.lower() if value else "all types"
+        nf = ActivityFilters(
+            q=filters.q,
+            status=filters.status,
+            activity_type=value,
+            date_from=filters.date_from,
+            date_to=filters.date_to,
+            source=filters.source,
+        )
+        type_links.append(
+            {
+                "href": _activities_return_url(
+                    page=page,
+                    per_page=per_page,
+                    filters=nf,
+                    view=view,
+                    year=cal_year if view == "calendar" else None,
+                    month=cal_month if view == "calendar" else None,
+                ),
+                "label": label,
+                "active": active,
+            }
+        )
+
+    return {
+        "picker_date_from": picker_from,
+        "picker_date_to": picker_to,
+        "subheader_date_from": _format_filter_date_display(picker_from),
+        "subheader_date_to": _format_filter_date_display(picker_to),
+        "subheader_type_label": type_label,
+        "type_filter_links": type_links,
+    }
 
 
 def _activities_tab_query_factory(
@@ -485,6 +554,15 @@ async def activities_browser(
         errors_quick_url=errors_quick_url,
         activity_type_choices=ACTIVITY_TYPE_FILTER_CHOICES,
         filter_form_id="activities-filter-form",
+        **_activities_subheader_context(
+            view=view,
+            filters=filters,
+            cal_year=cal_year,
+            cal_month=cal_month,
+            per_page=per_page,
+            page=page,
+            today=today,
+        ),
     )
 
     if view == "calendar":

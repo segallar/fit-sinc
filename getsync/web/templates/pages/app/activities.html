@@ -5,17 +5,12 @@
 
 {% block page_content %}
 <div class="{% if activities_view == 'calendar' and calendar %}getsync-activities-page--calendar d-flex flex-column flex-grow-1 min-h-0{% endif %}">
-{% set activities_filter_form_id = "activities-filter-form" %}
-{% with hint="All activities from connected sources. Filter by source in the ? menu.", filter_form_id=activities_filter_form_id %}
-{% include "components/activities_page_header.html" %}
-{% endwith %}
+{% include "components/activities_subheader.html" %}
 {% if errors_quick_url %}
 <p class="mb-2">
   <a href="{{ errors_quick_url }}" class="btn btn-outline-secondary btn-sm">Show errors only</a>
 </p>
 {% endif %}
-
-{% include "components/activities_filters.html" %}
 
 {% if activities_view == 'calendar' and calendar %}
 <div class="getsync-activities-calendar-shell flex-grow-1 d-flex flex-column min-h-0">

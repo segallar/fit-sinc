@@ -1,0 +1,7 @@
+<div class="getsync-view-toggle btn-group flex-shrink-0" role="group" aria-label="Activities view">
+  <a href="{{ prefix }}/activities?{{ activities_tab_query('list') }}"
+     class="btn btn-sm{% if activities_view == 'list' %} active{% endif %}">List</a>
+  <a href="{{ prefix }}/activities?{{ activities_tab_query('calendar') }}"
+     class="btn btn-sm{% if activities_view == 'calendar' %} active{% endif %}">Calendar</a>
+  <button type="button" class="btn btn-sm" disabled title="Planned">Map</button>
+</div>

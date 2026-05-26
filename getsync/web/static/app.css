@@ -67,9 +67,71 @@ body {
   min-width: 14rem;
 }
 
-.getsync-activities-page-header .getsync-activities-tabs .nav-link {
-  padding: 0.25rem 0.75rem;
+.getsync-activities-subheader__title {
+  font-size: 1rem;
+  margin-right: 0.25rem;
+}
+
+.getsync-activities-subheader__text {
+  font-size: 0.9375rem;
+}
+
+.getsync-filter-link {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--getsync-text);
+  font-size: inherit;
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+  vertical-align: baseline;
+}
+
+.getsync-filter-link:hover,
+.getsync-filter-link:focus {
+  color: var(--getsync-primary-700);
+}
+
+.getsync-filter-link.dropdown-toggle::after {
+  display: none;
+}
+
+.getsync-filter-link--icon {
+  text-decoration: none;
+  font-size: 0.8125rem;
+  opacity: 0.55;
+  margin-left: 0.125rem;
+}
+
+.getsync-filter-link--icon:hover,
+.getsync-filter-link--icon:focus {
+  opacity: 1;
+}
+
+.getsync-filter-dropdown-menu {
+  min-width: 11rem;
+}
+
+.getsync-view-toggle .btn {
   font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.875rem;
+  border-color: var(--getsync-border);
+  color: var(--getsync-primary-700);
+  background: var(--getsync-surface);
+}
+
+.getsync-view-toggle .btn.active {
+  background: #0d6efd;
+  border-color: #0d6efd;
+  color: #fff;
+}
+
+.getsync-view-toggle .btn:disabled {
+  opacity: 0.45;
 }
 
 .getsync-activities-filter__row {
@@ -254,11 +316,7 @@ body {
   min-height: 12rem;
 }
 
-.getsync-activities-page--calendar .getsync-activities-filter {
-  margin-bottom: var(--getsync-space-2) !important;
-}
-
-.getsync-activities-page--calendar .getsync-page-header {
+.getsync-activities-page--calendar .getsync-activities-subheader {
   margin-bottom: var(--getsync-space-2) !important;
 }
 
