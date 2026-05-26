@@ -35,9 +35,28 @@ cd "$ROOT"
 
 "${ROOT}/scripts/ci/build-frontend-css.sh"
 
-if COMMIT="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)"; then
-  printf '%s\n' "$COMMIT" > "${ROOT}/getsync/_git_commit.txt"
-fi
+COMMIT="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || true)"
+DEPLOY_NUMBER="${GETSYNC_DEPLOY_NUMBER:-${GITHUB_RUN_NUMBER:-}}"
+DEPLOYED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+python3 - "$COMMIT" "$DEPLOY_NUMBER" "$DEPLOYED_AT" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+commit, number, deployed_at = sys.argv[1:4]
+meta: dict[str, object] = {"deployed_at": deployed_at}
+if commit:
+    meta["commit"] = commit
+if number:
+    try:
+        meta["deploy_number"] = int(number)
+    except ValueError:
+        meta["deploy_number"] = number
+Path("getsync/_build_meta.json").write_text(
+    json.dumps(meta, ensure_ascii=False) + "\n",
+    encoding="utf-8",
+)
+PY
 
 rsync -avz --delete --exclude-from=.rsyncignore \
   ./ "${SSH_USER}@${HOST}:${DEPLOY_PATH}/"

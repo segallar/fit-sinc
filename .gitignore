@@ -9,5 +9,6 @@ data/
 dist/
 *.egg-info/
 getsync/_git_commit.txt
+getsync/_build_meta.json
 node_modules/
 frontend/node_modules/

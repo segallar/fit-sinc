@@ -7,7 +7,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from getsync import __version__
-from getsync.build_info import git_commit_short
+from getsync.build_info import deploy_number, deploy_time_footer, git_commit_short
 from getsync.users.timezones import DEFAULT_TIMEZONE, options_for_select
 from getsync.web import html as H
 
@@ -61,6 +61,8 @@ def jinja_env() -> Environment:
     env.globals.update(
         app_version=__version__,
         git_commit=git_commit_short(),
+        deploy_number=deploy_number(),
+        deploy_time=deploy_time_footer(),
         esc=H.esc,
         fmt_km=H.fmt_km,
         fmt_duration=H.fmt_duration,

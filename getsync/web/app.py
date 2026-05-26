@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from getsync import __version__
-from getsync.build_info import git_commit_short
+from getsync.build_info import deploy_number, deployed_at_iso, git_commit_short
 from getsync.config import get_settings
 from getsync.garmin.web_refresh import refresh_web_session
 from getsync.hammerhead.oauth import verify_webhook_signature
@@ -115,12 +115,14 @@ async def favicon() -> FileResponse:
 
 
 @app.get("/health")
-async def health() -> dict[str, str | bool]:
+async def health() -> dict[str, str | bool | int | None]:
     return {
         "status": "ok",
         "service": "getsync",
         "version": __version__,
         "commit": git_commit_short(),
+        "deploy_number": deploy_number(),
+        "deployed_at": deployed_at_iso(),
         "registration_open": registration_is_open(),
     }
 
