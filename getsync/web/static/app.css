@@ -1,48 +1,101 @@
-/* GetSync — palette aligned with fitsync.io (mint green SaaS) */
+/* GetSync — theme overrides on Bootstrap 5. Tokens: tokens.css */
 
-:root,
-[data-bs-theme="light"] {
-  --getsync-primary-50: #e6f4f1;
-  --getsync-primary-100: #c0e4dc;
-  --getsync-primary-600: rgb(41, 145, 125);
-  --getsync-primary-700: #237d6c;
-  --getsync-primary-900: #14473d;
-  --getsync-text: #1f2d1f;
-  --getsync-text-muted: #4b554b;
-  --getsync-bg-warm: #fdfaf7;
-  --getsync-border: #f3f4f3;
-
-  --bs-primary: var(--getsync-primary-600);
-  --bs-primary-rgb: 41, 145, 125;
-  --bs-primary-text-emphasis: var(--getsync-primary-900);
-  --bs-primary-bg-subtle: var(--getsync-primary-50);
-  --bs-primary-border-subtle: var(--getsync-primary-100);
-
-  --bs-link-color: var(--getsync-primary-700);
-  --bs-link-hover-color: var(--getsync-primary-900);
-  --bs-focus-ring-color: rgba(41, 145, 125, 0.25);
-
-  --bs-body-color: var(--getsync-text);
-  --bs-body-color-rgb: 31, 45, 31;
-  --bs-body-bg: #ffffff;
-  --bs-secondary-color: var(--getsync-text-muted);
-  --bs-border-color: var(--getsync-border);
-}
+@import url("tokens.css");
 
 body {
   min-height: 100vh;
   color: var(--getsync-text);
 }
 
-/* Landing layout — horizontal gutters like fitsync.io (container + px-6) */
-.getsync-site-inner {
-  width: 100%;
-  max-width: 72rem;
-  margin-inline: auto;
-  padding-inline: 1.5rem;
+/* ─── App shell (/app, /app/admin) ───────────────────────────────────────── */
+
+.getsync-app {
+  --bs-border-radius: var(--getsync-radius-md);
+  --bs-border-radius-sm: var(--getsync-radius-sm);
+  --bs-border-radius-lg: var(--getsync-radius-lg);
 }
 
-/* Bootstrap flex only on .container / .container-fluid — required for navbar */
+.getsync-app .form-control:focus,
+.getsync-app .form-select:focus {
+  border-color: var(--getsync-primary-600);
+  box-shadow: 0 0 0 0.25rem var(--bs-focus-ring-color);
+}
+
+.getsync-app-header {
+  border-color: var(--getsync-primary-100) !important;
+}
+
+.getsync-app-nav .nav-link {
+  font-weight: 500;
+}
+
+.getsync-app-nav .nav-link.active {
+  background-color: var(--getsync-primary-600);
+}
+
+.getsync-page-header {
+  max-width: var(--getsync-page-max);
+}
+
+.getsync-data-card {
+  border-color: var(--getsync-border);
+  border-radius: var(--getsync-radius-md);
+  box-shadow: var(--getsync-shadow-sm);
+}
+
+.getsync-data-card > .card-header {
+  background-color: var(--getsync-surface-muted);
+  border-bottom-color: var(--getsync-border);
+}
+
+.getsync-filter-card {
+  background-color: var(--getsync-surface-muted) !important;
+  border-color: var(--getsync-border) !important;
+  border-radius: var(--getsync-radius-md);
+}
+
+.getsync-user-bar {
+  border-color: var(--getsync-primary-100) !important;
+  background-color: var(--getsync-primary-50) !important;
+  border-radius: var(--getsync-radius-md);
+}
+
+.getsync-badge--synced {
+  background-color: var(--getsync-status-synced) !important;
+}
+
+.getsync-badge--error {
+  background-color: var(--getsync-status-error) !important;
+}
+
+.getsync-badge--pending {
+  background-color: var(--getsync-status-pending) !important;
+  color: var(--getsync-text) !important;
+}
+
+.getsync-badge--neutral {
+  background-color: var(--getsync-status-neutral) !important;
+}
+
+/* ─── Marketing site (.getsync-site) ─────────────────────────────────────── */
+
+.getsync-site-inner {
+  width: 100%;
+  max-width: var(--getsync-content-max);
+  margin-inline: auto;
+  padding-inline: var(--getsync-space-6);
+}
+
+.getsync-site .navbar {
+  --bs-navbar-padding-x: 0;
+  padding-inline: 0;
+}
+
+.getsync-site .navbar-brand {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+}
+
 .navbar > .getsync-site-inner {
   display: flex;
   flex-wrap: wrap;
@@ -54,7 +107,6 @@ body {
   padding-block: 2rem 2.5rem;
 }
 
-/* Landing footer — full-width band (sibling of main wrapper), content in getsync-site-inner */
 .getsync-site .getsync-site-footer {
   width: 100%;
   flex-shrink: 0;
@@ -129,7 +181,6 @@ body {
   background-color: var(--getsync-bg-warm);
 }
 
-/* Landing: narrow centered columns (fitsync.io-style feature grid) */
 .getsync-section-narrow {
   max-width: 48rem;
   margin-inline: auto;
@@ -141,10 +192,9 @@ body {
 }
 
 .getsync-site {
-  /* Controls (inputs, buttons, dropdown) — same radius as feature cards (0.75rem) */
-  --bs-border-radius: 0.75rem;
-  --bs-border-radius-sm: 0.75rem;
-  --bs-border-radius-lg: 0.75rem;
+  --bs-border-radius: var(--getsync-radius-md);
+  --bs-border-radius-sm: var(--getsync-radius-md);
+  --bs-border-radius-lg: var(--getsync-radius-md);
 }
 
 .getsync-site .form-control:focus,
@@ -163,7 +213,7 @@ body {
 
 .getsync-auth-card {
   border: 1px solid var(--getsync-primary-100);
-  border-radius: 0.75rem;
+  border-radius: var(--getsync-radius-md);
   box-shadow: none;
 }
 
@@ -178,13 +228,13 @@ body {
 
 .getsync-feature-card {
   border: 1px solid var(--getsync-border);
-  border-radius: 0.75rem;
+  border-radius: var(--getsync-radius-md);
   box-shadow: none;
   transition: box-shadow 0.2s ease;
 }
 
 .getsync-feature-card:hover {
-  box-shadow: 0 10px 15px -3px rgba(31, 45, 31, 0.08);
+  box-shadow: var(--getsync-shadow-md);
 }
 
 .getsync-feature-card .card-body {
@@ -208,9 +258,11 @@ body {
   border: none;
 }
 
+/* ─── Shared Bootstrap overrides ─────────────────────────────────────────── */
+
 .btn-primary {
-  --bs-btn-bg: rgb(41, 145, 125);
-  --bs-btn-border-color: rgb(41, 145, 125);
+  --bs-btn-bg: var(--getsync-primary-600);
+  --bs-btn-border-color: var(--getsync-primary-600);
   --bs-btn-hover-bg: var(--getsync-primary-700);
   --bs-btn-hover-border-color: var(--getsync-primary-700);
   --bs-btn-active-bg: var(--getsync-primary-700);
@@ -219,9 +271,9 @@ body {
 
 .btn-outline-primary {
   --bs-btn-color: var(--getsync-primary-700);
-  --bs-btn-border-color: rgb(41, 145, 125);
-  --bs-btn-hover-bg: rgb(41, 145, 125);
-  --bs-btn-hover-border-color: rgb(41, 145, 125);
+  --bs-btn-border-color: var(--getsync-primary-600);
+  --bs-btn-hover-bg: var(--getsync-primary-600);
+  --bs-btn-hover-border-color: var(--getsync-primary-600);
   --bs-btn-hover-color: #fff;
   --bs-btn-active-bg: var(--getsync-primary-700);
   --bs-btn-active-border-color: var(--getsync-primary-700);

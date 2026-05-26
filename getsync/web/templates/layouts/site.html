@@ -3,9 +3,11 @@
 {% block container_class %}d-flex flex-column flex-grow-1 w-100{% endblock %}
 {% block container_padding %}{% endblock %}
 
-{% block header %}
+{% block header_outer %}
 {% include "components/site_navbar.html" %}
 {% endblock %}
+
+{% block header %}{% endblock %}
 
 {% block content %}
 <div class="getsync-site-inner getsync-site-main">
