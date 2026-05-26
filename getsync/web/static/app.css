@@ -34,7 +34,75 @@ body {
 }
 
 .getsync-page-header {
-  max-width: var(--getsync-page-max);
+  max-width: none;
+}
+
+.getsync-page-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  cursor: help;
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+
+.getsync-page-hint:hover,
+.getsync-page-hint:focus {
+  opacity: 1;
+  outline: none;
+}
+
+.getsync-page-hint.dropdown-toggle::after {
+  display: none;
+}
+
+.getsync-activities-hint-menu {
+  min-width: 14rem;
+}
+
+.getsync-activities-page-header .getsync-activities-tabs .nav-link {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.getsync-activities-filter__row {
+  overflow-x: auto;
+  padding-bottom: 0.125rem;
+}
+
+.getsync-activities-filter__field {
+  flex: 0 0 auto;
+  min-width: 6.5rem;
+}
+
+.getsync-activities-filter__field--date {
+  min-width: 8.75rem;
+}
+
+.getsync-activities-filter__field--narrow {
+  min-width: 4.75rem;
+}
+
+.getsync-activities-filter .form-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--getsync-text-muted, #6c757d);
+  margin-bottom: 0.125rem;
+  white-space: nowrap;
+}
+
+.getsync-activities-filter .form-control-sm,
+.getsync-activities-filter .form-select-sm {
+  min-height: calc(1.5em + 0.5rem + 2px);
 }
 
 .getsync-data-card {
@@ -150,17 +218,48 @@ body {
   color: #fff;
 }
 
+/* Cabinet (/app, /app/admin): full viewport width, flush left (no centered column). */
 .getsync-app-main {
   flex: 1;
   min-width: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   padding: var(--getsync-space-4) var(--getsync-space-5);
-  max-width: var(--getsync-page-max);
 }
 
 .getsync-app-layout--topbar .getsync-app-main {
-  max-width: var(--getsync-page-max);
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   width: 100%;
+}
+
+.getsync-app-layout--calendar-page {
+  min-height: 100vh;
+}
+
+.getsync-app-main--activities-calendar {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 3.25rem);
+}
+
+.getsync-activities-page--calendar {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.getsync-activities-calendar-shell {
+  flex: 1 1 auto;
+  min-height: 12rem;
+}
+
+.getsync-activities-page--calendar .getsync-activities-filter {
+  margin-bottom: var(--getsync-space-2) !important;
+}
+
+.getsync-activities-page--calendar .getsync-page-header {
+  margin-bottom: var(--getsync-space-2) !important;
 }
 
 .getsync-topbar-user-text {
@@ -437,10 +536,31 @@ footer.getsync-footer:not(.getsync-site-footer) {
 
 /* ─── Activity calendar ──────────────────────────────────────────────────── */
 
+.getsync-activity-calendar--fullscreen {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.getsync-activity-calendar--fullscreen > .card-body {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .getsync-cal-grid {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.getsync-cal-grid--fill .getsync-cal-row:not(.getsync-cal-head) {
+  flex: 1 1 0;
+  min-height: 2.75rem;
+}
+
+.getsync-cal-grid--fill .getsync-cal-day {
+  min-height: 0;
+  height: 100%;
 }
 
 .getsync-cal-row {

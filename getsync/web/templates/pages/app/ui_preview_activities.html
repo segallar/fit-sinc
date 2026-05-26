@@ -6,14 +6,16 @@
 {% block page_content %}
 <div class="alert alert-info small mb-3">Wireframe — no form fields</div>
 
-{% with title="Activities", lead="All activities from connected sources. Source is a column." %}
-{% include "components/page_header.html" %}
-{% endwith %}
-
-<ul class="nav nav-pills mb-3">
-  <li class="nav-item"><span class="nav-link">List</span></li>
-  <li class="nav-item"><span class="nav-link active">Calendar</span></li>
-</ul>
+<div class="getsync-page-header getsync-activities-page-header d-flex flex-wrap justify-content-between align-items-center gap-2 gap-md-3 mb-3">
+  <h1 class="h4 mb-0 fw-semibold d-flex align-items-center gap-2">
+    <span>Activities</span>
+    <span class="getsync-page-hint text-muted">?</span>
+  </h1>
+  <ul class="nav nav-pills getsync-activities-tabs mb-0 flex-shrink-0">
+    <li class="nav-item"><span class="nav-link">List</span></li>
+    <li class="nav-item"><span class="nav-link active">Calendar</span></li>
+  </ul>
+</div>
 
 {% if calendar %}
 {% include "components/activity_calendar.html" %}
@@ -23,12 +25,13 @@
 </div>
 {% endif %}
 
-<div class="getsync-filter-card card card-body border mb-4">
-  <p class="small text-muted mb-2 fw-medium">Filters (list view)</p>
-  <div class="row g-0">
-    {% with label="Source" %}{% include "components/wireframe_field.html" %}{% endwith %}
-    {% with label="Name search" %}{% include "components/wireframe_field.html" %}{% endwith %}
-    {% with label="GetSync status" %}{% include "components/wireframe_field.html" %}{% endwith %}
+<div class="getsync-activities-filter getsync-filter-card card card-body border mb-4">
+  <div class="getsync-activities-filter__row d-flex flex-nowrap align-items-end gap-2">
+    {% with label="Name" %}{% include "components/wireframe_field.html" %}{% endwith %}
+    {% with label="GetSync" %}{% include "components/wireframe_field.html" %}{% endwith %}
+    {% with label="Type" %}{% include "components/wireframe_field.html" %}{% endwith %}
+    {% with label="From" %}{% include "components/wireframe_field.html" %}{% endwith %}
+    <span class="btn btn-primary btn-sm disabled">Filter</span>
   </div>
 </div>
 
@@ -38,7 +41,6 @@
       <thead class="table-light">
         <tr>
           <th>Date</th>
-          <th>Source</th>
           <th>Name</th>
           <th>Type</th>
           <th>Status</th>
@@ -47,7 +49,6 @@
       <tbody>
         <tr>
           <td>2026-05-20</td>
-          <td><span class="badge text-bg-light border">Hammerhead</span></td>
           <td>Morning Ride</td>
           <td>cycling</td>
           <td>{{ status_badge("synced") }}</td>

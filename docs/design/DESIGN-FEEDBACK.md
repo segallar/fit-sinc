@@ -48,9 +48,11 @@
 
 | ID | P | тип | Замечание | Предложение | статус |
 | -- | - | --- | --------- | ----------- | ------ |
-| | | | | | |
+| D-001 | P1 | layout | Контент кабинета в узкой колонке по центру | Full width, flush left — все `/app` | accepted |
 
-**Типичные темы:** nav-pills vs sidebar · плотность · mint/primary · footer build info · user block · ширина контента · единый page header.
+**Типичные темы:** nav-pills vs sidebar · плотность · mint/primary · footer build info · user block · единый page header.
+
+**Принято (2026-05):** кабинет `/app` + `/app/admin` — **full width**, **выравнивание влево** (не центрированная колонка). См. [APP-UI.md §1](../APP-UI.md#1-принятые-решения-qa-2026-05).
 
 ---
 

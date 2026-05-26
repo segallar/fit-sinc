@@ -11,6 +11,7 @@
      → /app/activities          ← главный экран (List | Calendar)
      → /app/                    ← сводка sync + sync log (#sync-log)
      → /app/settings            ← profile, connections, garmin-session, password
+     (layout: full width, left-aligned — APP-UI §1)
 
 Просмотр поездки:
   Calendar → клик дня → /app/activities?view=list&date_from=&date_to=

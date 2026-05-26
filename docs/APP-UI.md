@@ -28,6 +28,8 @@
 | **Dashboard** | Сводка sync + CTA на Activities; **sync log** внизу (`#sync-log`); отдельного `/app/log` нет |
 | **Settings** | Одна страница: `#profile` · `#connections` · `#password` — `settings_subnav.html` ✅ |
 | **Garmin login** | Status/refresh в карточке Garmin; **первичный login** — CLI (**2.12** 📋 UI в Connections) |
+| **Ширина кабинета** | **На всю ширину viewport**, контент **прижат к левому краю** — без `max-width` и без `margin: auto` по центру (`getsync-app-main` в [`app.css`](../getsync/web/static/app.css)). Лендинг и `/app/login` — отдельно (узкая колонка допустима). |
+| **Calendar view** | Сетка месяца дополнительно **растягивается по высоте** доступной области (`getsync-app-main--activities-calendar`). |
 
 ---
 
@@ -44,11 +46,11 @@
 ┌──────────────────────────────────────────────────────────────────┐
 │ [ico] GetSync   Activities  Dashboard  Settings   [Admin]  user  │
 ├──────────────────────────────────────────────────────────────────┤
-│  page_header · main content                                       │
+│  page_header · main content (full width, left-aligned)              │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-**Сейчас в коде** ([`cabinet.py`](../getsync/web/cabinet.py)): nav-pills + `app_header` · порядок: **Activities** → Dashboard → Settings · Admin — если `is_admin`.
+**Сейчас в коде** ([`cabinet.py`](../getsync/web/cabinet.py)): nav-pills + topbar · порядок: **Activities** → Dashboard → Settings · Admin — если `is_admin`. **Main:** full width, left edge (см. §1 «Ширина кабинета»).
 
 | URL legacy | Куда |
 |------------|------|
@@ -103,7 +105,7 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 | `--getsync-surface` / `--getsync-surface-muted` | Cards, filter panels |
 | `--getsync-status-*` | synced / error / pending / neutral |
 | `--getsync-radius-md` | Cards, inputs (0.75rem) |
-| `--getsync-page-max` | Max width main column (64rem) |
+| `--getsync-page-max` | Узкая колонка только **site / auth**; кабинет `/app` — **не** использует |
 
 **Плотность кабинета (дополнить в `app.css` при редизайне):**
 

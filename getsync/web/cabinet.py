@@ -36,7 +36,13 @@ def _normalize_active(active: str, prefix: str) -> str:
     return f"{prefix}{active}" if active.startswith("/") else f"{prefix}/{active}"
 
 
-def cabinet_context(request: Request, *, active: str, wide: bool = False) -> dict:
+def cabinet_context(
+    request: Request,
+    *,
+    active: str,
+    wide: bool = False,
+    app_main_class: str = "",
+) -> dict:
     user = user_row_from_session(request)
     lang = normalize_locale(user.locale if user else DEFAULT_LOCALE)
     display_tz = user.timezone if user else DEFAULT_TIMEZONE
@@ -52,6 +58,7 @@ def cabinet_context(request: Request, *, active: str, wide: bool = False) -> dic
         "prefix": APP_PREFIX,
         "admin_prefix": ADMIN_PREFIX,
         "wide": wide,
+        "app_main_class": app_main_class.strip(),
     }
 
 
@@ -61,9 +68,12 @@ def render_cabinet(
     *,
     active: str,
     wide: bool = False,
+    app_main_class: str = "",
     **context: object,
 ) -> str:
-    ctx = cabinet_context(request, active=active, wide=wide)
+    ctx = cabinet_context(
+        request, active=active, wide=wide, app_main_class=app_main_class
+    )
     display_tz = ctx.pop("display_timezone")
     return render_template(
         template,

@@ -31,7 +31,7 @@
   --getsync-radius-md: 0.75rem;
   --getsync-radius-lg: 1rem;
   --getsync-content-max: 72rem;
-  --getsync-page-max: 64rem;
+  --getsync-page-max: 64rem; /* site / auth only; cabinet uses full width */
 
   /* Spacing scale (use in custom components; Bootstrap utilities unchanged) */
   --getsync-space-1: 0.25rem;

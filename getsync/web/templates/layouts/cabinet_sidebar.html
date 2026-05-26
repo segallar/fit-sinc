@@ -8,9 +8,9 @@
 {% block header_extra %}{% endblock %}
 
 {% block content %}
-<div class="getsync-app-layout getsync-app-layout--topbar d-flex flex-column w-100">
+<div class="getsync-app-layout getsync-app-layout--topbar d-flex flex-column w-100{% if app_main_class == 'getsync-app-main--activities-calendar' %} getsync-app-layout--calendar-page{% endif %}">
   {% include "components/app_topbar.html" %}
-  <div class="getsync-app-main flex-grow-1 w-100">
+  <div class="getsync-app-main flex-grow-1 w-100 {{ app_main_class }}">
     {% include "components/flash.html" %}
     {% block page_content %}{% endblock %}
   </div>

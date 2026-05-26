@@ -50,6 +50,8 @@
 | **Settings** | `/app/settings` | Profile, connections, `#garmin-session`, password |
 | **Admin** | `/app/admin/` | Users CRUD |
 
+**Layout кабинета (2026-05):** все страницы `/app` и `/app/admin` — **на всю ширину экрана**, контент **к левому краю** (без центрированной колонки 64rem). Спека: [APP-UI.md §1](APP-UI.md#1-принятые-решения-qa-2026-05).
+
 Редиректы: `/app/log` → `/?#sync-log` · `/app/session` → `/settings#garmin-session`.
 
 ---

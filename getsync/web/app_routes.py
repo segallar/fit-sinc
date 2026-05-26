@@ -13,7 +13,12 @@ from urllib.parse import quote
 from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 
-from getsync.activities.browse import ActivityFilters, ActivityBrowseRow, fetch_activities_page
+from getsync.activities.browse import (
+    ACTIVITY_TYPE_FILTER_CHOICES,
+    ActivityFilters,
+    ActivityBrowseRow,
+    fetch_activities_page,
+)
 from getsync.activities.calendar import build_activity_calendar
 from getsync.timeutil import zone_info
 from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
@@ -478,6 +483,8 @@ async def activities_browser(
         },
         filters_active=filters.is_active(),
         errors_quick_url=errors_quick_url,
+        activity_type_choices=ACTIVITY_TYPE_FILTER_CHOICES,
+        filter_form_id="activities-filter-form",
     )
 
     if view == "calendar":
@@ -536,6 +543,7 @@ async def activities_browser(
             "pages/app/activities.html",
             active="/activities",
             wide=True,
+            app_main_class="getsync-app-main--activities-calendar",
             flash=flash,
             calendar=calendar,
             **common,

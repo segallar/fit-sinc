@@ -1,0 +1,59 @@
+{# filter_form_id, activities_view, filters, per_page, calendar?, activity_type_choices #}
+<form id="{{ filter_form_id | default('activities-filter-form') }}"
+      class="getsync-activities-filter getsync-filter-card card card-body border mb-4"
+      method="get" action="{{ prefix }}/activities">
+  <input type="hidden" name="view" value="{{ activities_view }}">
+  {% if activities_view == 'calendar' and calendar %}
+  <input type="hidden" name="year" value="{{ calendar.year }}">
+  <input type="hidden" name="month" value="{{ calendar.month }}">
+  {% endif %}
+
+  <div class="getsync-activities-filter__row d-flex flex-nowrap align-items-end gap-2">
+    {% if activities_view == 'list' %}
+    <div class="getsync-activities-filter__field">
+      <label class="form-label">Name</label>
+      <input type="search" name="q" value="{{ filters.q }}" class="form-control form-control-sm"
+             placeholder="Morning ride">
+    </div>
+    <div class="getsync-activities-filter__field">
+      <label class="form-label">GetSync</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value=""{% if not filters.status %} selected{% endif %}>all</option>
+        {% for st in ('synced', 'not synced', 'pending', 'error') %}
+        <option value="{{ st }}"{% if filters.status == st %} selected{% endif %}>{{ st }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="getsync-activities-filter__field">
+      <label class="form-label">Type</label>
+      <select name="activity_type" class="form-select form-select-sm">
+        {% for value, label in activity_type_choices %}
+        <option value="{{ value }}"{% if filters.activity_type == value %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="getsync-activities-filter__field getsync-activities-filter__field--date">
+      <label class="form-label">From</label>
+      <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control form-control-sm">
+    </div>
+    <div class="getsync-activities-filter__field getsync-activities-filter__field--date">
+      <label class="form-label">To</label>
+      <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control form-control-sm">
+    </div>
+    <div class="getsync-activities-filter__field getsync-activities-filter__field--narrow">
+      <label class="form-label">Per page</label>
+      <select name="per_page" class="form-select form-select-sm">
+        {% for n in (25, 50, 100) %}
+        <option value="{{ n }}"{% if per_page == n %} selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
+    <div class="getsync-activities-filter__actions d-flex gap-2 flex-shrink-0 ms-auto">
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      <a href="{{ prefix }}/activities?view={{ activities_view }}{% if activities_view == 'calendar' and calendar %}&year={{ calendar.year }}&month={{ calendar.month }}{% endif %}"
+         class="btn btn-outline-secondary btn-sm">Reset</a>
+    </div>
+  </div>
+</form>

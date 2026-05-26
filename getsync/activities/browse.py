@@ -17,6 +17,18 @@ from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 Source = Literal["hammerhead", "garmin"]
 SourceFilter = Literal["", "hammerhead", "garmin"]  # "" = all sources
 BrowseMode = Literal["all", "hammerhead", "garmin"]
+
+# value → label; substring match against row.activity_type (Garmin type_key, HH type name)
+ACTIVITY_TYPE_FILTER_CHOICES: tuple[tuple[str, str], ...] = (
+    ("", "All types"),
+    ("cycling", "Cycling"),
+    ("running", "Running"),
+    ("swimming", "Swimming"),
+    ("walking", "Walking"),
+    ("hiking", "Hiking"),
+    ("mountain_biking", "Mountain biking"),
+    ("triathlon", "Triathlon"),
+)
 MAX_HH_SCAN_PAGES = 25
 MAX_GM_SCAN_ITEMS = 500
 GM_SCAN_BATCH = 100
