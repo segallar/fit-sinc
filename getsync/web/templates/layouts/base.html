@@ -24,8 +24,9 @@
     <main class="flex-1">
       {% block content %}{% endblock %}
     </main>
-    <footer class="mt-10 border-t border-slate-200 pt-4 text-xs text-slate-500">
-      {% block footer %}{% endblock %}
+    <footer class="mt-10 border-t border-slate-200 pt-4 space-y-2 text-xs text-slate-500">
+      {% block footer_extra %}{% endblock %}
+      {% include "components/build_footer.html" %}
     </footer>
   </div>
 </body>

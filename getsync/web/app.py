@@ -8,6 +8,8 @@ from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from getsync import __version__
+from getsync.build_info import git_commit_short
 from getsync.config import get_settings
 from getsync.garmin.web_refresh import refresh_web_session
 from getsync.hammerhead.oauth import verify_webhook_signature
@@ -88,7 +90,7 @@ async def _lifespan(_app: FastAPI):
             await task
 
 
-app = FastAPI(title="GetSync", version="0.5.0", lifespan=_lifespan)
+app = FastAPI(title="GetSync", version=__version__, lifespan=_lifespan)
 # Auth middleware должен быть зарегистрирован раньше SessionMiddleware,
 # иначе request.session недоступен (500 на /, /app, /admin).
 install_auth_middleware(app)
@@ -117,7 +119,8 @@ async def health() -> dict[str, str | bool]:
     return {
         "status": "ok",
         "service": "getsync",
-        "version": "0.5.0",
+        "version": __version__,
+        "commit": git_commit_short(),
         "registration_open": registration_is_open(),
     }
 

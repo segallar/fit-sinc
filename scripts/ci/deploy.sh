@@ -35,6 +35,10 @@ cd "$ROOT"
 
 "${ROOT}/scripts/ci/build-frontend-css.sh"
 
+if COMMIT="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)"; then
+  printf '%s\n' "$COMMIT" > "${ROOT}/getsync/_git_commit.txt"
+fi
+
 rsync -avz --delete --exclude-from=.rsyncignore \
   ./ "${SSH_USER}@${HOST}:${DEPLOY_PATH}/"
 

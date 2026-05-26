@@ -8,5 +8,6 @@ data/
 .DS_Store
 dist/
 *.egg-info/
+getsync/_git_commit.txt
 node_modules/
 frontend/node_modules/
