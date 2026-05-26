@@ -136,6 +136,23 @@ def _activities_return_url(
     return f"{P}/activities?{q}" if q else f"{P}/activities"
 
 
+def _activities_rows_load_url(
+    *,
+    per_page: int,
+    filters: ActivityFilters | None = None,
+) -> str:
+    """Base URL for infinite-scroll row fragments (page added by JS)."""
+    params = _activities_query_params(
+        page=1,
+        per_page=per_page,
+        filters=filters,
+        view="list",
+    )
+    params.pop("page", None)
+    q = H.query_string(params)
+    return f"{P}/activities/rows?{q}" if q else f"{P}/activities/rows"
+
+
 def _shift_month(year: int, month: int, delta: int) -> tuple[int, int]:
     m = month + delta
     y = year
@@ -652,6 +669,8 @@ async def activities_browser(
         month=today.month,
     )
 
+    has_more = result.page < result.total_pages
+
     return render_cabinet(
         request,
         "pages/app/activities.html",
@@ -666,8 +685,62 @@ async def activities_browser(
         params=query_params,
         page=result.page,
         total_pages=result.total_pages,
+        rows_load_url=_activities_rows_load_url(per_page=per_page, filters=filters),
+        next_page=result.page + 1,
+        has_more_rows=has_more,
         activities_tab_query=_activities_tab_query_factory(tab_base),
         **{k: v for k, v in common.items() if k != "activities_tab_query"},
+    )
+
+
+@router.get("/activities/rows", include_in_schema=False)
+async def activities_rows_fragment(
+    request: Request,
+    source: str = Query("", pattern="^(|hammerhead|garmin)$"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=10, le=100),
+    q: str = Query(""),
+    status: str = Query(""),
+    activity_type: str = Query(""),
+    date_from: str = Query(""),
+    date_to: str = Query(""),
+) -> HTMLResponse:
+    """HTML fragment: table rows for infinite scroll."""
+    ctx = _ctx(request)
+    store = _store()
+    user = store.get_user(ctx.user_id)
+    display_tz = user.timezone if user else None
+    filters = ActivityFilters(
+        q=q.strip(),
+        status=status.strip(),
+        activity_type=activity_type.strip(),
+        date_from=date_from.strip(),
+        date_to=date_to.strip(),
+        source=source.strip().lower(),
+    )
+    result = await fetch_activities_page(
+        page=page,
+        per_page=per_page,
+        filters=filters,
+        ctx=ctx,
+        display_tz=display_tz,
+    )
+    list_return = _activities_return_url(
+        page=result.page, per_page=per_page, filters=filters, view="list"
+    )
+    rows = [_activity_row_view(row, return_url=list_return) for row in result.rows]
+    has_more = result.page < result.total_pages
+    html = render_template(
+        "components/activities_table_rows.html",
+        rows=rows,
+        has_more_rows=has_more,
+    )
+    return HTMLResponse(
+        html,
+        headers={
+            "X-Next-Page": str(result.page + 1),
+            "X-Has-More": "1" if has_more else "0",
+        },
     )
 
 

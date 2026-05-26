@@ -23,13 +23,14 @@
       <span class="getsync-activities-subheader__text text-muted">from</span>
 
       <div class="dropdown getsync-filter-dropdown d-inline-block">
-        <button type="button"
-                class="getsync-filter-link dropdown-toggle"
-                data-bs-toggle="dropdown"
-                data-bs-auto-close="outside"
-                aria-expanded="false"
-                aria-label="Filter from date">{{ subheader_date_from }}</button>
-        <div class="dropdown-menu getsync-filter-dropdown-menu shadow-sm p-3">
+        <a href="#"
+           class="getsync-filter-link dropdown-toggle"
+           data-bs-toggle="dropdown"
+           data-bs-auto-close="outside"
+           aria-expanded="false"
+           aria-label="Filter from date"
+           onclick="return false">{{ subheader_date_from }}</a>
+        <div class="dropdown-menu getsync-filter-dropdown-menu p-3">
           <label class="form-label small mb-1" for="activities-date-from">From</label>
           <input id="activities-date-from"
                  type="date"
@@ -43,13 +44,14 @@
       <span class="getsync-activities-subheader__text text-muted">to</span>
 
       <div class="dropdown getsync-filter-dropdown d-inline-block">
-        <button type="button"
-                class="getsync-filter-link dropdown-toggle"
-                data-bs-toggle="dropdown"
-                data-bs-auto-close="outside"
-                aria-expanded="false"
-                aria-label="Filter to date">{{ subheader_date_to }}</button>
-        <div class="dropdown-menu getsync-filter-dropdown-menu shadow-sm p-3">
+        <a href="#"
+           class="getsync-filter-link dropdown-toggle"
+           data-bs-toggle="dropdown"
+           data-bs-auto-close="outside"
+           aria-expanded="false"
+           aria-label="Filter to date"
+           onclick="return false">{{ subheader_date_to }}</a>
+        <div class="dropdown-menu getsync-filter-dropdown-menu p-3">
           <label class="form-label small mb-1" for="activities-date-to">To</label>
           <input id="activities-date-to"
                  type="date"
@@ -61,12 +63,13 @@
       </div>
 
       <div class="dropdown getsync-filter-dropdown d-inline-block">
-        <button type="button"
-                class="getsync-filter-link dropdown-toggle"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-                aria-label="Activity type filter">{{ subheader_type_label }}</button>
-        <ul class="dropdown-menu getsync-filter-dropdown-menu shadow-sm">
+        <a href="#"
+           class="getsync-filter-link dropdown-toggle"
+           data-bs-toggle="dropdown"
+           aria-expanded="false"
+           aria-label="Activity type filter"
+           onclick="return false">{{ subheader_type_label }}</a>
+        <ul class="dropdown-menu getsync-filter-dropdown-menu">
           {% for link in type_filter_links %}
           <li>
             <a class="dropdown-item{% if link.active %} active{% endif %}" href="{{ link.href }}">{{ link.label }}</a>
@@ -76,13 +79,14 @@
       </div>
 
       <div class="dropdown getsync-filter-dropdown d-inline-block">
-        <button type="button"
-                class="getsync-filter-link getsync-filter-link--icon dropdown-toggle"
-                data-bs-toggle="dropdown"
-                data-bs-auto-close="outside"
-                aria-expanded="false"
-                aria-label="More filters">?</button>
-        <div class="dropdown-menu getsync-filter-dropdown-menu shadow-sm p-3">
+        <a href="#"
+           class="getsync-filter-link getsync-filter-link--icon dropdown-toggle"
+           data-bs-toggle="dropdown"
+           data-bs-auto-close="outside"
+           aria-expanded="false"
+           aria-label="More filters"
+           onclick="return false">?</a>
+        <div class="dropdown-menu getsync-filter-dropdown-menu p-3">
           <p class="small text-muted mb-2">Source and sync filters</p>
           <label class="form-label small mb-1" for="activities-source-filter">Source</label>
           <select id="activities-source-filter"

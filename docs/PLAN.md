@@ -139,6 +139,7 @@ flowchart LR
 | **2.12** | **P1** | Garmin login в Settings (не CLI) | 1–2 вечера | **2.10.2** |
 | **2.5** | **P2** | i18n тел страниц кабинета; lang в шапке | 1–2 вечера | лучше с **2.10** |
 | **2.3b** | **P3** | Календарь v6.1: дни только в облаке | 1 вечер | browse API |
+| **?** | **Обсуждение** | **Кэш browse/calendar:** нужен ли server-side кэш каталога (SQLite + повторные HH/Garmin API) при infinite scroll и фильтрах? | — | **не делать до решения** |
 | **1.5 C** | ⏸ H1 | DNS getsync.me, certbot — [1.5-RENAME.md](1.5-RENAME.md) | 1–2 дня | после волны UI |
 | **2.11** | ⏸ | Лендинг SEO/скрины (**2.11.3–4**) | 2–3 вечера | **1.5 C**, **2.10** |
 | **2.4** | ⏸ | Telegram-алерты | 1–2 вечера | стабильный log UX |
@@ -203,7 +204,7 @@ flowchart LR
 | Подзадача | Содержание | Оценка |
 | --------- | ---------- | ------ |
 | **2.10.1** | Перенос `cabinet.html` → `cabinet_sidebar.html` на все `/app` | 1–2 вечера |
-| **2.10.2** | Полировка dashboard, activities, settings; **2.12** в Connections | 3–5 дней |
+| **2.10.2** | Полировка dashboard, activities, settings; **2.12** в Connections; infinite scroll; **?** кэш — [реестр](#реестр-открытых-задач) | 3–5 дней |
 | **2.10.3** | Admin, mobile, a11y | 2–3 дня |
 
 Прототип: `/app/ui-preview` · [design/README.md](design/README.md).

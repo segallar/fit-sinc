@@ -1,0 +1,31 @@
+{# Partial: <tr> rows for Activities list (full page + infinite scroll). #}
+{% from "components/status_badge.html" import status_badge %}
+{% for row in rows %}
+<tr class="getsync-activity-row">
+  <td>{% set iso = row.activity_date %}{% include "components/datetime_cell.html" %}</td>
+  <td class="getsync-col-source text-center">
+    {% with source=row.source %}{% include "components/activity_source_icon.html" %}{% endwith %}
+  </td>
+  <td>{{ row.name }}</td>
+  <td>{{ row.activity_type }}</td>
+  <td>{{ fmt_km(row.distance) }}</td>
+  <td>{{ row.duration_fmt }}</td>
+  <td class="getsync-activity-row-menu-anchor position-relative">
+    {{ status_badge(row.sync_status, row.sync_detail) }}
+    <div class="dropdown position-absolute top-0 start-0 w-100 h-100">
+      <button type="button"
+              class="btn p-0 border-0 getsync-activity-row-menu-btn w-100 h-100"
+              data-bs-toggle="dropdown"
+              data-bs-display="static"
+              data-bs-auto-close="outside"
+              aria-label="Activity linked info and actions"></button>
+      {% include "components/activity_row_menu.html" %}
+    </div>
+  </td>
+</tr>
+{% endfor %}
+{% if has_more_rows %}
+<tr class="getsync-activities-load-sentinel">
+  <td colspan="7" class="text-center text-muted py-2 small">Scroll for more…</td>
+</tr>
+{% endif %}
