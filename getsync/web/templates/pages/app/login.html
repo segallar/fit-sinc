@@ -4,20 +4,25 @@
 {% block title %}{{ form_t.page_title }}{% endblock %}
 
 {% block auth_content %}
-<h2 class="h4 mb-4">{{ form_t.sign_in_h2 }}</h2>
+<h2 class="h4 mb-4 text-center">{{ form_t.sign_in_h2 }}</h2>
 {% if error %}
 <div class="alert alert-danger">{{ form_t.error_invalid_credentials }}</div>
 {% endif %}
-<form method="post" action="{{ prefix }}/login">
-  <div class="mb-3">
-    <label class="form-label">{{ form_t.email_label }}</label>
-    <input type="email" name="email" class="form-control" required autocomplete="username">
-  </div>
-  <div class="mb-3">
-    <label class="form-label">{{ form_t.password_label }}</label>
-    <input type="password" name="password" class="form-control" required autocomplete="current-password">
-  </div>
-  <button type="submit" class="btn btn-primary w-100">{{ form_t.sign_in_button }}</button>
+<form method="post" action="{{ prefix }}/login" class="getsync-auth-form">
+  {% set field_id = 'login-email' %}
+  {% set label = form_t.email_label %}
+  {% set name = 'email' %}
+  {% set input_type = 'email' %}
+  {% set required = true %}
+  {% set autocomplete = 'username' %}
+  {% include "components/auth_form_field.html" %}
+  {% set field_id = 'login-password' %}
+  {% set label = form_t.password_label %}
+  {% set name = 'password' %}
+  {% set input_type = 'password' %}
+  {% set autocomplete = 'current-password' %}
+  {% include "components/auth_form_field.html" %}
+  <button type="submit" class="btn btn-primary btn-lg w-100">{{ form_t.sign_in_button }}</button>
 </form>
 {% if registration_open %}
 <p class="mt-3 mb-0 text-center small text-muted">
