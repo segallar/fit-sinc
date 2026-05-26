@@ -45,7 +45,7 @@ class TestRegisterRoutes(unittest.TestCase):
                 client = TestClient(app)
                 r = client.get("/register")
                 self.assertEqual(r.status_code, 403)
-                self.assertIn("закрыта", r.text)
+                self.assertIn("недоступна", r.text)
 
     def test_register_and_login_redirects_to_app(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -80,9 +80,9 @@ class TestRegisterRoutes(unittest.TestCase):
                 self.assertEqual(user.slug, "newuser")
                 self.assertFalse(user.is_admin)
 
-    def test_home_has_login_and_signup(self) -> None:
+    def test_home_login_always_signup_when_open(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            with isolated_env(Path(tmp)):
+            with isolated_env(Path(tmp), REGISTRATION_OPEN="true"):
                 from getsync.web.app import app
 
                 client = TestClient(app)
@@ -91,6 +91,17 @@ class TestRegisterRoutes(unittest.TestCase):
                 self.assertIn("/app/login", r.text)
                 self.assertIn("/register", r.text)
                 self.assertIn("Sign up", r.text)
+
+    def test_home_hides_signup_when_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(Path(tmp), REGISTRATION_OPEN="false"):
+                from getsync.web.app import app
+
+                client = TestClient(app)
+                r = client.get("/")
+                self.assertEqual(r.status_code, 200)
+                self.assertIn("/app/login", r.text)
+                self.assertNotIn("Sign up", r.text)
 
 
 if __name__ == "__main__":

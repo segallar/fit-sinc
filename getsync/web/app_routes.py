@@ -17,6 +17,7 @@ from getsync.config import get_settings
 from getsync.garmin.web_refresh import refresh_web_session, session_monitor
 from getsync.state.store import Store
 from getsync.sync.service import sync_activity
+from getsync.users.bootstrap import registration_is_open
 from getsync.users.context import UserContext
 from getsync.web import html as H
 from getsync.web.auth import (
@@ -154,6 +155,7 @@ async def app_login_form(error: str = "") -> str:
         "pages/app/login.html",
         prefix=P,
         error=bool(error),
+        registration_open=registration_is_open(),
     )
 
 

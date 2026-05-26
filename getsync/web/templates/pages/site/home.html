@@ -21,13 +21,19 @@
      class="inline-flex w-full items-center justify-center rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-800 sm:w-auto">
     Login
   </a>
+  {% if registration_open %}
   <a href="/register"
      class="inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 sm:w-auto">
     Sign up
   </a>
+  {% endif %}
 </div>
 <p class="mt-4 text-xs text-slate-500">
+  {% if registration_open %}
   После регистрации подключите Hammerhead и Garmin в <strong>Settings</strong> кабинета.
+  {% else %}
+  Новые аккаунты создаёт администратор. Уже есть доступ — нажмите <strong>Login</strong>.
+  {% endif %}
 </p>
 {% endblock %}
 
