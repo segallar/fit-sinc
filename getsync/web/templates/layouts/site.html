@@ -37,11 +37,18 @@
 </div>
 {% endblock %}
 
-{% block footer_extra %}
-<div class="getsync-site-inner">
-  <nav class="mb-2">
-    <a href="/health" class="me-3">Health</a>
-    <a href="https://getsync.me">getsync.me</a>
-  </nav>
-</div>
+{% block footer %}
+<footer class="getsync-footer getsync-site-footer text-muted small mt-auto">
+  <div class="getsync-site-inner">
+    <div class="getsync-site-footer-row">
+      <nav class="getsync-site-footer-nav" aria-label="Footer">
+        <a href="/health">{{ t.footer_health }}</a>
+        <a href="https://getsync.me">getsync.me</a>
+      </nav>
+      <div class="getsync-site-footer-meta">
+        {% block footer_build %}{% include "components/build_footer.html" %}{% endblock %}
+      </div>
+    </div>
+  </div>
+</footer>
 {% endblock %}

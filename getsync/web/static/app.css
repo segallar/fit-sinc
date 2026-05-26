@@ -54,14 +54,54 @@ body {
   padding-block: 2rem 2.5rem;
 }
 
-.getsync-site .getsync-footer {
-  padding-bottom: 2rem;
-  padding-inline: 1.5rem;
+/* Landing footer — full-width band, content aligned to getsync-site-inner */
+.getsync-site .getsync-site-footer {
+  margin-top: 3rem;
+  padding: 0;
+  border-top: 1px solid var(--getsync-primary-100);
+  background: linear-gradient(180deg, var(--getsync-primary-50) 0%, #f4faf8 100%);
 }
 
-.getsync-site .getsync-footer > p {
-  max-width: 72rem;
-  margin-inline: auto;
+.getsync-site .getsync-site-footer .getsync-site-inner {
+  padding-block: 1.75rem 2rem;
+}
+
+.getsync-site-footer-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .getsync-site-footer-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+}
+
+.getsync-site-footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.getsync-site-footer-nav a {
+  color: var(--getsync-primary-700);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.getsync-site-footer-nav a:hover {
+  color: var(--getsync-primary-900);
+  text-decoration: underline;
+}
+
+.getsync-site-footer-meta p {
+  margin-bottom: 0;
+  font-size: 0.75rem;
 }
 
 .getsync-faq {
@@ -166,7 +206,7 @@ body {
   margin-left: 0.25rem;
 }
 
-footer.getsync-footer {
+footer.getsync-footer:not(.getsync-site-footer) {
   margin-top: 2.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--bs-border-color);
