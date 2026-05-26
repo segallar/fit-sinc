@@ -524,20 +524,6 @@ async def activities_browser(
     tab_query = _activities_tab_query_factory(base_params)
     flash = {"queued": queued} if queued else None
 
-    errors_quick_url = None
-    if filters.status != "error":
-        err_params: dict[str, object] = {
-            "status": "error",
-            "per_page": per_page,
-            "view": view,
-        }
-        if filters.source:
-            err_params["source"] = filters.source
-        if view == "calendar":
-            err_params["year"] = cal_year
-            err_params["month"] = cal_month
-        errors_quick_url = f"{P}/activities?{H.query_string(err_params)}"
-
     common = dict(
         activities_view=view,
         activities_tab_query=tab_query,
@@ -551,7 +537,6 @@ async def activities_browser(
             "source": filters.source,
         },
         filters_active=filters.is_active(),
-        errors_quick_url=errors_quick_url,
         activity_type_choices=ACTIVITY_TYPE_FILTER_CHOICES,
         filter_form_id="activities-filter-form",
         **_activities_subheader_context(
@@ -621,7 +606,7 @@ async def activities_browser(
             "pages/app/activities.html",
             active="/activities",
             wide=True,
-            app_main_class="getsync-app-main--activities-calendar",
+            app_main_class="getsync-app-main--activities",
             flash=flash,
             calendar=calendar,
             **common,
@@ -670,6 +655,7 @@ async def activities_browser(
         "pages/app/activities.html",
         active="/activities",
         wide=True,
+        app_main_class="getsync-app-main--activities",
         flash=flash,
         rows=rows,
         browse_error=result.error,

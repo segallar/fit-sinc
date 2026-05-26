@@ -1,6 +1,6 @@
 {# filter_form_id, activities_view, filters, calendar?, picker dates, type_filter_links #}
 <form id="{{ filter_form_id | default('activities-filter-form') }}"
-      class="getsync-activities-subheader mb-3"
+      class="getsync-activities-subheader mb-2"
       method="get"
       action="{{ prefix }}/activities">
   <input type="hidden" name="view" value="{{ activities_view }}">
@@ -17,8 +17,8 @@
   <input type="hidden" name="per_page" value="{{ per_page }}">
   {% endif %}
 
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 gap-md-3">
-    <div class="getsync-activities-subheader__left d-flex flex-wrap align-items-baseline gap-1">
+  <div class="getsync-activities-subheader__row d-flex flex-nowrap align-items-center justify-content-between gap-2 gap-md-3">
+    <div class="getsync-activities-subheader__left d-flex flex-nowrap align-items-baseline gap-1">
       <span class="getsync-activities-subheader__title fw-semibold">Activities</span>
       <span class="getsync-activities-subheader__text text-muted">from</span>
 

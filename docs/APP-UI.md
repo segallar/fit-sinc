@@ -214,7 +214,7 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 
 | Блок | Содержание |
 |------|------------|
-| Header | Title, lead («all sources»), optional «Show errors only» |
+| Header | Sub-header: title, date/type dropdowns, view toggle List \| Calendar \| Map |
 | **Tabs** | **List** (default) \| **Calendar** — `activities_tabs.html` |
 | Filters | List: source, `q`, status, type, date_from/to, per_page · Calendar: **source** only |
 | **Calendar view** | `?view=calendar&year=&month=` — сетка месяца, worst status, счётчик; ‹ › Today |
