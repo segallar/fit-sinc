@@ -44,6 +44,33 @@ class TestAppLogin(unittest.TestCase):
                 self.assertIn("/app/logout", dash.text)
                 self.assertNotIn('nav><a href="/app/logout">Logout</a>', dash.text)
 
+    def test_session_cookie_secure_when_enabled(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(
+                Path(tmp),
+                SESSION_COOKIE_SECURE="true",
+            ):
+                settings = __import__(
+                    "fit_sinc.config", fromlist=["get_settings"]
+                ).get_settings()
+                Store(settings.db_path).ensure_default_user(
+                    email="owner@test.local",
+                    password="good-pass",
+                )
+
+                from fit_sinc.web.app import app
+
+                client = TestClient(app, base_url="https://testserver")
+                r = client.post(
+                    "/app/login",
+                    data={"email": "owner@test.local", "password": "good-pass"},
+                    follow_redirects=False,
+                )
+                self.assertEqual(r.status_code, 303)
+                cookie = r.headers.get("set-cookie", "")
+                self.assertIn("fit_sinc_session=", cookie)
+                self.assertIn("secure", cookie.lower())
+
     def test_login_wrong_password_redirects_with_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):

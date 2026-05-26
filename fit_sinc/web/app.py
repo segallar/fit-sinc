@@ -18,7 +18,11 @@ from fit_sinc.users.bootstrap import apply_bootstrap_admin
 from fit_sinc.users.migrate import infer_hammerhead_user_id, migrate_legacy_files
 from fit_sinc.web.admin_routes import router as admin_router
 from fit_sinc.web.app_routes import router as app_router
-from fit_sinc.web.auth import install_auth_middleware, install_sessions
+from fit_sinc.web.auth import (
+    install_auth_middleware,
+    install_sessions,
+    warn_insecure_session_config,
+)
 from fit_sinc.web.settings_routes import router as settings_router
 from fit_sinc.web.site_routes import router as site_router
 logger = logging.getLogger("fit_sinc")
@@ -32,6 +36,8 @@ def _bootstrap() -> None:
     migrate_legacy_files(settings, settings.default_user_id)
     apply_bootstrap_admin(store, settings)
     logger.info("bootstrap: default user ready (hh_user_id=%s)", hh_uid)
+    for msg in warn_insecure_session_config():
+        logger.warning("session config: %s", msg)
 
 
 async def _jwt_refresh_loop() -> None:

@@ -162,7 +162,7 @@ fit_sinc serve
 | Webhook | HMAC | без изменений |
 | Кабинет | Сессия `fit_sinc_session` (HttpOnly) | + `https_only` на prod |
 | Снаружи | nginx → `127.0.0.1` | без изменений |
-| UI снаружи | **Basic Auth** на nginx (двойной вход) | только сессия приложения |
+| UI снаружи | Сессия приложения (`SESSION_COOKIE_SECURE` на HTTPS) | — |
 | Админ | `users.is_admin` + `/app/admin/*` | без отдельного пароля в `.env` |
 | Секреты | `.env` на сервере | per-tenant Garmin **не** в общем `.env` |
 
@@ -170,7 +170,7 @@ fit_sinc serve
 
 ## Ограничения (актуальные)
 
-- nginx Basic Auth + `/app/login` (5b.5)
+- Даты в UI в MSK (1.7)
 - Нет `/app/settings` и `/register` — HH/Garmin через CLI или админку (5b.3–5b.4)
 - Даты в UI в основном MSK (`timeutil.py`); `users.timezone` — поле есть, полное форматирование в TZ — позже
 - Только активности Hammerhead → Garmin (не routes)

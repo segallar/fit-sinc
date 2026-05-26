@@ -11,7 +11,7 @@ flowchart LR
     Systemd --> App[uvicorn :8080]
     Nginx[nginx TLS] --> App
     HH[Hammerhead webhook] --> Nginx
-    User[Браузер + Basic Auth] --> Nginx
+    User[Браузер] --> Nginx
 ```
 
 | Компонент | Значение |
@@ -37,11 +37,6 @@ apt install -y python3.12-venv apache2-utils nginx certbot python3-certbot-nginx
 useradd -r -d /opt/fit_sinc -s /usr/sbin/nologin fit_sinc
 mkdir -p /opt/fit_sinc/data/fits
 chown -R fit_sinc:fit_sinc /opt/fit_sinc
-
-# nginx + Basic Auth
-htpasswd -nbB admin 'YOUR_PASSWORD' > /etc/nginx/.htpasswd_fit_sinc
-chmod 640 /etc/nginx/.htpasswd_fit_sinc
-chown root:www-data /etc/nginx/.htpasswd_fit_sinc
 
 cp deploy/nginx/fit.conf /etc/nginx/conf.d/fit.conf
 cp deploy/fit-sinc.service /etc/systemd/system/fit-sinc.service
@@ -135,8 +130,9 @@ curl -sk -o /dev/null -w "%{http_code}\n" -X POST \
 # Лендинг + логин (без Basic Auth на romansegalla.online)
 curl -sk https://romansegalla.online/ | head -20
 
-# UI fit (с Basic Auth, пока 5b.5 не снят)
-curl -sk -u admin:PASSWORD https://fit.romansegalla.online/
+# UI fit (session login, без nginx Basic Auth)
+curl -sk -o /dev/null -w "%{http_code}\n" https://fit.romansegalla.online/app/login
+# ожидается 200
 
 # На сервере
 ssh root@sirocco.romansegalla.online \
@@ -151,9 +147,11 @@ ssh root@sirocco.romansegalla.online \
 |------|------|------------|
 | `/webhooks/*` | нет | Hammerhead webhook (HMAC в приложении) |
 | `/health` | нет | Healthcheck |
-| `/`, `/static/*`, `/favicon.ico` | Basic Auth | UI и статика |
+| `/`, `/static/*`, `/favicon.ico` | нет (сессия в приложении) | UI и статика |
 
 Конфиг: [`deploy/nginx/fit.conf`](../deploy/nginx/fit.conf)
+
+**Production `.env`:** `SESSION_SECRET` (длинная случайная строка) и `SESSION_COOKIE_SECURE=true`.
 
 **romansegalla.online** — лендинг и тот же uvicorn без Basic Auth:
 
@@ -265,5 +263,6 @@ Auth tokens (Hammerhead/Garmin) по-прежнему обновляются в�
 - [ ] `systemctl is-active fit-sinc` → `active`
 - [ ] `/health` → 200
 - [ ] Webhook без HMAC → 403, с HMAC → 200
-- [ ] Dashboard открывается с Basic Auth
+- [ ] `SESSION_COOKIE_SECURE=true` в `/opt/fit_sinc/.env` на prod
+- [ ] Dashboard открывается по `/app/login` (без nginx Basic Auth)
 - [ ] `fit_sinc hammerhead status` и `garmin status` на сервере → connected

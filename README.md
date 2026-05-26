@@ -164,7 +164,7 @@ fit_sinc serve                  # http://127.0.0.1:8080 — webhook + UI
 | `/activities/{id}/fit` | Скачать `.fit` |
 | `POST /activities/{id}/retry` | Повторить sync |
 
-В production UI обычно за nginx с Basic Auth; приложение слушает только `127.0.0.1`.
+В production UI за nginx (TLS); вход по email+password в `/app/login`, cookie `SESSION_COOKIE_SECURE=true`. Приложение слушает только `127.0.0.1`.
 
 ## Деплой и CI
 

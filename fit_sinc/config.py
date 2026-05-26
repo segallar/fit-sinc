@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     garmin_jwt_refresh_before_sec: int = 3600
 
     session_secret: str = "change-me-in-production"
+    session_cookie_secure: bool = False
 
     default_user_id: str = "default"
     registration_open: bool = False
@@ -44,6 +45,13 @@ class Settings(BaseSettings):
     @property
     def db_path(self) -> Path:
         return self.data_dir / "fit_sinc.db"
+
+    def session_secret_is_default(self) -> bool:
+        return self.session_secret.strip() in (
+            "",
+            "change-me-in-production",
+            "change-me-in-production-use-long-random-string",
+        )
 
 
 @lru_cache

@@ -1,6 +1,6 @@
 # Roadmap fit_sinc
 
-> **Статус (2026-05-26):** MVP (фазы 0–5) в production; **5b** — **1.2**/**1.3** в коде; **1.1** security tests ✅; **1.4** Basic Auth — открыто.
+> **Статус (2026-05-26):** MVP (фазы 0–5) в production; **5b** горизонт 1: **1.1–1.4** ✅; далее **1.7**, **1.8**, **2.1**.
 
 **Текущее состояние:** [README](../README.md) · [ARCHITECTURE.md](ARCHITECTURE.md)  
 **Операции:** [CI-CD.md](CI-CD.md) · [API Hammerhead](API_HAMMERHEAD.md) · [API Garmin](API_GARMIN.md)
@@ -43,7 +43,7 @@
 | 3 Garmin upload (web JWT, browser, fallback) | ✅ код / ⚠️ ops на сервере |
 | 4 CI (GitHub Actions test + deploy main) | ✅ |
 | 5 Мультипользовательность (tenants, `/admin`, `/app`) | ✅ MVP |
-| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | 🔄 **1.2–1.3** ✅ · 🔴 **1.4** · 🟡 **2.1** |
+| **5b** Единый кабинет, регистрация, настройки, без Basic Auth | **1.1–1.4** ✅ · 🟡 **2.1** register |
 | **UI** Новый интерфейс приложения (Jinja2 + Tailwind) | ✅ |
 | **Design** Проектирование и улучшение UI/UX (дизайн-система) | 📋 · **2.10** |
 | **Site** Главная страница [romansegalla.online](https://romansegalla.online) | MVP ✅ · полировка **2.11** |
@@ -113,7 +113,7 @@
 | **1.1** | **[Security](#security-тесты-доступа-session-auth):** тесты session auth, tenant isolation, webhook HMAC | ✅ | 5b.1 ✅ |
 | **1.2** | **5b.4:** `/app/settings` — профиль, смена пароля, Hammerhead OAuth, Garmin connect/status | 2 вечера | UI ✅ |
 | **1.3** | **5b.2:** пункт **Settings** в nav → `/app/settings` | ✅ | UI ✅ |
-| **1.4** | **5b.5:** снять nginx Basic Auth; `SESSION_SECRET`, `https_only` cookie | ½ дня | **1.1** |
+| **1.4** | **5b.5:** снять nginx Basic Auth; `SESSION_SECRET`, `https_only` cookie | ✅ | **1.1** |
 | **1.5** | **9:** переименование — бренд, пакет, домен ([план](1.5-RENAME.md)) | 1–2 дня | **1.4**; имя **R1** |
 | **1.6** | **Docs:** ARCHITECTURE — `data/users/{id}/`, без глобального `garmin_web` | 1–2 ч | — |
 | **1.7** | **Ops:** даты в UI в `users.timezone` (убрать хардкод MSK в подписях) | ½ вечера | **1.2** |
@@ -233,7 +233,7 @@ flowchart TB
 
 **Ограничения MVP (ещё открыты в 5b):**
 
-- nginx **Basic Auth** на весь UI (двойной вход) — снять в **1.4** (5b.5)
+- ~~nginx Basic Auth~~ — снят (**1.4**)
 - Нет `/register` — **2.1** (5b.3)
 - Нет `/app/settings` — профиль и HH/Garmin только через админку / CLI — **1.2** (5b.4)
 - Даты в таблицах пока в MSK ([`timeutil.py`](../fit_sinc/timeutil.py)); поле `users.timezone` есть, форматирование в TZ пользователя — вместе с **6** / settings
@@ -1200,7 +1200,7 @@ StorageBackend          — LocalFS | S3 (boto3)
 - [x] **1.1** Security — session auth, POST `/app/*`, admin 403, tenant isolation, webhook HMAC
 - [x] **1.2** 5b.4 — `/app/settings`: профиль, пароль, Hammerhead/Garmin
 - [x] **1.3** 5b.2 — пункт **Settings** в nav
-- [ ] **1.4** 5b.5 — nginx без Basic Auth; `https_only` cookie (после **1.1**)
+- [x] **1.4** 5b.5 — nginx без Basic Auth; `SESSION_COOKIE_SECURE` (https_only cookie)
 - [ ] **1.5** 9 — переименование — [1.5-RENAME.md](1.5-RENAME.md) (бренд R1; после **1.4**)
 - [x] **1.6** Docs — ARCHITECTURE: `data/users/{id}/`
 - [ ] **1.7** Ops — даты в UI по `users.timezone`

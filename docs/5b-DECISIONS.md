@@ -31,7 +31,7 @@ fit_sinc user list                             # флаг [admin]
 ## Что ещё не меняется (до 5b.1+)
 
 - ~~Отдельный `/admin/login` и `ADMIN_PASSWORD`~~ — убрано в **5b.1**; админ только через `/app/login` + `users.is_admin`.
-- nginx **Basic Auth** на UI — снимается в **5b.5**, только после единого login в **5b.1**.
+- nginx **Basic Auth** на UI — снят (**1.4**); вход только через `/app/login` + `SESSION_COOKIE_SECURE`.
 - `/register` и `/app/settings` — **5b.3** / **5b.4**.
 
 ## Переменные окружения

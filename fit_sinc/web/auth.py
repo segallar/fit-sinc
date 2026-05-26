@@ -24,8 +24,23 @@ def install_sessions(app: FastAPI) -> None:
         session_cookie="fit_sinc_session",
         max_age=14 * 24 * 3600,
         same_site="lax",
-        https_only=False,
+        https_only=settings.session_cookie_secure,
     )
+
+
+def warn_insecure_session_config() -> list[str]:
+    """Return human-readable warnings for production session setup."""
+    settings = get_settings()
+    warnings: list[str] = []
+    if settings.session_secret_is_default():
+        warnings.append(
+            "SESSION_SECRET is default — set a long random value in .env"
+        )
+    if not settings.session_cookie_secure:
+        warnings.append(
+            "SESSION_COOKIE_SECURE=false — set SESSION_COOKIE_SECURE=true on HTTPS"
+        )
+    return warnings
 
 
 def user_context_from_session(request: Request) -> UserContext | None:
