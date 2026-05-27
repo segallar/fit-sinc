@@ -149,7 +149,7 @@ getsync --user <slug> garmin status   # upload_ready
 |------|-----|----------|
 | `/` | Все | Лендинг ([`site_routes.py`](../getsync/web/site_routes.py)) |
 | `/webhooks/hammerhead` | Hammerhead | Приём событий |
-| `/health` | Мониторинг | `{"service":"getsync","version":"0.6.0"}` |
+| `/health` | Мониторинг | `{"service":"getsync","version":"0.7.0"}` (dev) |
 | `/app/login` | Гость | Вход email + password |
 | `/app/activities` | Пользователь | **Главный экран:** List \| Calendar, unified sources; sync summary внизу |
 | `/app/` | Пользователь | **303** → `/app/activities` |
