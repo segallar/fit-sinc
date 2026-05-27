@@ -7,9 +7,10 @@ from dataclasses import dataclass
 from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
+from getsync.audit import log as audit_log
 from getsync.config import get_settings
 from getsync.state.store import Store
-from getsync.web.auth import APP_ADMIN_PREFIX
+from getsync.web.auth import APP_ADMIN_PREFIX, user_row_from_session
 from getsync.web.cabinet import render_cabinet
 from getsync.web.admin_health import admin_health_context
 from getsync.web.admin_log import admin_log_context
@@ -120,7 +121,7 @@ async def admin_user_create(
 ) -> Response:
     store = _store()
     try:
-        store.create_user(
+        user = store.create_user(
             slug=slug,
             display_name=display_name,
             email=email,
@@ -129,6 +130,15 @@ async def admin_user_create(
             locale=locale,
             telegram=telegram or None,
             hammerhead_user_id=hammerhead_user_id or None,
+        )
+        actor = user_row_from_session(request)
+        audit_log(
+            store,
+            "user_created",
+            f"email={user.email}",
+            user_id=user.id,
+            subject=user.slug,
+            actor_user_id=actor.id if actor else None,
         )
     except Exception as exc:
         form = UserFormData(
@@ -198,6 +208,7 @@ async def admin_user_edit(request: Request, user_id: str) -> str:
 
 @router.post("/users/{user_id}/edit", include_in_schema=False)
 async def admin_user_update(
+    request: Request,
     user_id: str,
     display_name: str = Form(...),
     email: str = Form(...),
@@ -221,5 +232,15 @@ async def admin_user_update(
         password=password or None,
         disabled=disabled == "on",
         is_admin=is_admin == "on",
+    )
+    target = store.get_user(user_id)
+    actor = user_row_from_session(request)
+    audit_log(
+        store,
+        "user_updated",
+        f"email={email.strip().lower()}",
+        user_id=user_id,
+        subject=target.slug if target else user_id,
+        actor_user_id=actor.id if actor else None,
     )
     return RedirectResponse(f"{A}/", status_code=303)

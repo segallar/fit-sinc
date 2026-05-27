@@ -71,11 +71,11 @@ class SessionRefreshEventRow:
 
 @dataclass(frozen=True)
 class AdminLogRow:
-    """Unified admin log entry (sync pipeline + Garmin JWT refresh)."""
+    """Unified admin log entry (sync, Garmin JWT, admin audit)."""
 
     created_at: str
     user_id: str | None
-    log_kind: str  # sync | garmin
+    log_kind: str  # sync | garmin | admin
     event_type: str
     subject: str | None
     message: str | None
@@ -136,6 +136,7 @@ class Store:
             self._ensure_activities_table(conn)
             self._ensure_sync_events_table(conn)
             self._ensure_session_refresh_table(conn)
+            self._ensure_admin_audit_table(conn)
             conn.execute(
                 """
                 CREATE INDEX IF NOT EXISTS idx_activities_user_date
@@ -152,6 +153,12 @@ class Store:
                 """
                 CREATE INDEX IF NOT EXISTS idx_session_refresh_created
                     ON session_refresh_events(created_at DESC)
+                """
+            )
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_admin_audit_created
+                    ON admin_audit_events(created_at DESC)
                 """
             )
 
@@ -317,6 +324,22 @@ class Store:
             conn.execute("ALTER TABLE session_refresh_events ADD COLUMN user_id TEXT")
             conn.execute(
                 "UPDATE session_refresh_events SET user_id = 'default' WHERE user_id IS NULL"
+            )
+
+    def _ensure_admin_audit_table(self, conn: sqlite3.Connection) -> None:
+        if not self._table_exists(conn, "admin_audit_events"):
+            conn.execute(
+                """
+                CREATE TABLE admin_audit_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT,
+                    actor_user_id TEXT,
+                    event_type TEXT NOT NULL,
+                    subject TEXT,
+                    message TEXT,
+                    created_at TEXT NOT NULL
+                )
+                """
             )
 
     def _migrate_activities_v1(self, conn: sqlite3.Connection) -> None:
@@ -703,6 +726,39 @@ class Store:
             (message or "")[:500],
         )
 
+    def log_admin_audit(
+        self,
+        event_type: str,
+        message: str = "",
+        *,
+        user_id: str | None = None,
+        subject: str | None = None,
+        actor_user_id: str | None = None,
+    ) -> None:
+        """Admin-visible audit: user create/update, registration, etc."""
+        msg = (message or "")[:2000] or None
+        if actor_user_id:
+            actor = self.get_user(actor_user_id)
+            who = actor.slug if actor else actor_user_id
+            msg = f"by {who}: {msg}" if msg else f"by {who}"
+        with self._conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO admin_audit_events (
+                    user_id, actor_user_id, event_type, subject, message, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (user_id, actor_user_id, event_type, subject, msg, _utcnow()),
+            )
+        _audit_log.info(
+            "admin user=%s actor=%s event=%s subject=%s msg=%s",
+            user_id or "—",
+            actor_user_id or "—",
+            event_type,
+            subject or "—",
+            (msg or "")[:500],
+        )
+
     def count_activities_by_status(
         self,
         user_id: str,
@@ -886,9 +942,11 @@ class Store:
                    WHERE (? IS NULL OR user_id = ?))
                 + (SELECT COUNT(*) FROM session_refresh_events
                    WHERE (? IS NULL OR user_id = ?))
+                + (SELECT COUNT(*) FROM admin_audit_events
+                   WHERE (? IS NULL OR user_id = ?))
                 AS n
                 """,
-                (user_id, user_id, user_id, user_id),
+                (user_id, user_id, user_id, user_id, user_id, user_id),
             ).fetchone()
         return int(row["n"]) if row else 0
 
@@ -913,11 +971,16 @@ class Store:
                            trigger AS subject, message
                     FROM session_refresh_events
                     WHERE (? IS NULL OR user_id = ?)
+                    UNION ALL
+                    SELECT created_at, user_id, 'admin' AS log_kind, event_type,
+                           COALESCE(subject, actor_user_id) AS subject, message
+                    FROM admin_audit_events
+                    WHERE (? IS NULL OR user_id = ?)
                 )
                 ORDER BY created_at DESC, log_kind DESC
                 LIMIT ? OFFSET ?
                 """,
-                (user_id, user_id, user_id, user_id, limit, offset),
+                (user_id, user_id, user_id, user_id, user_id, user_id, limit, offset),
             ).fetchall()
         return [
             AdminLogRow(

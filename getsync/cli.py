@@ -175,6 +175,15 @@ def user_create(
         telegram=telegram or None,
         hammerhead_user_id=hammerhead_user_id or None,
     )
+    from getsync.audit import log as audit_log
+
+    audit_log(
+        store,
+        "user_created",
+        f"email={row.email}",
+        user_id=row.id,
+        subject=row.slug,
+    )
     typer.echo(f"Created user id={row.id} slug={row.slug} email={row.email}")
 
 

@@ -8,6 +8,7 @@ import re
 from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from getsync.audit import log as audit_log, request_ip
 from getsync.config import get_settings
 from getsync.state.store import Store
 from getsync.users.bootstrap import registration_is_open
@@ -225,6 +226,13 @@ async def register_submit(
             status_code=500,
         )
 
+    audit_log(
+        store,
+        "user_registered",
+        f"email={user.email} ip={request_ip(request)}",
+        user_id=user.id,
+        subject=user.slug,
+    )
     login_user(request, user.id)
     logger.info("registered user id=%s slug=%s email=%s", user.id, user.slug, user.email)
     return RedirectResponse("/app/activities", status_code=303)

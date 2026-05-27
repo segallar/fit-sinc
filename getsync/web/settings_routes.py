@@ -9,6 +9,7 @@ import shutil
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from getsync.audit import log as audit_log, request_ip
 from getsync.config import get_settings
 from getsync.garmin.session import garmin_login
 from getsync.garmin.web_refresh import refresh_web_session
@@ -199,6 +200,14 @@ async def settings_profile(
         )
     except Exception as exc:
         return _redirect(error=str(exc), section="profile")
+    user = store.get_user(ctx.user_id)
+    audit_log(
+        store,
+        "settings_profile",
+        f"locale={loc} timezone={timezone.strip()} ip={request_ip(request)}",
+        user_id=ctx.user_id,
+        subject=user.slug if user else ctx.user_id,
+    )
     response = _redirect("profile_saved", section="profile")
     response.set_cookie(
         LANG_COOKIE,
@@ -227,7 +236,15 @@ async def settings_password(
         return _redirect(error="password_mismatch", section="password")
     if not _store().verify_user_password(user.email, current_password):
         return _redirect(error="wrong_current_password", section="password")
-    _store().update_user(ctx.user_id, password=new_password)
+    store = _store()
+    store.update_user(ctx.user_id, password=new_password)
+    audit_log(
+        store,
+        "settings_password",
+        f"ip={request_ip(request)}",
+        user_id=ctx.user_id,
+        subject=user.slug,
+    )
     return _redirect("password_changed", section="password")
 
 
@@ -262,6 +279,14 @@ async def hammerhead_callback(
         from getsync.web.auth import login_user
 
         login_user(request, uid)
+        actor = _store().get_user(uid)
+        audit_log(
+            _store(),
+            "user_login",
+            f"via=hammerhead_oauth ip={request_ip(request)}",
+            user_id=uid,
+            subject=actor.slug if actor else uid,
+        )
     if not code:
         return _redirect(error="hh_missing_code", section="hammerhead")
     oauth = _hammerhead_oauth(request)
@@ -272,8 +297,17 @@ async def hammerhead_callback(
     ctx = UserContext(uid, get_settings())
     save_json(ctx.hammerhead_tokens_path, tokens.to_dict())
     hh_uid = tokens.user_id or None
+    store = _store()
     if hh_uid:
-        _store().update_user(uid, hammerhead_user_id=str(hh_uid))
+        store.update_user(uid, hammerhead_user_id=str(hh_uid))
+    target = store.get_user(uid)
+    audit_log(
+        store,
+        "settings_hammerhead_connected",
+        f"hammerhead_user_id={hh_uid or '—'} ip={request_ip(request)}",
+        user_id=uid,
+        subject=target.slug if target else uid,
+    )
     return _redirect("hh_connected", section="hammerhead")
 
 
@@ -283,6 +317,14 @@ async def hammerhead_disconnect(request: Request) -> RedirectResponse:
     path = ctx.hammerhead_tokens_path
     if path.is_file():
         path.unlink()
+    user = _store().get_user(ctx.user_id)
+    audit_log(
+        _store(),
+        "settings_hammerhead_disconnected",
+        f"ip={request_ip(request)}",
+        user_id=ctx.user_id,
+        subject=user.slug if user else ctx.user_id,
+    )
     return _redirect("hh_disconnected", section="hammerhead")
 
 
@@ -317,6 +359,14 @@ async def garmin_login_settings(
 
         if not garmin_auto_login_configured(ctx):
             msg = "garmin_connected_no_vault"
+    user = _store().get_user(ctx.user_id)
+    audit_log(
+        _store(),
+        "settings_garmin_connected",
+        f"save_credentials={store_password} ip={request_ip(request)}",
+        user_id=ctx.user_id,
+        subject=user.slug if user else ctx.user_id,
+    )
     return _redirect(msg, section="garmin", anchor="garmin-session")
 
 
@@ -340,4 +390,12 @@ async def garmin_disconnect(request: Request) -> RedirectResponse:
     from getsync.credentials.garmin import clear_garmin_credentials
 
     clear_garmin_credentials(ctx)
+    user = _store().get_user(ctx.user_id)
+    audit_log(
+        _store(),
+        "settings_garmin_disconnected",
+        f"ip={request_ip(request)}",
+        user_id=ctx.user_id,
+        subject=user.slug if user else ctx.user_id,
+    )
     return _redirect("garmin_disconnected", section="garmin")

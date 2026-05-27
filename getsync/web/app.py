@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from getsync import __version__
 from getsync.build_info import deploy_number, deployed_at_iso, git_commit_short
+from getsync.audit import record_startup
 from getsync.config import get_settings
 from getsync.logging_setup import configure_logging
 
@@ -40,6 +41,7 @@ def _bootstrap() -> None:
     hh_uid = infer_hammerhead_user_id(settings)
     store.ensure_default_user(hammerhead_user_id=hh_uid)
     apply_bootstrap_admin(store, settings)
+    record_startup(store, settings.data_dir)
     logger.info("bootstrap: default user ready (hh_user_id=%s)", hh_uid)
     for msg in warn_insecure_session_config():
         logger.warning("session config: %s", msg)

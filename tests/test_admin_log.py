@@ -29,6 +29,22 @@ class TestAdminLogStore(unittest.TestCase):
                 self.assertIn("garmin", kinds)
                 self.assertGreaterEqual(rows[0].created_at, rows[-1].created_at)
 
+    def test_admin_audit_in_merged_log(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with isolated_env(Path(tmp)):
+                get_settings.cache_clear()
+                store = Store(get_settings().db_path)
+                store.ensure_default_user(password="x")
+                store.log_admin_audit(
+                    "user_created",
+                    "email=new@example.com",
+                    user_id="newuser",
+                    subject="newuser",
+                    actor_user_id="default",
+                )
+                rows = store.list_admin_log(limit=5)
+                self.assertTrue(any(r.log_kind == "admin" and r.event_type == "user_created" for r in rows))
+
     def test_count_admin_log(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
@@ -37,7 +53,8 @@ class TestAdminLogStore(unittest.TestCase):
                 store.ensure_default_user(password="x")
                 store.log_event("sync_started", "", "a", user_id="default")
                 store.log_session_refresh("bg", "failed", "x", user_id="default")
-                self.assertEqual(store.count_admin_log(), 2)
+                store.log_admin_audit("user_updated", "email=x@y.z", user_id="default", subject="default")
+                self.assertEqual(store.count_admin_log(), 3)
 
 
 if __name__ == "__main__":

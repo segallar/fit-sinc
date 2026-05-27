@@ -151,14 +151,13 @@ getsync serve                  # http://127.0.0.1:8080 — webhook + UI
 
 | Переменная | Назначение |
 |------------|------------|
-| `HAMMERHEAD_CLIENT_ID` / `SECRET` | OAuth приложение Hammerhead |
-| `HAMMERHEAD_WEBHOOK_SECRET` | HMAC для `X-Hmac-Signature` |
-| `HAMMERHEAD_REDIRECT_URI` | По умолчанию `http://127.0.0.1:8765/callback` |
-| `GETSYNC_SECRETS_KEY` | Fernet-ключ для encrypted credentials (**2.16**) |
-| Garmin login/password | Только per-user (Settings / `getsync garmin login --save-credentials`), не в `.env` |
-| `REGISTRATION_OPEN` | Разрешить `/register` (по умолчанию `false`) |
-| `MAIL_BACKEND` / `RESEND_*` | Почта: `null` \| `console` \| `resend` — см. `.env.example` |
+| `HAMMERHEAD_*` | OAuth приложение + webhook (Developer Portal) |
+| `GETSYNC_SECRETS_KEY` | Fernet для `data/users/…/secrets.enc` (авто-перелогин Garmin) |
+| `SESSION_SECRET` / `SESSION_COOKIE_SECURE` | Cookie входа в `/app` |
 | `DATA_DIR` | Каталог данных (по умолчанию `data`) |
+| `REGISTRATION_OPEN` / `BOOTSTRAP_ADMIN_EMAIL` | Регистрация и первый admin |
+| `MAIL_*` / `APP_PUBLIC_URL` | Почта Resend (опционально) |
+| Garmin login/password | Только per-user (Settings), не в `.env` |
 
 Полный список — [`.env.example`](.env.example).
 

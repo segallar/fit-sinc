@@ -1,4 +1,4 @@
-"""Unified admin log (sync events + Garmin JWT refresh)."""
+"""Unified admin log (sync, Garmin JWT, admin audit)."""
 
 from __future__ import annotations
 
@@ -9,6 +9,19 @@ from getsync.web.connections import _session_event_class
 def _event_status_class(log_kind: str, event_type: str) -> str:
     if log_kind == "garmin":
         return _session_event_class(event_type)
+    if log_kind == "admin":
+        if event_type in (
+            "user_created",
+            "user_registered",
+            "user_login",
+            "deploy",
+            "settings_hammerhead_connected",
+            "settings_garmin_connected",
+        ):
+            return "ok"
+        if event_type in ("user_logout", "settings_hammerhead_disconnected", "settings_garmin_disconnected"):
+            return ""
+        return ""
     if event_type == "error":
         return "failed"
     if event_type in ("garmin_uploaded", "garmin_duplicate", "synced", "fit_saved"):
@@ -17,7 +30,11 @@ def _event_status_class(log_kind: str, event_type: str) -> str:
 
 
 def _kind_label(log_kind: str) -> str:
-    return "Garmin JWT" if log_kind == "garmin" else "Sync"
+    if log_kind == "garmin":
+        return "Garmin JWT"
+    if log_kind == "admin":
+        return "Admin"
+    return "Sync"
 
 
 def admin_log_context(

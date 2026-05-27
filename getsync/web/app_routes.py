@@ -25,6 +25,7 @@ from getsync.activities.browse import (
 from getsync.activities.calendar import attach_calendar_row_views, build_activity_calendar
 from getsync.timeutil import zone_info
 from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
+from getsync.audit import log as audit_log, request_ip
 from getsync.config import get_settings
 from getsync.state.store import Store
 from getsync.sync.service import sync_activity
@@ -353,15 +354,33 @@ async def app_login_submit(
     password: str = Form(""),
     next: str = Form(""),
 ) -> RedirectResponse:
-    user = _store().verify_user_password(email, password)
+    store = _store()
+    user = store.verify_user_password(email, password)
     if not user:
         return RedirectResponse(f"{P}/login?error=1", status_code=303)
     login_user(request, user.id)
+    audit_log(
+        store,
+        "user_login",
+        f"ip={request_ip(request)}",
+        user_id=user.id,
+        subject=user.slug,
+    )
     return RedirectResponse(f"{P}/activities", status_code=303)
 
 
 @router.get("/logout", include_in_schema=False)
 async def app_logout(request: Request) -> RedirectResponse:
+    store = _store()
+    user = user_row_from_session(request)
+    if user:
+        audit_log(
+            store,
+            "user_logout",
+            f"ip={request_ip(request)}",
+            user_id=user.id,
+            subject=user.slug,
+        )
     logout_user(request)
     return RedirectResponse(f"{P}/login", status_code=303)
 

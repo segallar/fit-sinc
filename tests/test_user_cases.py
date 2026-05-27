@@ -191,7 +191,7 @@ class TestAdminUseCases(unittest.TestCase):
 
                 admin_log = client.get("/app/admin/log")
                 self.assertEqual(admin_log.status_code, 200)
-                self.assertIn("Sync pipeline", admin_log.text)
+                self.assertIn("app restarts and deploys", admin_log.text)
 
     def test_uc_a02_non_admin_forbidden_on_admin(self) -> None:
         """UC-A02: Regular user gets 403 on /app/admin/."""
