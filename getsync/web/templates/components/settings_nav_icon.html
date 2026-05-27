@@ -5,16 +5,12 @@
 <img src="/static/icons/settings/hammerhead.png" class="getsync-settings-nav-img" width="20" height="20" alt="" aria-hidden="true">
 {% elif name == 'garmin' %}
 <img src="/static/icons/settings/garmin.png" class="getsync-settings-nav-img" width="20" height="20" alt="" aria-hidden="true">
-{% elif name == 'password' %}
-<img src="/static/icons/settings/password.png" class="getsync-settings-nav-img getsync-settings-nav-img--mono" width="20" height="20" alt="" aria-hidden="true">
 {% elif name == 'wahoo' %}
 <img src="/static/icons/settings/wahoo.png" class="getsync-settings-nav-img" width="20" height="20" alt="" aria-hidden="true">
-{% else %}
-<svg class="getsync-settings-nav-icon getsync-settings-nav-icon--{{ name }}" width="20" height="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false">
-  {% if name == 'profile' %}
-  <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5 6s-1 0-1-1 1-4 6-4 6 3 6 4 1 1 1 1H3Z"/>
-  {% else %}
-  <path d="M3 5.5a1.5 1.5 0 0 1 1.5-1.5h7A1.5 1.5 0 0 1 13 5.5v5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 10.5v-5Zm2 1.75a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Zm0 2a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z"/>
-  {% endif %}
-</svg>
+{% elif name == 'profile' %}
+<i class="bi bi-person getsync-settings-nav-icon getsync-settings-nav-icon--profile" aria-hidden="true"></i>
+{% elif name == 'password' %}
+<i class="bi bi-lock getsync-settings-nav-icon getsync-settings-nav-icon--password" aria-hidden="true"></i>
+{% elif name == 'connection' %}
+<i class="bi bi-plug getsync-settings-nav-icon getsync-settings-nav-icon--connection" aria-hidden="true"></i>
 {% endif %}

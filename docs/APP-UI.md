@@ -262,7 +262,7 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 | Класс / token | Значение |
 |---------------|----------|
 | Subnav link | `font-size: 0.9rem` — `.getsync-settings-nav-list .nav-link`; фон **белый** + border primary-100 + shadow (не сливаться с `bg-light`) |
-| Subnav icon | справа — `static/icons/settings/*.png` (бренды) + SVG для Profile / Connections |
+| Subnav icon | справа — PNG бренды (HH/Garmin/…) · **Bootstrap Icons** для Profile (`bi-person`), Connections (`bi-plug`), Password (`bi-lock`) |
 | Connections | `<details>` — клик по заголовку раскрывает подменю; `open` если активна интеграция |
 | Active nav item | `primary-50` фон + тёмный текст (без полоски слева) |
 | Settings gear | `icons/settings_gear.html` — классическая 6-зубая шестерёнка outline |

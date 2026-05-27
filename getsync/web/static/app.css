@@ -499,6 +499,15 @@ button.getsync-filter-link:focus-visible {
   margin-left: 0.25rem;
 }
 
+.getsync-settings-nav-icon.bi {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
 .getsync-settings-nav-img {
   display: block;
   width: 20px;
@@ -513,6 +522,10 @@ button.getsync-filter-link:focus-visible {
 
 .getsync-settings-nav-icon--profile {
   color: var(--getsync-primary-600);
+}
+
+.getsync-settings-nav-icon--password {
+  color: #5c6b5c;
 }
 
 .getsync-settings-nav-icon--connection {
