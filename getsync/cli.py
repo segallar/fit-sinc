@@ -307,7 +307,16 @@ def garmin_login_cmd(
     typer.echo(f"OAuth session: {user_ctx.garth_dir}")
     typer.echo(f"Web session: {user_ctx.garmin_web_dir}")
     if save_credentials:
-        typer.echo(f"Credentials: {user_ctx.user_data_dir}/connections/garmin/")
+        from getsync.credentials.garmin import garmin_auto_login_configured
+
+        if garmin_auto_login_configured(user_ctx):
+            typer.echo(f"Credentials: {user_ctx.user_data_dir}/connections/garmin/")
+        else:
+            typer.echo(
+                "Note: GETSYNC_SECRETS_KEY not set — sessions OK, auto re-login disabled. "
+                "Add key to .env and re-run with --save-credentials.",
+                err=True,
+            )
 
 
 @garmin_app.command("web-login")

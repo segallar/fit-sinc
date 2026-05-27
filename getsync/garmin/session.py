@@ -43,13 +43,21 @@ def garmin_login(
     web_login(email, password, user_ctx)
     if save_credentials:
         from getsync.credentials.garmin import save_garmin_login
+        from getsync.credentials.store import CredentialStoreError
 
-        save_garmin_login(
-            user_ctx,
-            email,
-            password if store_password else None,
-            store_password=store_password,
-        )
+        try:
+            save_garmin_login(
+                user_ctx,
+                email,
+                password if store_password else None,
+                store_password=store_password,
+            )
+        except CredentialStoreError as exc:
+            logger.warning(
+                "Garmin sessions saved but encrypted credentials not stored for %s: %s",
+                user_ctx.user_id,
+                exc,
+            )
 
 
 def garmin_resume(ctx: UserContext | None = None) -> bool:
