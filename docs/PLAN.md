@@ -78,7 +78,7 @@
 | **Auth** | `/register` при `REGISTRATION_OPEN`; session `getsync_session`; bootstrap admin |
 | **2.16 ✅** | Encrypted Garmin credentials per user; CLI `--save-credentials`; `ensure_garmin_session` — [CREDENTIALS.md](CREDENTIALS.md) |
 | **Mail (infra)** | `getsync/mail` + Resend; `getsync mail test`; verify/register в UI — **2.6** / **2.1e** 📋 |
-| **Не сделано** | **2.10** sidebar · **2.12** Garmin login в Settings · **2.6** email verify · **3.11** pull · 301 legacy host |
+| **Не сделано** | **2.10** sidebar · **2.12** Garmin login в Settings · **2.6** email verify · **3.11** pull |
 
 ### Снимок кабинета `/app`
 
@@ -97,7 +97,7 @@
 
 **Цель:** согласованный дизайн и стабильное поведение `/app` + **Garmin login в UI** (**2.12** — UX-блокер; backend credentials **2.16** ✅).
 
-**Не в v0.7:** **3.x** хаб · полный **3.11** · legacy 301 `fit.romansegalla.online`.
+**Не в v0.7:** **3.x** хаб · полный **3.11**.
 
 ```mermaid
 flowchart TB
@@ -250,7 +250,7 @@ flowchart LR
 | Hammerhead webhook + OAuth | ✅ |
 | Браузер: getsync.me, app login | ✅ |
 | E2E ride → sync | отложено |
-| 301 `fit.romansegalla.online` → app | backlog |
+| 301 `fit.romansegalla.online` → app | ✅ 2026-05-27 |
 
 [1.5-RENAME.md](archive/1.5-RENAME.md) — полный чеклист и backlog.
 
@@ -283,9 +283,9 @@ flowchart LR
 
 | Задача | Примечание |
 | ------ | ---------- |
-| CI GitHub Actions | `checkout@v6`, `setup-python@v6` (Node 24 runtime) |
-| `upload_ready` на sirocco | мониторинг |
-| Убрать `GARMIN_EMAIL` из `.env` prod | multi-tenant |
+| CI GitHub Actions | ✅ `checkout@v6`, `setup-python@v6` |
+| `upload_ready` на sirocco | мониторинг (сейчас `true` вручную) |
+| Убрать `GARMIN_EMAIL` из `.env` prod | ✅ 2026-05-27 (per-user session) |
 | Admin Statistics | H2 |
 
 ---
@@ -298,7 +298,8 @@ flowchart LR
 | Garmin download (**3.11.1**) | spike до реализации |
 | Manual activity без FIT | `no_file`, не error (**3.11.2**) |
 | Регрессия **2.10** | **2.13** после вёрстки |
-| Legacy host 301 | `fit.romansegalla.online` → `app.getsync.me` — ops backlog |
+
+Закрыто (2026-05-27): legacy 301 `fit.romansegalla.online` → `app.getsync.me` — [`deploy/nginx/fit.conf`](../deploy/nginx/fit.conf), smoke в [CI-CD.md](CI-CD.md#nginx).
 
 ---
 

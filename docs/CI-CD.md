@@ -33,7 +33,7 @@ flowchart LR
 | Сервер | `sirocco.romansegalla.online` (`134.209.133.187`) |
 | SSH | `ssh -i ~/.ssh/id_ed25519 root@sirocco.romansegalla.online` |
 | **App (целевой)** | `getsync.me`, `app.getsync.me` |
-| App (legacy DNS) | `fit.romansegalla.online` — 301 на `app.getsync.me` 📋 backlog |
+| App (legacy DNS) | `fit.romansegalla.online` — 301 → `app.getsync.me` ✅ ([`fit.conf`](../deploy/nginx/fit.conf)) |
 | Лендинг (личный) | `romansegalla.online` — proxy на `:8080` |
 | Каталог приложения | `/opt/getsync` |
 | Пользователь сервиса | `getsync:getsync` |
@@ -244,7 +244,17 @@ ssh root@sirocco \
 | `/health` | нет | Healthcheck |
 | `/`, `/static/*`, `/app/*` | сессия приложения | UI |
 
-Конфиг: [`deploy/nginx/getsync.conf`](../deploy/nginx/getsync.conf) (целевой), legacy: [`deploy/nginx/fit.conf`](../deploy/nginx/fit.conf).
+Конфиг: [`deploy/nginx/getsync.conf`](../deploy/nginx/getsync.conf) (целевой), legacy redirect: [`deploy/nginx/fit.conf`](../deploy/nginx/fit.conf) (`fit.romansegalla.online` → `https://app.getsync.me$request_uri`).
+
+Legacy redirect (уже на sirocco с 2026-05-27):
+
+```bash
+scp -i ~/.ssh/id_ed25519 deploy/nginx/fit.conf \
+  root@sirocco.romansegalla.online:/etc/nginx/conf.d/fit.conf
+ssh -i ~/.ssh/id_ed25519 root@sirocco.romansegalla.online \
+  'nginx -t && systemctl reload nginx'
+curl -sI https://fit.romansegalla.online/health | grep -i location
+```
 
 **Production `.env`:**
 
