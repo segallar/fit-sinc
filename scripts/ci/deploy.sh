@@ -115,6 +115,12 @@ if [[ "\$new_hash" != "\$old_hash" ]]; then
 else
   echo "pyproject.toml unchanged — skip pip (editable install)"
 fi
+sudo -u \${SERVICE_USER} bash -c "cd \${DEPLOY_PATH} && .venv/bin/python -c \"
+import cryptography
+from getsync.credentials.store import CredentialStore
+from getsync.web.app import app
+print('import_ok', app.version)
+\""
 
 playwright_ok=0
 if [[ -f "\${DEPLOY_PATH}/\${PLAYWRIGHT_MARKER}" ]]; then
@@ -145,16 +151,16 @@ fi
 
 systemctl restart \${SERVICE_UNIT}
 ok=0
-for attempt in 1 2 3 4 5 6; do
+for attempt in 1 2 3 4 5 6 7 8 9 10; do
   if [[ \$attempt -gt 1 ]]; then
-    sleep 1
+    sleep 2
   fi
   if systemctl is-active --quiet \${SERVICE_UNIT} \
      && curl -sf http://127.0.0.1:8080/health >/dev/null; then
     ok=1
     break
   fi
-  echo "waiting for \${SERVICE_UNIT} (attempt \${attempt}/6)..." >&2
+  echo "waiting for \${SERVICE_UNIT} (attempt \${attempt}/10)..." >&2
 done
 if [[ "\$ok" != 1 ]]; then
   echo "Deploy health check failed" >&2

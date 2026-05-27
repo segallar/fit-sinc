@@ -45,6 +45,7 @@ jobs:
        github.ref == 'refs/heads/master' ||
        startsWith(github.ref, 'refs/heads/hotfix/'))
     runs-on: ubuntu-latest
+    # If deploy fails with exit 1, check Actions log: health poll or pip import smoke test.
     environment: production
     permissions:
       contents: read
