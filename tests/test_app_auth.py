@@ -124,7 +124,8 @@ class TestAdminAccess(unittest.TestCase):
                 admin_log = client.get("/app/admin/log")
                 self.assertEqual(admin_log.status_code, 200)
                 self.assertIn("app restarts and deploys", admin_log.text)
-                self.assertIn("JWT_WEB", admin_log.text)
+                self.assertIn("Garmin JWT", admin_log.text)
+                self.assertIn("getsync-admin-col-flag", admin_log.text)
 
                 legacy = client.get("/app/admin/sync-log", follow_redirects=False)
                 self.assertEqual(legacy.status_code, 303)
