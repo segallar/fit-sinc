@@ -144,6 +144,40 @@ def _hammerhead_oauth(request: Request) -> HammerheadOAuth:
     )
 
 
+def _debug_settings_nav_log(section: str) -> None:
+    # #region agent log
+    import json
+    import time
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    log_path = root / ".cursor" / "debug-030885.log"
+    font_ok = (root / "getsync/web/static/fonts/bootstrap-icons.woff2").is_file()
+    css_ok = (root / "getsync/web/static/bootstrap-icons.min.css").is_file()
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.open("a", encoding="utf-8").write(
+            json.dumps(
+                {
+                    "sessionId": "030885",
+                    "hypothesisId": "H2-H3",
+                    "location": "settings_routes.py:settings_page",
+                    "message": "settings nav static assets",
+                    "data": {
+                        "section": section,
+                        "font_self_hosted": font_ok,
+                        "css_self_hosted": css_ok,
+                    },
+                    "timestamp": int(time.time() * 1000),
+                }
+            )
+            + "\n"
+        )
+    except OSError:
+        pass
+    # #endregion
+
+
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def settings_page(request: Request) -> str:
     ctx = _ctx(request)
@@ -152,6 +186,7 @@ async def settings_page(request: Request) -> str:
         raise HTTPException(status_code=404)
     connection_groups = list_connections(ctx, user)
     section = _settings_section(request)
+    _debug_settings_nav_log(section)
     return render_cabinet(
         request,
         "pages/app/settings.html",
