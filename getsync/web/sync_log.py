@@ -31,4 +31,5 @@ def sync_log_context(
         "log_next_href": _page_href(log_page + 1) if has_next else None,
         "log_range_label": f"{from_idx}–{to_idx} of {total}",
         "show_user_column": user_id is None,
+        "sync_log_compact": True,
     }

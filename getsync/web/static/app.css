@@ -605,6 +605,17 @@ button.getsync-filter-link:focus-visible {
   font-size: 0.9rem;
 }
 
+.getsync-settings-card {
+  border: 1px solid var(--getsync-primary-100);
+  box-shadow: var(--getsync-shadow-sm);
+}
+
+.getsync-settings-panel .table thead th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--getsync-text-muted);
+}
+
 .getsync-settings-nav-group {
   margin-top: 0.125rem;
 }

@@ -3,8 +3,8 @@
   <label class="col-sm-4 col-lg-3 col-form-label getsync-settings-label text-sm-end mb-0" for="{{ select_name or 'locale' }}">{{ label or 'Language' }}</label>
   <div class="col-sm-8 col-lg-9">
     <select name="{{ select_name or 'locale' }}" id="{{ select_name or 'locale' }}" class="form-select form-select-sm" required>
-      {% for label_text, value, is_sel in locale_options(selected) %}
-      <option value="{{ value }}" {% if is_sel %}selected{% endif %}>{{ label_text }}</option>
+      {% for opt in locale_options(selected) %}
+      <option value="{{ opt.value }}"{% if opt.selected %} selected{% endif %}>{{ opt.label }}</option>
       {% endfor %}
     </select>
   </div>
@@ -13,8 +13,8 @@
 <div class="mb-3">
   <label class="form-label">{{ label or 'Language' }}</label>
   <select name="{{ select_name or 'locale' }}" class="form-select" required>
-    {% for label_text, value, is_sel in locale_options(selected) %}
-    <option value="{{ value }}" {% if is_sel %}selected{% endif %}>{{ label_text }}</option>
+    {% for opt in locale_options(selected) %}
+    <option value="{{ opt.value }}"{% if opt.selected %} selected{% endif %}>{{ opt.label }}</option>
     {% endfor %}
   </select>
 </div>

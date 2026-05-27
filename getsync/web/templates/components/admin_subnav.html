@@ -1,11 +1,28 @@
-<ul class="nav nav-pills gap-1 mb-3">
-  <li class="nav-item">
-    <a class="nav-link{% if admin_section == 'users' %} active{% endif %}" href="{{ admin_prefix }}/">Users</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link{% if admin_section == 'sync-log' %} active{% endif %}" href="{{ admin_prefix }}/sync-log">Sync log</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link{% if admin_section == 'garmin-log' %} active{% endif %}" href="{{ admin_prefix }}/log">Garmin log</a>
-  </li>
-</ul>
+<nav class="getsync-settings-subnav" aria-label="Admin sections">
+  <ul class="nav flex-column getsync-settings-nav-list">
+    <li class="nav-item">
+      <a class="nav-link getsync-settings-nav-link{% if admin_section == 'users' %} active{% endif %}"
+         href="{{ admin_prefix }}/"
+         {% if admin_section == 'users' %}aria-current="page"{% endif %}>
+        <span class="getsync-settings-nav-text">Users</span>
+        {% with name='users' %}{% include "components/admin_nav_icon.html" %}{% endwith %}
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link getsync-settings-nav-link{% if admin_section == 'sync-log' %} active{% endif %}"
+         href="{{ admin_prefix }}/sync-log"
+         {% if admin_section == 'sync-log' %}aria-current="page"{% endif %}>
+        <span class="getsync-settings-nav-text">Sync log</span>
+        {% with name='sync-log' %}{% include "components/admin_nav_icon.html" %}{% endwith %}
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link getsync-settings-nav-link{% if admin_section == 'garmin-log' %} active{% endif %}"
+         href="{{ admin_prefix }}/log"
+         {% if admin_section == 'garmin-log' %}aria-current="page"{% endif %}>
+        <span class="getsync-settings-nav-text">Garmin log</span>
+        {% with name='garmin-log' %}{% include "components/admin_nav_icon.html" %}{% endwith %}
+      </a>
+    </li>
+  </ul>
+</nav>

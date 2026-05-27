@@ -135,7 +135,8 @@ class TestAdminAccess(unittest.TestCase):
 
                 new_user = client.get("/app/admin/users/new")
                 self.assertEqual(new_user.status_code, 200)
-                self.assertIn('class="card shadow-sm"', new_user.text)
+                self.assertIn("getsync-settings-layout", new_user.text)
+                self.assertIn("getsync-settings-card", new_user.text)
                 self.assertIn('action="/app/admin/users/new"', new_user.text)
 
     def test_non_admin_forbidden_on_app_admin(self) -> None:

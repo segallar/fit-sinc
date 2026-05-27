@@ -1,53 +1,53 @@
-{% extends "layouts/cabinet.html" %}
+{% extends "layouts/admin_page.html" %}
 
 {% block title %}Admin — Users — GetSync{% endblock %}
 
-{% block page_content %}
-<h2 class="h5 mb-2">Admin</h2>
-{% include "components/admin_subnav.html" %}
-<h3 class="h6 text-primary mb-3">Users</h3>
-<p class="mb-3">
-  <a href="{{ admin_prefix }}/users/new" class="btn btn-primary btn-sm">New user</a>
-</p>
-
-<div class="card shadow-sm">
-  <div class="table-responsive">
-    <table class="table table-hover table-sm mb-0">
-      <thead class="table-light">
-        <tr>
-          <th>id</th>
-          <th>slug</th>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Telegram</th>
-          <th>TZ</th>
-          <th>HH user</th>
-          <th>admin</th>
-          <th>off</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for u in users %}
-        <tr>
-          <td class="font-monospace small">{{ u.id }}</td>
-          <td>{{ u.slug }}</td>
-          <td>{{ u.display_name }}</td>
-          <td>{{ u.email }}</td>
-          <td>{{ u.telegram or '—' }}</td>
-          <td>{{ u.timezone }}</td>
-          <td class="font-monospace small">{{ u.hammerhead_user_id or '—' }}</td>
-          <td>{{ 'yes' if u.is_admin else '' }}</td>
-          <td>{{ 'yes' if u.disabled else '' }}</td>
-          <td>
-            <a href="{{ admin_prefix }}/users/{{ u.id }}/edit" class="btn btn-outline-secondary btn-sm">edit</a>
-          </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="10" class="text-center text-muted py-4">No users</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+{% block admin_content %}
+<section class="getsync-settings-section">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <h3 class="getsync-settings-heading mb-0">Users</h3>
+    <a href="{{ admin_prefix }}/users/new" class="btn btn-primary btn-sm">New user</a>
   </div>
-</div>
+
+  <div class="card shadow-sm getsync-settings-card mb-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>id</th>
+            <th>slug</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Telegram</th>
+            <th>TZ</th>
+            <th>HH user</th>
+            <th>admin</th>
+            <th>off</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td class="font-monospace small">{{ u.id }}</td>
+            <td>{{ u.slug }}</td>
+            <td>{{ u.display_name }}</td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.telegram or '—' }}</td>
+            <td>{{ u.timezone }}</td>
+            <td class="font-monospace small">{{ u.hammerhead_user_id or '—' }}</td>
+            <td>{{ 'yes' if u.is_admin else '' }}</td>
+            <td>{{ 'yes' if u.disabled else '' }}</td>
+            <td>
+              <a href="{{ admin_prefix }}/users/{{ u.id }}/edit" class="btn btn-outline-secondary btn-sm">Edit</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="10" class="text-center text-muted py-4">No users</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
 {% endblock %}

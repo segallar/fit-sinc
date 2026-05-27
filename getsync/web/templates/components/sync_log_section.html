@@ -1,8 +1,10 @@
-<section id="sync-log" class="mt-4 pt-2">
+<section id="sync-log" class="{% if sync_log_compact %}getsync-settings-section{% else %}mt-4 pt-2{% endif %}">
+  {% if not sync_log_compact %}
   <h2 class="h6 mb-1">Sync log</h2>
+  {% endif %}
   <p class="text-muted small mb-3">{{ log_range_label }}</p>
 
-  <div class="card shadow-sm">
+  <div class="card shadow-sm getsync-settings-card mb-0">
     <div class="table-responsive">
       <table class="table table-hover table-sm mb-0">
         <thead class="table-light">

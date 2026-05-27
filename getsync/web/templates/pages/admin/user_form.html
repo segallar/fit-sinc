@@ -1,96 +1,89 @@
-{% extends "layouts/cabinet.html" %}
+{% extends "layouts/admin_page.html" %}
+{% from "components/settings_form_macros.html" import settings_field %}
 
 {% block title %}{{ form.title }} — GetSync{% endblock %}
 
-{% block page_content %}
-<h2 class="h5 mb-2">Admin</h2>
-{% include "components/admin_subnav.html" %}
-<h3 class="h6 text-primary mb-3">{{ form.title }}</h3>
+{% block admin_content %}
+<section class="getsync-settings-section">
+  <h3 class="getsync-settings-heading mb-3">{{ form.title }}</h3>
 
-{% if form.error %}
-<div class="alert alert-danger">{{ form.error }}</div>
-{% endif %}
+  {% if form.error %}
+  <div class="alert alert-danger py-2 small">{{ form.error }}</div>
+  {% endif %}
 
-<div class="card shadow-sm">
-  <div class="card-body">
-    <form method="post" action="{{ form.action }}">
-      <fieldset class="mb-4">
-        <legend class="h6 text-primary">Account</legend>
+  <div class="card shadow-sm getsync-settings-card">
+    <div class="card-body getsync-settings-card-body">
+      <form method="post" action="{{ form.action }}" class="getsync-settings-form">
+        <h4 class="getsync-settings-heading mb-3">Account</h4>
         {% if form.edit %}
-        <p class="small text-muted">
-          Slug: <code>{{ form.slug }}</code> · id: <code>{{ form.user_id }}</code>
-        </p>
+        <div class="row getsync-settings-field align-items-center mb-3">
+          <div class="col-sm-4 col-lg-3 col-form-label getsync-settings-label text-sm-end mb-0">Identifiers</div>
+          <div class="col-sm-8 col-lg-9 small text-muted">
+            Slug: <code>{{ form.slug }}</code> · id: <code>{{ form.user_id }}</code>
+          </div>
+        </div>
         {% else %}
-        <div class="mb-3">
-          <label class="form-label">Slug</label>
-          <input name="slug" value="{{ form.slug }}" class="form-control" required pattern="[a-z0-9][a-z0-9_-]{1,62}" autocomplete="off">
-          <div class="form-text">Lowercase letters, digits, <code>_</code> and <code>-</code>.</div>
+        {% call settings_field("Slug", "slug") %}
+        <input name="slug" id="slug" value="{{ form.slug }}" class="form-control form-control-sm" required pattern="[a-z0-9][a-z0-9_-]{1,62}" autocomplete="off">
+        <div class="form-text">Lowercase letters, digits, <code>_</code> and <code>-</code>.</div>
+        {% endcall %}
+        {% endif %}
+        {% call settings_field("Display name", "display_name") %}
+        <input name="display_name" id="display_name" value="{{ form.display_name }}" class="form-control form-control-sm" required>
+        {% endcall %}
+        {% call settings_field("Email", "email") %}
+        <input type="email" name="email" id="email" value="{{ form.email }}" class="form-control form-control-sm" required>
+        {% endcall %}
+        {% call settings_field("Password", "password") %}
+        <input type="password" name="password" id="password" class="form-control form-control-sm"{% if not form.edit %} required{% endif %}
+               placeholder="{{ form.pwd_hint }}" autocomplete="new-password">
+        <div class="form-text">{{ form.pwd_hint }}</div>
+        {% endcall %}
+        {% set select_name = 'timezone' %}
+        {% set selected = form.timezone %}
+        {% set label = 'Timezone' %}
+        {% set settings_inline = true %}
+        {% include "components/timezone_select.html" %}
+        {% set select_name = 'locale' %}
+        {% set selected = form.locale %}
+        {% set label = 'Language' %}
+        {% include "components/locale_select.html" %}
+
+        <h4 class="getsync-settings-heading mb-3 mt-4">Contacts</h4>
+        {% call settings_field("Telegram", "telegram") %}
+        <input name="telegram" id="telegram" value="{{ form.telegram }}" class="form-control form-control-sm" placeholder="@username">
+        {% endcall %}
+
+        <h4 class="getsync-settings-heading mb-3 mt-4">Hammerhead</h4>
+        {% call settings_field("Hammerhead user id", "hammerhead_user_id") %}
+        <input name="hammerhead_user_id" id="hammerhead_user_id" value="{{ form.hammerhead_user_id }}" class="form-control form-control-sm">
+        {% endcall %}
+
+        {% if form.edit %}
+        <h4 class="getsync-settings-heading mb-3 mt-4">Access</h4>
+        <div class="row getsync-settings-field mb-2">
+          <div class="col-sm-4 col-lg-3"></div>
+          <div class="col-sm-8 col-lg-9">
+            <div class="form-check mb-2">
+              <input type="checkbox" name="disabled" class="form-check-input" id="disabled"{% if form.disabled %} checked{% endif %}>
+              <label class="form-check-label" for="disabled">Disabled</label>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" name="is_admin" class="form-check-input" id="is_admin"{% if form.is_admin %} checked{% endif %}>
+              <label class="form-check-label" for="is_admin">Administrator</label>
+            </div>
+          </div>
         </div>
         {% endif %}
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label">Display name</label>
-            <input name="display_name" value="{{ form.display_name }}" class="form-control" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Email</label>
-            <input type="email" name="email" value="{{ form.email }}" class="form-control" required>
-          </div>
-          <div class="col-12">
-            <label class="form-label">Password</label>
-            <input type="password" name="password" class="form-control"{% if not form.edit %} required{% endif %}
-                   placeholder="{{ form.pwd_hint }}">
-            <div class="form-text">{{ form.pwd_hint }}</div>
-          </div>
-          <div class="col-12">
-            {% set select_name = 'timezone' %}
-            {% set selected = form.timezone %}
-            {% include "components/timezone_select.html" %}
-          </div>
-          <div class="col-12">
-            {% set select_name = 'locale' %}
-            {% set selected = form.locale %}
-            {% set label = 'Language' %}
-            {% include "components/locale_select.html" %}
-          </div>
-        </div>
-      </fieldset>
 
-      <fieldset class="mb-4">
-        <legend class="h6 text-primary">Contacts</legend>
-        <div class="mb-3">
-          <label class="form-label">Telegram</label>
-          <input name="telegram" value="{{ form.telegram }}" class="form-control" placeholder="@username">
+        <div class="row mt-3">
+          <div class="col-sm-8 col-lg-9 offset-sm-4 offset-lg-3 d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+            <a href="{{ admin_prefix }}/" class="btn btn-outline-secondary btn-sm">Cancel</a>
+          </div>
         </div>
-      </fieldset>
-
-      <fieldset class="mb-4">
-        <legend class="h6 text-primary">Hammerhead</legend>
-        <div class="mb-3">
-          <label class="form-label">Hammerhead user id</label>
-          <input name="hammerhead_user_id" value="{{ form.hammerhead_user_id }}" class="form-control">
-        </div>
-      </fieldset>
-
-      {% if form.edit %}
-      <fieldset class="mb-4">
-        <legend class="h6 text-primary">Access</legend>
-        <div class="form-check mb-2">
-          <input type="checkbox" name="disabled" class="form-check-input" id="disabled"{% if form.disabled %} checked{% endif %}>
-          <label class="form-check-label" for="disabled">Disabled</label>
-        </div>
-        <div class="form-check">
-          <input type="checkbox" name="is_admin" class="form-check-input" id="is_admin"{% if form.is_admin %} checked{% endif %}>
-          <label class="form-check-label" for="is_admin">Administrator</label>
-        </div>
-      </fieldset>
-      {% endif %}
-
-      <div class="d-flex flex-wrap gap-2 border-top pt-3">
-        <button type="submit" class="btn btn-primary">Save</button>
-        <a href="{{ admin_prefix }}/" class="btn btn-outline-secondary">Cancel</a>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
-</div>
+</section>
 {% endblock %}
