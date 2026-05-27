@@ -146,7 +146,8 @@ class TestActivityCalendar(unittest.TestCase):
             row = store.get_activity(user.id, "hh-1", source="hammerhead")
             assert row is not None
             self.assertEqual(row.name, "New name")
-            key = store.delete_activity(user.id, "hh-1", source="hammerhead")
+            found, key = store.delete_activity(user.id, "hh-1", source="hammerhead")
+            self.assertTrue(found)
             self.assertEqual(key, "activities/hammerhead/hh-1.fit")
             self.assertIsNone(
                 store.get_activity(user.id, "hh-1", source="hammerhead")

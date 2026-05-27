@@ -892,8 +892,8 @@ class Store:
         activity_id: str,
         *,
         source: str,
-    ) -> str | None:
-        """Remove catalog row; returns storage_key if a FIT artifact was linked."""
+    ) -> tuple[bool, str | None]:
+        """Remove catalog row. Returns (found, storage_key) for optional FIT cleanup."""
         with self._conn() as conn:
             row = conn.execute(
                 """
@@ -903,7 +903,7 @@ class Store:
                 (user_id, source, activity_id),
             ).fetchone()
             if row is None:
-                return None
+                return False, None
             storage_key = row["storage_key"]
             conn.execute(
                 """
@@ -913,7 +913,7 @@ class Store:
                 (user_id, source, activity_id),
             )
         self._signal_admin_health()
-        return storage_key
+        return True, storage_key
 
     def get_activity(
         self,

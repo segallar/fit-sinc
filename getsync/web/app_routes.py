@@ -982,10 +982,10 @@ async def delete_catalog_activity(
     ctx = _ctx(request)
     source = _validate_catalog_source(source)
     store = _store()
-    storage_key = store.delete_activity(
+    found, storage_key = store.delete_activity(
         ctx.user_id, activity_id, source=source
     )
-    if storage_key is None:
+    if not found:
         raise HTTPException(status_code=404, detail="Activity not found")
     if storage_key:
         ActivityStorage(ctx)._backend.delete(ctx.user_id, storage_key)

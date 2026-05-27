@@ -156,6 +156,9 @@ class TestAppRoutesRequireSession(unittest.TestCase):
             with isolated_env(Path(tmp)):
                 client, store, user_id = _make_client(tmp)
                 store.upsert_activity(user_id, "act-1", sync_status="error")
+                store.upsert_activity(
+                    user_id, "99", source="garmin", name="Garmin ride"
+                )
                 _login(client, "admin@test.local", "admin-pass")
 
                 for path, data in APP_POST_CASES:
