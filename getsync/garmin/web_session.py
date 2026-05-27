@@ -359,7 +359,18 @@ def upload_fit_via_web(
             files={"file": (safe_name, fit_bytes, "application/octet-stream")},
         )
 
-    if resp.status_code >= 400 and "json" not in (resp.headers.get("content-type") or ""):
+    content_type = resp.headers.get("content-type") or ""
+    if resp.status_code == 409:
+        if "json" in content_type:
+            try:
+                return _parse_upload_response(resp)
+            except RuntimeError:
+                pass
+        from getsync.garmin.upload_errors import garmin_duplicate_result
+
+        return garmin_duplicate_result()
+
+    if resp.status_code >= 400 and "json" not in content_type:
         resp.raise_for_status()
 
     return _parse_upload_response(resp)

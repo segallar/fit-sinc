@@ -301,6 +301,10 @@ def _upload_fit_via_browser_sync(
 
                 if captured:
                     status, url, body = captured[-1]
+                    if status == 409:
+                        from getsync.garmin.upload_errors import garmin_duplicate_result
+
+                        return garmin_duplicate_result()
                     raise RuntimeError(
                         f"Garmin upload response not JSON ({status} {url}): {body[:200]}"
                     )

@@ -126,8 +126,19 @@ def upload_fit(
                 f"Garmin session not available for {user_ctx.user_id} — "
                 f"run: getsync --user {user_ctx.user_id} garmin login --save-credentials"
             )
+    from getsync.garmin.upload_errors import (
+        garmin_duplicate_result,
+        is_garmin_duplicate_upload,
+    )
+
     buf = io.BytesIO(fit_bytes)
     buf.name = filename if filename.endswith(".fit") else f"{filename}.fit"
-    result = garth.upload(buf)
+    try:
+        result = garth.upload(buf)
+    except Exception as exc:
+        if is_garmin_duplicate_upload(exc):
+            garth.save(str(garth_dir))
+            return garmin_duplicate_result()
+        raise
     garth.save(str(garth_dir))
     return result

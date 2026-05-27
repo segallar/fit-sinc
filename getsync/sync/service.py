@@ -10,6 +10,11 @@ from typing import Any
 import httpx
 
 from getsync.garmin.session import upload_fit
+from getsync.garmin.upload_errors import (
+    garmin_duplicate_log_message,
+    garmin_duplicate_result,
+    is_garmin_duplicate_upload,
+)
 from getsync.hammerhead.client import HammerheadClient
 from getsync.state.store import Store
 from getsync.storage.activity import ActivityStorage
@@ -126,6 +131,28 @@ async def sync_activity(
             user_ctx,
         )
     except Exception as exc:
+        if is_garmin_duplicate_upload(exc):
+            garmin_result = garmin_duplicate_result()
+            store.mark_synced(
+                user_ctx.user_id,
+                activity_id,
+                garmin_result,
+                storage_key=storage_key,
+                **meta,
+            )
+            dup_msg = garmin_duplicate_log_message()
+            store.log_event(
+                "garmin_duplicate",
+                dup_msg,
+                activity_id,
+                user_id=user_ctx.user_id,
+            )
+            logger.info(
+                "synced %s -> Garmin duplicate (409) for user %s",
+                activity_id,
+                user_ctx.user_id,
+            )
+            return SyncResult(activity_id, "synced", dup_msg)
         msg = f"Garmin upload failed: {exc}"
         store.upsert_activity(
             user_ctx.user_id,
