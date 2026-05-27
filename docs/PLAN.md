@@ -78,7 +78,7 @@
 | **Auth** | `/register` при `REGISTRATION_OPEN`; session `getsync_session`; bootstrap admin |
 | **2.16 ✅** | Encrypted Garmin credentials per user; CLI `--save-credentials`; `ensure_garmin_session` — [CREDENTIALS.md](CREDENTIALS.md) |
 | **Mail (infra)** | `getsync/mail` + Resend; `getsync mail test`; verify/register в UI — **2.6** / **2.1e** 📋 |
-| **Не сделано** | **2.10** sidebar · **2.12** Garmin login в Settings · **2.6** email verify · **3.11** pull |
+| **Не сделано** | **2.10** sidebar · **2.6** email verify · **3.11** pull |
 
 ### Снимок кабинета `/app`
 
@@ -139,11 +139,11 @@ flowchart TB
 | -- | ------ | ------ | ------ | ------ | ------ |
 | — | **0.7** | ▶ | Design feedback — [DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md) | — | — |
 | **2.10** | 0.7 | P0 | Sidebar + вёрстка кабинета — [APP-UI.md](APP-UI.md) §11 | 4–7 дн | feedback |
-| **2.12** | 0.7 | P1 | Garmin login в Settings (форма email/password) | 1–2 веч | **2.10.2** |
+| **2.12** | 0.7 | ✅ | Garmin login в Settings (форма email/password) | — | **2.16** |
 | **2.16** | 0.7 | ✅ | Credentials backend: Fernet store, auto re-login Garmin | — | — |
 | **2.16.1** | 0.7 | ✅ | Garmin: `--save-credentials`, per-user `connections/garmin/` | — | **2.16** |
 | **2.16.2** | 0.7 | ✅ | `ensure_garmin_*`, retry OAuth, `GarminSessionError` | — | **2.16.1** |
-| **2.13** | 0.7 | P1 | Тесты после **2.10** | 2–4 дн | **2.10** |
+| **2.13** | 0.7 | 🔄 | Тесты: flows + user cases ✅; регрессия после **2.10** 📋 | 1–2 дн | **2.10** |
 | **2.14** | 0.7 | P1 | Sync log UX (фильтры; таблица в admin ✅) | 0.5 веч | — |
 | **2.5** | 0.7 | P2 | i18n кабинета | 1–2 веч | **2.10** |
 | **2.15** | backlog | P3 | Календарь: облачные дни без SQLite | 1 веч | browse |
@@ -214,15 +214,19 @@ flowchart LR
 | **2.10.2** | Activities, Settings, Admin; **2.12** в Connections | 3–5 дн |
 | **2.10.3** | Mobile, a11y | 2–3 дн |
 
-### 2.12 — Garmin login в UI
+### 2.12 — Garmin login в UI ✅
 
-Блокер для **3.11.1+** без CLI. Backend **2.16** ✅ (CredentialStore, auto re-login); в Settings пока status/refresh/CLI hint. См. [APP-UI.md](APP-UI.md) §6.3 · [CREDENTIALS.md](CREDENTIALS.md).
+Форма email/password + «сохранить для авто-входа» в Settings → Garmin (`POST /app/settings/garmin/login`). Backend **2.16** ✅. См. [APP-UI.md](APP-UI.md) §6.3 · [CREDENTIALS.md](CREDENTIALS.md).
 
 ### 2.13 — Тестирование
 
-- `GET /app/activities?view=calendar&year=&month=`
-- redirects `/app/`, `/app/log`, `/app/session`
-- browse/calendar tests; smoke login → activities → settings
+| Шаг | Статус |
+| --- | ------ |
+| `tests/flows.py` + `test_user_cases.py` (guest/user/admin) | ✅ v0.7 |
+| redirects `/app/`, `/app/log`, `/app/session` | ✅ |
+| calendar `?view=calendar&year=&month=` | ✅ |
+| smoke login → activities → settings | ✅ |
+| регрессия после **2.10** (sidebar/layout) | 📋 после 2.10 |
 
 ### 2.14 — Sync log UX (admin)
 

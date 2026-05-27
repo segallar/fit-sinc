@@ -14,7 +14,7 @@
 | ------- | ---------- |
 | **Без сети в CI** | Автотесты не ходят в Hammerhead, Garmin и SMTP; внешние HTTP — через `unittest.mock` |
 | **Изоляция данных** | Временный `DATA_DIR`, чистый SQLite, сброс `get_settings.cache_clear()` — [`tests/helpers.py`](../tests/helpers.py) |
-| **Быстрый feedback** | ~112 тестов (`python -m unittest discover -s tests`), stdlib `unittest`, без Playwright в job `test` |
+| **Быстрый feedback** | ~139 тестов (`python -m unittest discover -s tests`), stdlib `unittest`, без Playwright в job `test` |
 | **Регрессия безопасности** | Отдельный модуль `test_security_auth.py`: сессии, admin, tenant isolation, webhook |
 | **Деплой ≠ тесты** | На VPS через rsync **не** попадают `tests/`, `docs/`, `scripts/` — [`.rsyncignore`](../.rsyncignore) |
 
@@ -42,7 +42,7 @@ flowchart TB
 | Уровень | Где | Примеры |
 | ------- | --- | ------- |
 | Unit | `tests/test_*.py` | `timeutil`, `storage`, slug email, HMAC verify |
-| Integration (in-process) | `FastAPI TestClient` + temp DB | login, activities browse, webhook POST, sync idempotency |
+| Integration (in-process) | `FastAPI TestClient` + temp DB | login, activities browse, webhook POST, sync idempotency, **user-case flows** |
 | Smoke | `test_smoke.py`, `test_build_info.py` | импорт app, лендинг 200, footer version |
 | Ручная отладка Garmin | `scripts/debug_*.py`, `test_browser_fetch.py` | Playwright, consent, upload URLs |
 | E2E продукта | вне репозитория | поездка на Karoo, мониторинг sync log |
@@ -115,6 +115,17 @@ python -m unittest tests.test_security_auth.TestTenantIsolation -v
 | `isolated_env(tmp_root, **extra)` | Context manager: temp `data/`, переопределение env, сброс settings |
 | `webhook_hmac(body, secret)` | HMAC-SHA256 hex для подписи webhook в тестах |
 
+### `tests/flows.py`
+
+| Утилита | Назначение |
+| ------- | ---------- |
+| `login(client, email, password)` | POST `/app/login`, проверка redirect |
+| `logout(client)` | GET `/app/logout` |
+| `assert_redirect` / `assert_redirect_prefix` | Legacy URLs и redirects без follow |
+| `seed_default_user` / `seed_regular_user` | Пользователи в temp SQLite |
+
+Сценарии из [design/SCREENS.md](design/SCREENS.md) — [`tests/test_user_cases.py`](../tests/test_user_cases.py) (PLAN **2.13**).
+
 Типичный паттерн:
 
 ```python
@@ -162,8 +173,9 @@ with tempfile.TemporaryDirectory() as tmp:
 | `test_timeutil.py` | Utils | даты, фильтры в TZ пользователя |
 | `test_timezones.py` | Utils | список TZ, валидация |
 | `test_mail.py` | Mail **2.1e** | NullMailer, Resend mock (без реального API) |
+| `test_user_cases.py` | User flows **2.13** | guest/user/admin journeys, legacy redirects, calendar params |
 
-**Планируется (PLAN 2.13):** явные тесты redirects `/app/` → activities, `/app/log` → admin sync-log; calendar query params; сценарий login → activities → settings.
+**2.13 (частично ✅):** `test_user_cases.py` + `flows.py` — redirects `/app/` → activities, `/app/log` → admin sync-log, `/app/session` → settings; calendar query params; login → activities → settings; register auto-login.
 
 ---
 

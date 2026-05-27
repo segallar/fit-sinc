@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import shutil
 
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from getsync.config import get_settings
+from getsync.garmin.session import garmin_login
 from getsync.garmin.web_refresh import refresh_web_session
 from getsync.hammerhead.client import HammerheadClient
 from getsync.hammerhead.oauth import HammerheadOAuth
@@ -23,13 +25,14 @@ from getsync.web.connections import (
     list_connections,
 )
 from getsync.users.locale import normalize_locale
-from getsync.web.app_i18n import flash_message
+from getsync.web.app_i18n import cabinet_strings, flash_message
 from getsync.web.cabinet import render_cabinet
 from getsync.web.site_i18n import LANG_COOKIE
 from getsync.web.oauth_state import sign_hammerhead_oauth_state, verify_hammerhead_oauth_state
 
 router = APIRouter(prefix="/app/settings", tags=["settings"])
 P = "/app/settings"
+logger = logging.getLogger("getsync.web.settings")
 
 
 def _store() -> Store:
@@ -104,6 +107,7 @@ def _redirect(
 
 
 def _flash_from_query(request: Request, lang: str) -> dict[str, str]:
+    t = cabinet_strings(lang)
     flash: dict[str, str] = {}
     msg = request.query_params.get("msg", "").strip()
     err = request.query_params.get("error", "").strip()
@@ -125,6 +129,10 @@ def _flash_from_query(request: Request, lang: str) -> dict[str, str]:
         flash["error"] = "New passwords do not match."
     elif err == "wrong_current_password":
         flash["error"] = "Current password is incorrect."
+    elif err == "garmin_credentials_required":
+        flash["error"] = t["flash_garmin_credentials_required"]
+    elif err == "garmin_login_failed":
+        flash["error"] = t["flash_garmin_login_failed"]
     elif err:
         flash["error"] = err.replace("_", " ")
     return flash
@@ -276,6 +284,40 @@ async def hammerhead_disconnect(request: Request) -> RedirectResponse:
     if path.is_file():
         path.unlink()
     return _redirect("hh_disconnected", section="hammerhead")
+
+
+@router.post("/garmin/login", include_in_schema=False)
+async def garmin_login_settings(
+    request: Request,
+    garmin_email: str = Form(""),
+    garmin_password: str = Form(""),
+    save_credentials: str = Form(""),
+) -> RedirectResponse:
+    ctx = _ctx(request)
+    email = garmin_email.strip()
+    password = garmin_password
+    if not email or not password:
+        return _redirect(error="garmin_credentials_required", section="garmin")
+    store_password = save_credentials.strip().lower() in ("on", "true", "1", "yes")
+    try:
+        await asyncio.to_thread(
+            garmin_login,
+            email,
+            password,
+            ctx,
+            save_credentials=store_password,
+            store_password=store_password,
+        )
+    except Exception as exc:
+        logger.warning("Garmin login from settings failed for %s: %s", ctx.user_id, exc)
+        return _redirect(error="garmin_login_failed", section="garmin")
+    msg = "garmin_connected"
+    if store_password:
+        from getsync.credentials.garmin import garmin_auto_login_configured
+
+        if not garmin_auto_login_configured(ctx):
+            msg = "garmin_connected_no_vault"
+    return _redirect(msg, section="garmin", anchor="garmin-session")
 
 
 @router.post("/garmin/refresh", include_in_schema=False)

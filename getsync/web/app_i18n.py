@@ -203,6 +203,16 @@ _register_cabinet("en", {
     "flash_hh_disconnected": "Hammerhead disconnected.",
     "flash_garmin_refreshed": "Garmin session refresh requested.",
     "flash_garmin_disconnected": "Garmin sessions removed for this account.",
+    "flash_garmin_connected": "Garmin Connect linked successfully.",
+    "flash_garmin_connected_no_vault": (
+        "Garmin linked. Sessions saved; auto re-login needs GETSYNC_SECRETS_KEY on the server."
+    ),
+    "flash_garmin_credentials_required": "Garmin email and password are required.",
+    "flash_garmin_login_failed": "Garmin login failed. Check email and password.",
+    "garmin_email": "Garmin email",
+    "garmin_password": "Garmin password",
+    "garmin_save_credentials": "Store password for automatic re-login",
+    "garmin_connect": "Connect Garmin",
 })
 
 _register_cabinet("ru", {
@@ -237,6 +247,16 @@ _register_cabinet("ru", {
     "flash_hh_disconnected": "Hammerhead отключён.",
     "flash_garmin_refreshed": "Запрошено обновление сессии Garmin.",
     "flash_garmin_disconnected": "Сессии Garmin удалены для этого аккаунта.",
+    "flash_garmin_connected": "Garmin Connect успешно подключён.",
+    "flash_garmin_connected_no_vault": (
+        "Garmin подключён. Сессии сохранены; для авто-входа нужен GETSYNC_SECRETS_KEY на сервере."
+    ),
+    "flash_garmin_credentials_required": "Укажите email и пароль Garmin.",
+    "flash_garmin_login_failed": "Не удалось войти в Garmin. Проверьте email и пароль.",
+    "garmin_email": "Email Garmin",
+    "garmin_password": "Пароль Garmin",
+    "garmin_save_credentials": "Сохранить пароль для автоматического входа",
+    "garmin_connect": "Подключить Garmin",
 })
 
 _register_cabinet("de", {
@@ -271,6 +291,16 @@ _register_cabinet("de", {
     "flash_hh_disconnected": "Hammerhead getrennt.",
     "flash_garmin_refreshed": "Garmin-Sitzung wird aktualisiert.",
     "flash_garmin_disconnected": "Garmin-Sitzungen für dieses Konto entfernt.",
+    "flash_garmin_connected": "Garmin Connect erfolgreich verknüpft.",
+    "flash_garmin_connected_no_vault": (
+        "Garmin verknüpft. Sitzungen gespeichert; Auto-Login braucht GETSYNC_SECRETS_KEY auf dem Server."
+    ),
+    "flash_garmin_credentials_required": "Garmin-E-Mail und Passwort sind erforderlich.",
+    "flash_garmin_login_failed": "Garmin-Anmeldung fehlgeschlagen. E-Mail und Passwort prüfen.",
+    "garmin_email": "Garmin-E-Mail",
+    "garmin_password": "Garmin-Passwort",
+    "garmin_save_credentials": "Passwort für automatische Anmeldung speichern",
+    "garmin_connect": "Garmin verbinden",
 })
 
 
@@ -283,5 +313,7 @@ def flash_message(lang: str | None, msg_code: str) -> str | None:
         "hh_disconnected": t["flash_hh_disconnected"],
         "garmin_refreshed": t["flash_garmin_refreshed"],
         "garmin_disconnected": t["flash_garmin_disconnected"],
+        "garmin_connected": t["flash_garmin_connected"],
+        "garmin_connected_no_vault": t["flash_garmin_connected_no_vault"],
     }
     return mapping.get(msg_code)

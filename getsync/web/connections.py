@@ -113,8 +113,14 @@ def _garmin_session_monitor(mon_raw: dict[str, object]) -> dict[str, object]:
 
 
 def garmin_session_context(ctx: UserContext) -> dict[str, object]:
-    """Garmin JWT monitor for Settings (status + manual refresh)."""
-    return {"mon": _garmin_session_monitor(session_monitor(ctx))}
+    """Garmin JWT monitor + login form hints for Settings."""
+    from getsync.credentials.garmin import META_EMAIL, get_garmin_meta
+
+    meta = get_garmin_meta(ctx)
+    return {
+        "mon": _garmin_session_monitor(session_monitor(ctx)),
+        "garmin_saved_email": (meta.get(META_EMAIL) or "").strip(),
+    }
 
 
 def garmin_refresh_log_context(

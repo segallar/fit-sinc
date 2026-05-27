@@ -13,12 +13,13 @@
 - Mail module: `getsync/mail`, backends `null` / `console` / `resend`, CLI `getsync mail test`
 - CI: GitHub Actions `checkout@v6`, `setup-python@v6` (Node 24 runtime)
 - Ops: nginx 301 `fit.romansegalla.online` → `app.getsync.me` ([`deploy/nginx/fit.conf`](deploy/nginx/fit.conf)); prod без глобальных `GARMIN_EMAIL` / `GARMIN_PASSWORD`
+- **2.12** — Garmin login в Settings: email/password, сохранение credentials (`POST /app/settings/garmin/login`)
+- **2.13** (часть) — `tests/flows.py`, `test_user_cases.py` (guest/user/admin journeys)
 
 ### Планируется
 
 - **2.10** — sidebar и вёрстка кабинета
-- **2.12** — Garmin login в Settings (форма в UI)
-- **2.13** — регрессионные тесты
+- **2.13** — регрессия после **2.10**
 - **2.14** — UX sync log в admin
 - **2.6** — email verify при регистрации
 

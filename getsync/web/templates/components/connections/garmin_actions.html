@@ -1,6 +1,32 @@
+{% from "components/settings_form_macros.html" import settings_field %}
+
+<form method="post" action="{{ prefix }}/settings/garmin/login" class="getsync-settings-form mb-3" autocomplete="on">
+  {% call settings_field(t.garmin_email, "garmin_email") %}
+  <input type="email" name="garmin_email" id="garmin_email" class="form-control form-control-sm"
+         value="{{ garmin_saved_email }}" required autocomplete="username">
+  {% endcall %}
+  {% call settings_field(t.garmin_password, "garmin_password") %}
+  <input type="password" name="garmin_password" id="garmin_password" class="form-control form-control-sm"
+         required autocomplete="current-password">
+  {% endcall %}
+  <div class="row getsync-settings-field align-items-center mb-3">
+    <div class="col-sm-8 col-lg-9 offset-sm-4 offset-lg-3">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="save_credentials" id="save_credentials" value="on" checked>
+        <label class="form-check-label small" for="save_credentials">{{ t.garmin_save_credentials }}</label>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-8 col-lg-9 offset-sm-4 offset-lg-3">
+      <button type="submit" class="btn btn-primary btn-sm">{{ t.garmin_connect }}</button>
+    </div>
+  </div>
+</form>
+
 <div class="d-flex flex-wrap gap-2">
   <form method="post" action="{{ prefix }}/settings/garmin/refresh">
-    <button type="submit" class="btn btn-primary btn-sm">Refresh web session</button>
+    <button type="submit" class="btn btn-outline-primary btn-sm">Refresh web session</button>
   </form>
   <form method="post" action="{{ prefix }}/settings/garmin/disconnect"
         onsubmit="return confirm('Remove Garmin web and OAuth files for this account?');">
@@ -8,6 +34,3 @@
   </form>
   <a href="{{ prefix }}/settings?section=garmin#garmin-session" class="btn btn-outline-secondary btn-sm">Session details</a>
 </div>
-<p class="small text-muted mt-3 mb-0">
-  CLI: <code>getsync --user {{ user.slug }} garmin login</code>
-</p>

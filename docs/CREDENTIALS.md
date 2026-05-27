@@ -1,7 +1,7 @@
 # Учётные данные интеграций (per user)
 
 > **Создано:** 2026-05-26 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
-> **Статус:** **2.16** backend ✅ · **2.12** Garmin login UI 📋  
+> **Статус:** **2.16** backend ✅ · **2.12** Garmin login UI ✅  
 > **Связано:** [CONNECTIONS.md](CONNECTIONS.md) · [DATABASE.md](DATABASE.md) · [PLAN.md](PLAN.md) (**2.7**, **2.12**, **2.16**) · [API_GARMIN.md](API_GARMIN.md)
 
 Цель: **авто-перелогин** при протухании сессий и **единое хранение секретов** для Garmin, Hammerhead и будущих систем — **отдельно на каждого tenant**, без общего `GARMIN_*` в `.env`.
@@ -120,7 +120,7 @@ ensure_garmin_session(user):
 
 | Канал | Поведение |
 | ----- | --------- |
-| **2.12** Settings | Форма Garmin: email, password, чекбокс «хранить для авто-восстановления», Connect |
+| **2.12** Settings | ✅ Форма Garmin: email, password, чекбокс «хранить для авто-восстановления», Connect |
 | CLI `garmin login` | Как сейчас + флаг `--save-credentials` (default true для admin?) |
 | Disconnect | Удалить `connections/garmin/` целиком (уже близко к `garmin/disconnect`) |
 | Admin | Не видеть пароли; только `connected` / `last_error` / `expires_at` |
@@ -155,7 +155,7 @@ ensure_garmin_session(user):
 | -- | ---------- | ----------- |
 | **2.16** | CredentialStore (Fernet), `secrets.enc`, env key | ✅ код |
 | **2.16.1** | Garmin: сохранение email/password (opt-in), убрать `.env` fallback | ✅ CLI; legacy `.env` fallback остаётся |
-| **2.16.2** | `ensure_garmin_session()` + auto re-login + понятные ошибки в UI | ✅ код; UI форма — **2.12** |
+| **2.16.2** | `ensure_garmin_session()` + auto re-login + понятные ошибки в UI | ✅ |
 | **2.7** | Таблица `connections` в SQLite, миграция файлов | **2.16** |
 | **2.7.1** | Hammerhead credentials через тот же store | **2.7** |
 
