@@ -256,6 +256,8 @@ systemctl restart getsync
 
 ## GitHub Actions
 
+Workflow: [`.github/workflows/test.yml`](../.github/workflows/test.yml) — `actions/checkout@v6`, `actions/setup-python@v6` (Node 24 runtime).
+
 | Job | Когда | Действие |
 |-----|--------|----------|
 | `test` | push, PR, `workflow_dispatch` | `pip install -e .`, `compileall getsync`, unittest |

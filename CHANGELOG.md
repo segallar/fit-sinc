@@ -1,18 +1,25 @@
 # Changelog
 
-> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-26 · **Версия:** 0.7.0  
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
 > Релизы продукта; версии в шапках `docs/` должны соответствовать актуальному содержанию.  
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/). Версии — [SemVer](https://semver.org/).
 
 ## [0.7.0] — в разработке
 
+### Added
+
+- **2.16** — CredentialStore (Fernet), per-user `connections/garmin/`, auto re-login Garmin (`ensure_garmin_session`)
+- Mail module: `getsync/mail`, backends `null` / `console` / `resend`, CLI `getsync mail test`
+- CI: GitHub Actions `checkout@v6`, `setup-python@v6` (Node 24 runtime)
+
 ### Планируется
 
 - **2.10** — sidebar и вёрстка кабинета
-- **2.12** — Garmin login в Settings
+- **2.12** — Garmin login в Settings (форма в UI)
 - **2.13** — регрессионные тесты
 - **2.14** — UX sync log в admin
+- **2.6** — email verify при регистрации
 
 ---
 

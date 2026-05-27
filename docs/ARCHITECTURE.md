@@ -1,7 +1,7 @@
 # Архитектура GetSync
 
 > **Создано:** 2026-05-25 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
-> **Статус (2026-05-26):** production — фазы 0–5; кабинет **5b** + **2.3** (unified activities, calendar, local storage) — [PLAN.md](PLAN.md).  
+> **Статус (2026-05-27):** production — фазы 0–5; кабинет **5b** + **2.3** (unified activities, calendar, local storage); **2.16** credentials backend ✅ — [PLAN.md](PLAN.md).  
 > UI-спека: [APP-UI.md](APP-UI.md) · connections: [CONNECTIONS.md](CONNECTIONS.md) · FIT: [STORAGE.md](STORAGE.md) · БД: [DATABASE.md](DATABASE.md)  
 > Быстрый старт — [README](../README.md) · индекс — [docs/README.md](README.md).
 
@@ -51,6 +51,7 @@ sequenceDiagram
 | Garmin Connect | Web `JWT_WEB` + refresh по `session` cookie → Playwright / HTTP / garth-ng |
 | Состояние | SQLite (`user_id` на activities и events) |
 | CLI | typer (`getsync`; CLI `getsync`) |
+| Email | `getsync/mail` — Resend / null / console; verify flows — **2.6** / **2.1e** 📋 |
 | Веб-UI | Jinja2 + HTMX + Bootstrap 5 ([UI.md](UI.md)) |
 | Деплой | VPS + nginx + systemd ([CI-CD.md](CI-CD.md)) |
 
@@ -61,7 +62,7 @@ sequenceDiagram
 | Слой | Изоляция |
 |------|----------|
 | SQLite | `activities` (PK `user_id, source, activity_id`), `sync_events`, `session_refresh_events` |
-| Файлы | `data/users/{user_id}/` — OAuth, Garmin session, `activities/{source}/*.fit` |
+| Файлы | `data/users/{user_id}/` — OAuth, Garmin session, `connections/garmin/` (encrypted), `activities/{source}/*.fit` |
 | Webhook | `payload.userId` → `users.hammerhead_user_id` |
 | Sync / upload | `UserContext` → `StorageBackend`, Garmin paths |
 | UI browse | `fetch_activities_page` → `persist_browse_rows` — каталог per tenant |
@@ -74,9 +75,9 @@ data/
       hammerhead/{id}.fit
       garmin/…
     hammerhead_tokens.json      # OAuth Hammerhead
+    connections/garmin/         # encrypted credentials (**2.16**)
     garmin_web/session.json     # JWT_WEB, session, …
     garth/                      # OAuth garth-ng (fallback upload)
-    activities/                 # FIT per source
 ```
 
 Каталог в SQLite: `activities(user_id, source, activity_id)` + `storage_key`, `activity_type`, … — [DATABASE.md](DATABASE.md) · файлы — [STORAGE.md](STORAGE.md).  
@@ -122,6 +123,8 @@ getsync --user <slug> garmin status   # upload_ready
 
 | Компонент | Назначение |
 |-----------|------------|
+| [`getsync/credentials/`](../getsync/credentials/) | Encrypted per-user secrets (**2.16**) |
+| [`getsync/mail/`](../getsync/mail/) | Outbound email (infra; verify — **2.1e**) |
 | [`getsync/hammerhead/`](../getsync/hammerhead/) | OAuth, API, FIT download, HMAC |
 | [`getsync/garmin/session.py`](../getsync/garmin/session.py) | Оркестрация upload в `UserContext` |
 | [`getsync/garmin/web_session.py`](../getsync/garmin/web_session.py) | Cookies, HTTP upload, `session.json` |
@@ -182,8 +185,10 @@ getsync user create <slug> --email ... --hammerhead-user-id ...
 
 getsync --user <slug> hammerhead auth
 getsync --user <slug> garmin login
+getsync --user <slug> garmin login --save-credentials   # **2.16**
 getsync --user <slug> garmin status
 getsync --user <slug> sync --since 2025-01-01
+getsync mail test --to you@example.com                  # Resend smoke
 
 getsync serve
 ```
@@ -205,8 +210,8 @@ getsync serve
 
 ## Ограничения (актуальные)
 
-- Подтверждение email не реализовано — **2.1e** (`REGISTRATION_OPEN=false` на prod по умолчанию)  
-- Garmin **первичный** login — CLI; в settings — status/refresh/session monitor  
+- Подтверждение email не реализовано — mail infra ✅, product flows **2.1e** / **2.6** (`REGISTRATION_OPEN=false` на prod по умолчанию)  
+- Garmin auto re-login ✅ при сохранённых credentials (**2.16**); **первичный** login в UI — **2.12** (пока CLI)  
 - Календарь — только дни из SQLite-каталога (после browse); облачные дни без upsert не видны  
 - Browse Garmin — постранично; без «полного месяца из API» в calendar v1  
 - Даты: UTC/ISO в SQLite, отображение в `users.timezone`  
@@ -241,6 +246,7 @@ Cutover DNS и legacy host: [1.5-RENAME.md](archive/1.5-RENAME.md), [CI-CD.md](C
 | **2.3** (часть) | Unified activities, SQLite catalog, calendar tab, sync summary, admin sync log, connections UI |
 | **11.0** (часть) | `StorageBackend` local, `storage_key`, per-user `activities/{source}/` |
 | **1.5** | Rename GetSync — A+B+C ✅ ([1.5-RENAME.md](archive/1.5-RENAME.md)) |
+| **2.16** | CredentialStore, Garmin auto re-login backend ✅ ([CREDENTIALS.md](CREDENTIALS.md)) |
 
 ## Связанная документация
 

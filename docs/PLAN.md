@@ -3,9 +3,9 @@
 
 > **Создано:** 2026-05-25 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
 > **Prod:** [v0.6.0](#v060--зафиксировано-2026-05-26) · **В разработке:** **v0.7.0** (кабинет / дизайн)  
-> **Выполненное до v0.6** (фазы 0–5, 5b) — [PLAN-ARCHIVE.md](archive/PLAN-ARCHIVE.md) · **~123** теста · HH→Garmin на sirocco.
+> **Выполненное до v0.6** (фазы 0–5, 5b) — [PLAN-ARCHIVE.md](archive/PLAN-ARCHIVE.md) · **~112** тестов (CI `unittest discover`) · HH→Garmin на sirocco.
 
-**Документы:** [APP-UI.md](APP-UI.md) · [SCREENS.md](design/SCREENS.md) · [CONNECTIONS.md](CONNECTIONS.md) · [STORAGE.md](STORAGE.md) · [DATABASE.md](DATABASE.md) · [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) · [CHANGELOG.md](../CHANGELOG.md)
+**Документы:** [APP-UI.md](APP-UI.md) · [SCREENS.md](design/SCREENS.md) · [CONNECTIONS.md](CONNECTIONS.md) · [CREDENTIALS.md](CREDENTIALS.md) · [STORAGE.md](STORAGE.md) · [DATABASE.md](DATABASE.md) · [2.1e-EMAIL.md](2.1e-EMAIL.md) · [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) · [CHANGELOG.md](../CHANGELOG.md)
 
 ---
 
@@ -66,6 +66,18 @@
 | Регистрация | `/register` при `REGISTRATION_OPEN` — без email verify (**2.6**) |
 | Домен | **`getsync.me`** / **`app.getsync.me`** ✅ — [1.5-RENAME.md](archive/1.5-RENAME.md) |
 
+### Что реализовано сейчас (код + prod)
+
+| Блок | Состояние |
+| ---- | --------- |
+| **Prod** | TLS, nginx, Hammerhead webhook + OAuth на `app.getsync.me` ✅ |
+| **Sync** | Webhook HH → FIT → Garmin; routing по `hammerhead_user_id`; Playwright на VPS |
+| **Кабинет** | Activities (list \| calendar), Settings (HH OAuth, Garmin monitor), Admin (users, sync-log, JWT log) |
+| **Auth** | `/register` при `REGISTRATION_OPEN`; session `getsync_session`; bootstrap admin |
+| **2.16 ✅** | Encrypted Garmin credentials per user; CLI `--save-credentials`; `ensure_garmin_session` — [CREDENTIALS.md](CREDENTIALS.md) |
+| **Mail (infra)** | `getsync/mail` + Resend; `getsync mail test`; verify/register в UI — **2.6** / **2.1e** 📋 |
+| **Не сделано** | **2.10** sidebar · **2.12** Garmin login в Settings · **2.6** email verify · **3.11** pull · 301 legacy host |
+
 ### Снимок кабинета `/app`
 
 | Экран | URL |
@@ -81,17 +93,19 @@
 
 ## v0.7.0 — фокус (кабинет)
 
-**Цель:** согласованный дизайн и стабильное поведение `/app` + **Garmin login в UI**.
+**Цель:** согласованный дизайн и стабильное поведение `/app` + **Garmin login в UI** (**2.12** — UX-блокер; backend credentials **2.16** ✅).
 
 **Не в v0.7:** **3.x** хаб · полный **3.11** · legacy 301 `fit.romansegalla.online`.
 
 ```mermaid
 flowchart TB
   T0["2.0 Design feedback\nDESIGN-FEEDBACK"]
+  T16["2.16 Credentials backend ✅"]
   T1["2.10 Sidebar + экраны"]
   T2["2.12 Garmin login UI"]
   T3["2.13 Тесты"]
   T4["2.14 Sync log UX"]
+  T16 -.-> T2
   T0 --> T1 --> T2 --> T3
   T1 --> T4
 ```
@@ -123,8 +137,8 @@ flowchart TB
 | -- | ------ | ------ | ------ | ------ | ------ |
 | — | **0.7** | ▶ | Design feedback — [DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md) | — | — |
 | **2.10** | 0.7 | P0 | Sidebar + вёрстка кабинета — [APP-UI.md](APP-UI.md) §11 | 4–7 дн | feedback |
-| **2.12** | 0.7 | P1 | Garmin login в Settings | 1–2 веч | **2.10.2** |
-| **2.16** | 0.7 | ✅ | Credentials: Fernet store, auto re-login Garmin | — | **2.12** UI |
+| **2.12** | 0.7 | P1 | Garmin login в Settings (форма email/password) | 1–2 веч | **2.10.2** |
+| **2.16** | 0.7 | ✅ | Credentials backend: Fernet store, auto re-login Garmin | — | — |
 | **2.16.1** | 0.7 | ✅ | Garmin: `--save-credentials`, per-user `connections/garmin/` | — | **2.16** |
 | **2.16.2** | 0.7 | ✅ | `ensure_garmin_*`, retry OAuth, `GarminSessionError` | — | **2.16.1** |
 | **2.13** | 0.7 | P1 | Тесты после **2.10** | 2–4 дн | **2.10** |
@@ -169,7 +183,7 @@ flowchart LR
 
 | Горизонт | Содержание |
 | -------- | ---------- |
-| **v0.7** | Кабинет: дизайн, Garmin login UI, тесты, **2.14** |
+| **v0.7** | Кабинет: дизайн (**2.10**), Garmin login UI (**2.12**), тесты (**2.13**), **2.14**; backend credentials (**2.16**) ✅ |
 | **H1** | ~~**1.5** getsync.me~~ ✅ |
 | **H2** | **2.11** · **2.4** · **2.6** |
 | **H3** | **2.8** → **3.11.*** → **3.9** → **3.1** ∥ **3.3** → **3.5** |
@@ -196,7 +210,7 @@ flowchart LR
 
 ### 2.12 — Garmin login в UI
 
-Блокер для **3.11.2+** без CLI. См. [APP-UI.md](APP-UI.md) §6.3.
+Блокер для **3.11.1+** без CLI. Backend **2.16** ✅ (CredentialStore, auto re-login); в Settings пока status/refresh/CLI hint. См. [APP-UI.md](APP-UI.md) §6.3 · [CREDENTIALS.md](CREDENTIALS.md).
 
 ### 2.13 — Тестирование
 
@@ -263,6 +277,7 @@ flowchart LR
 
 | Задача | Примечание |
 | ------ | ---------- |
+| CI GitHub Actions | `checkout@v6`, `setup-python@v6` (Node 24 runtime) |
 | `upload_ready` на sirocco | мониторинг |
 | Убрать `GARMIN_EMAIL` из `.env` prod | multi-tenant |
 | Admin Statistics | H2 |
@@ -288,5 +303,7 @@ flowchart LR
 | [CHANGELOG.md](../CHANGELOG.md) | Версии релизов |
 | [DOC-CONVENTION.md](DOC-CONVENTION.md) | Метаданные документов |
 | [PLAN-ARCHIVE.md](archive/PLAN-ARCHIVE.md) | История фаз 0–5 |
+| [CREDENTIALS.md](CREDENTIALS.md) | Per-user secrets, **2.16** |
+| [2.1e-EMAIL.md](2.1e-EMAIL.md) | Mail infra + verify (product 📋) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Потоки, tenants |
 | [APP-UI.md](APP-UI.md) | UI `/app` |

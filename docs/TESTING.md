@@ -14,7 +14,7 @@
 | ------- | ---------- |
 | **Без сети в CI** | Автотесты не ходят в Hammerhead, Garmin и SMTP; внешние HTTP — через `unittest.mock` |
 | **Изоляция данных** | Временный `DATA_DIR`, чистый SQLite, сброс `get_settings.cache_clear()` — [`tests/helpers.py`](../tests/helpers.py) |
-| **Быстрый feedback** | ~120+ тестов, stdlib `unittest`, без Playwright в job `test` |
+| **Быстрый feedback** | ~112 тестов (`python -m unittest discover -s tests`), stdlib `unittest`, без Playwright в job `test` |
 | **Регрессия безопасности** | Отдельный модуль `test_security_auth.py`: сессии, admin, tenant isolation, webhook |
 | **Деплой ≠ тесты** | На VPS через rsync **не** попадают `tests/`, `docs/`, `scripts/` — [`.rsyncignore`](../.rsyncignore) |
 

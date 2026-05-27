@@ -1,6 +1,6 @@
 # Документация GetSync
 
-> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-26 · **Версия:** 0.7.0  
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
 > **Продукт:** [GetSync](https://getsync.me) — синхронизация тренировок **Hammerhead Karoo → Garmin Connect**.  
 > **Код:** пакет `getsync`, CLI `getsync`.  
 > **Быстрый старт:** [README](../README.md).
@@ -47,6 +47,7 @@
 | **История rename** | fit_sinc → GetSync — [archive/1.5-RENAME.md](archive/1.5-RENAME.md) (миграции в коде сняты) |
 | **tenant** | Пользователь сервиса (`users.id`, каталог `data/users/{id}/`) |
 | **Production app** | `https://app.getsync.me` · legacy `fit.romansegalla.online` (301 → новый host — backlog) |
+| **Mail** | Infra ✅ (`getsync/mail`, Resend); verify при register — **2.6** / **2.1e** 📋 |
 
 ---
 

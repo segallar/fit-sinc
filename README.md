@@ -8,7 +8,7 @@
   <a href="https://getsync.me">getsync.me</a> — синхронизация тренировок <strong>Hammerhead Karoo</strong> → <strong>Garmin Connect</strong>
 </p>
 
-<p align="center"><small>Документация: <strong>v0.7.0</strong> · обновлено 2026-05-26 · <a href="docs/DOC-CONVENTION.md">соглашение о документах</a></small></p>
+<p align="center"><small>Документация: <strong>v0.7.0</strong> · обновлено 2026-05-27 · <a href="docs/DOC-CONVENTION.md">соглашение о документах</a></small></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
@@ -67,6 +67,8 @@ sequenceDiagram
 |--------|------------|
 | `hammerhead/` | OAuth, API client, скачивание FIT |
 | `garmin/` | Web-сессия, upload (browser / HTTP / garth) |
+| `credentials/` | Encrypted per-user secrets (**2.16**) |
+| `mail/` | Исходящая почта: null / console / Resend (infra) |
 | `sync/service.py` | id → FIT → upload → state, backfill |
 | `web/app.py` | Webhook + веб-UI |
 | `state/store.py` | SQLite: activities, sync_events |
@@ -76,10 +78,12 @@ sequenceDiagram
 
 ## Возможности
 
-- Webhook от Hammerhead + ручной backfill (`getsync sync`)
+- Webhook от Hammerhead + ручной backfill (`getsync sync`); routing по `userId` → tenant
+- Multi-tenant: несколько пользователей на одном инстансе, admin CRUD
 - Загрузка в Garmin Connect (неофициальный web API + [garth-ng](https://pypi.org/project/garth-ng/))
-- Веб-панель: дашборд, список активностей, лог синхронизации, скачивание `.fit`
-- CLI: OAuth Hammerhead, сессия Garmin, sync, `serve`
+- Кабинет: activities (календарь/список), settings, admin sync log + JWT log; скачивание `.fit`
+- Саморегистрация `/register` при `REGISTRATION_OPEN`
+- CLI: OAuth Hammerhead, сессия Garmin (`--save-credentials`), sync, `serve`, `mail test`
 - Дедупликация и история в SQLite
 
 ## Требования
@@ -119,6 +123,7 @@ Webhook URL (production): `https://app.getsync.me/webhooks/hammerhead` — се�
 
 ```bash
 getsync garmin login           # интерактивный логин (garth-ng)
+getsync garmin login --save-credentials   # сохранить в connections/garmin/ (2.16)
 getsync garmin status          # upload_ready = валиден web JWT
 getsync garmin refresh-web     # обновить web-сессию для upload
 ```
@@ -150,27 +155,35 @@ getsync serve                  # http://127.0.0.1:8080 — webhook + UI
 | `HAMMERHEAD_WEBHOOK_SECRET` | HMAC для `X-Hmac-Signature` |
 | `HAMMERHEAD_REDIRECT_URI` | По умолчанию `http://127.0.0.1:8765/callback` |
 | `GARMIN_EMAIL` / `PASSWORD` | Опционально для CLI |
+| `GETSYNC_SECRETS_KEY` | Fernet-ключ для encrypted credentials (**2.16**) |
+| `REGISTRATION_OPEN` | Разрешить `/register` (по умолчанию `false`) |
+| `MAIL_BACKEND` / `RESEND_*` | Почта: `null` \| `console` \| `resend` — см. `.env.example` |
 | `DATA_DIR` | Каталог данных (по умолчанию `data`) |
 
-Файлы данных (не коммитить): `data/getsync.db`, per-tenant `data/users/{id}/` (tokens, `activities/`, `garmin_web/`, `garth/`). См. [docs/STORAGE.md](docs/STORAGE.md), [docs/DATABASE.md](docs/DATABASE.md).
+Полный список — [`.env.example`](.env.example).
+
+Файлы данных (не коммитить): `data/getsync.db`, per-tenant `data/users/{id}/` (tokens, `activities/`, `connections/garmin/`, `garmin_web/`, `garth/`). См. [docs/STORAGE.md](docs/STORAGE.md), [docs/DATABASE.md](docs/DATABASE.md), [docs/CREDENTIALS.md](docs/CREDENTIALS.md).
 
 ## Веб-интерфейс
 
 | Путь | Описание |
 |------|----------|
-| `/app/` | Дашборд, последние тренировки |
-| `/app/activities` | Таблица HH/Garmin, фильтры |
-| `/app/log` | Лог webhook / download / upload |
-| `/app/settings` | Подключения Hammerhead / Garmin |
-| `/` | Главная: Login / Sign up |
+| `/` | Лендинг (Login / Sign up) |
 | `/register` | Регистрация (`REGISTRATION_OPEN=true`) |
 | `/app/login` | Вход (cookie `getsync_session`) |
+| `/app/` | → redirect `/app/activities` |
+| `/app/activities` | Календарь/список, sync summary, скачивание FIT |
+| `/app/settings` | Профиль, Hammerhead/Garmin connections |
+| `/app/admin/` | Users (admin) |
+| `/app/admin/sync-log` | Журнал sync (все tenants) |
+| `/app/admin/log` | Garmin JWT log (admin) |
+| `/app/log` | → redirect `/app/admin/sync-log` |
 
 В production UI за nginx (TLS); `SESSION_COOKIE_SECURE=true`. Приложение слушает только `127.0.0.1`.
 
 ## Деплой и CI
 
-- **CI:** GitHub Actions — **Tests** (push/PR) и **Deploy** (sirocco после Test на `main`; badges в шапке)
+- **CI:** GitHub Actions — test + deploy на `main` (`checkout@v6`, `setup-python@v6`, Node 24)
 - **Ручной deploy:** rsync + systemd — [docs/CI-CD.md](docs/CI-CD.md)
 - Юниты: `deploy/getsync.service`, `deploy/nginx/getsync.conf`
 
@@ -180,17 +193,19 @@ getsync serve                  # http://127.0.0.1:8080 — webhook + UI
 |----------|------------|
 | [docs/README.md](docs/README.md) | Индекс документации, соглашения, URL production |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архитектура v1, tenants, компоненты, фазы |
-| [docs/PLAN.md](docs/PLAN.md) | Roadmap (открытые задачи) · [архив](docs/archive/) — история |
+| [docs/PLAN.md](docs/PLAN.md) | Roadmap · [архив](docs/archive/) |
+| [docs/CREDENTIALS.md](docs/CREDENTIALS.md) | Per-user secrets, auto re-login Garmin |
 | [docs/CI-CD.md](docs/CI-CD.md) | Сервер, nginx, certbot, deploy |
 | [docs/API_HAMMERHEAD.md](docs/API_HAMMERHEAD.md) | OAuth, webhook, REST |
 | [docs/API_GARMIN.md](docs/API_GARMIN.md) | Web JWT, upload, garth-ng |
 
 ## Ограничения
 
-- **v1:** один логический пользователь (один Hammerhead + один Garmin); webhook `userId` пока не маршрутизируется
+- Подтверждение email не реализовано — **2.6** / **2.1e** (`REGISTRATION_OPEN=false` на prod по умолчанию)
+- Garmin **первичный** login — CLI; форма в Settings — **2.12**
 - Только **активности** Hammerhead → Garmin (не маршруты / workouts)
 - Garmin — через **неофициальный** API; возможны изменения со стороны Garmin
-- Секреты только в `.env` на сервере, не в git
+- Секреты в `.env` и `data/users/{id}/` на сервере, не в git
 
 ## Разработка
 
@@ -202,7 +217,7 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 ## Статус
 
-MVP (фазы 0–5) в production. Пакет и CLI — **getsync**, публичный домен — [getsync.me](https://getsync.me) / [app.getsync.me](https://app.getsync.me). Планы: [docs/PLAN.md](docs/PLAN.md).
+Production на [app.getsync.me](https://app.getsync.me) (фазы 0–5, **1.5** cutover ✅). **v0.7** в работе: дизайн кабинета (**2.10**), Garmin login в UI (**2.12**). Roadmap: [docs/PLAN.md](docs/PLAN.md).
 
 ---
 
