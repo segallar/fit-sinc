@@ -28,17 +28,23 @@ class TestBuildInfo(unittest.TestCase):
     def test_git_commit_from_env(self) -> None:
         import os
 
+        import getsync.build_info as bi
+
         prev = os.environ.get("GETSYNC_GIT_COMMIT")
         os.environ["GETSYNC_GIT_COMMIT"] = "abc123def456"
-        try:
-            self.assertEqual(git_commit_short(), "abc123def456")
-            self.assertIn("abc123def456", build_footer_text())
-        finally:
-            clear_build_info_cache()
-            if prev is None:
-                os.environ.pop("GETSYNC_GIT_COMMIT", None)
-            else:
-                os.environ["GETSYNC_GIT_COMMIT"] = prev
+        with tempfile.TemporaryDirectory() as tmp:
+            missing_meta = Path(tmp) / "_build_meta.json"
+            with patch.object(bi, "_BUILD_META_FILE", missing_meta):
+                clear_build_info_cache()
+                try:
+                    self.assertEqual(git_commit_short(), "abc123def456")
+                    self.assertIn("abc123def456", build_footer_text())
+                finally:
+                    clear_build_info_cache()
+                    if prev is None:
+                        os.environ.pop("GETSYNC_GIT_COMMIT", None)
+                    else:
+                        os.environ["GETSYNC_GIT_COMMIT"] = prev
 
     def test_deploy_meta_from_file(self) -> None:
         import getsync.build_info as bi
