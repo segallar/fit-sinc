@@ -1,5 +1,25 @@
-<nav class="getsync-settings-subnav nav nav-pills flex-wrap gap-1 mb-4" aria-label="Settings sections">
-  <a class="nav-link {% if settings_section == 'profile' %}active{% endif %}" href="#profile">Profile</a>
-  <a class="nav-link {% if settings_section == 'connections' %}active{% endif %}" href="#connections">Connections</a>
-  <a class="nav-link {% if settings_section == 'password' %}active{% endif %}" href="#password">Password</a>
+<nav class="getsync-settings-subnav" aria-label="Settings sections">
+  <ul class="nav flex-column getsync-settings-nav-list">
+    <li class="nav-item">
+      <a class="nav-link {% if settings_section == 'profile' %}active{% endif %}"
+         href="{{ prefix }}/settings?section=profile"
+         {% if settings_section == 'profile' %}aria-current="page"{% endif %}>
+        {{ t.profile_h3 }}
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if settings_section == 'connections' %}active{% endif %}"
+         href="{{ prefix }}/settings?section=connections"
+         {% if settings_section == 'connections' %}aria-current="page"{% endif %}>
+        {{ t.settings_connections_h3 }}
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if settings_section == 'password' %}active{% endif %}"
+         href="{{ prefix }}/settings?section=password"
+         {% if settings_section == 'password' %}aria-current="page"{% endif %}>
+        {{ t.password_h3 }}
+      </a>
+    </li>
+  </ul>
 </nav>

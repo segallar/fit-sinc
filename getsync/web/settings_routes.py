@@ -43,10 +43,18 @@ def _ctx(request: Request) -> UserContext:
     return ctx
 
 
+def _settings_section(request: Request) -> str:
+    raw = request.query_params.get("section", "profile").strip().lower()
+    if raw in ("profile", "connections", "password"):
+        return raw
+    return "profile"
+
+
 def _redirect(
     msg: str = "",
     *,
     error: str = "",
+    section: str = "",
     anchor: str = "",
 ) -> RedirectResponse:
     params: dict[str, str] = {}
@@ -54,6 +62,11 @@ def _redirect(
         params["msg"] = msg
     if error:
         params["error"] = error
+    sec = section.strip().lower()
+    if not sec and anchor.startswith("garmin"):
+        sec = "connections"
+    if sec in ("profile", "connections", "password"):
+        params["section"] = sec
     q = H.query_string(params)
     url = f"{P}?{q}" if q else P
     if anchor:
@@ -116,7 +129,7 @@ async def settings_page(request: Request) -> str:
         flash=_flash_from_query(request, user.locale),
         conn=connection_settings_view(ctx, user),
         connection_groups=list_connections(ctx, user),
-        settings_section="profile",
+        settings_section=_settings_section(request),
         **garmin_session_context(ctx),
     )
 
@@ -143,8 +156,8 @@ async def settings_profile(
             locale=loc,
         )
     except Exception as exc:
-        return _redirect(error=str(exc))
-    response = _redirect("profile_saved")
+        return _redirect(error=str(exc), section="profile")
+    response = _redirect("profile_saved", section="profile")
     response.set_cookie(
         LANG_COOKIE,
         loc,
@@ -167,13 +180,13 @@ async def settings_password(
     if not user:
         raise HTTPException(status_code=404)
     if len(new_password) < 8:
-        return _redirect(error="password_too_short")
+        return _redirect(error="password_too_short", section="password")
     if new_password != new_password_confirm:
-        return _redirect(error="password_mismatch")
+        return _redirect(error="password_mismatch", section="password")
     if not _store().verify_user_password(user.email, current_password):
-        return _redirect(error="wrong_current_password")
+        return _redirect(error="wrong_current_password", section="password")
     _store().update_user(ctx.user_id, password=new_password)
-    return _redirect("password_changed")
+    return _redirect("password_changed", section="password")
 
 
 @router.get("/hammerhead/connect", include_in_schema=False)
@@ -181,7 +194,7 @@ async def hammerhead_connect(request: Request) -> RedirectResponse:
     ctx = _ctx(request)
     settings = get_settings()
     if not settings.hammerhead_client_id or not settings.hammerhead_client_secret:
-        return _redirect(error="hh_not_configured")
+        return _redirect(error="hh_not_configured", section="connections")
     oauth = _hammerhead_oauth(request)
     state = sign_hammerhead_oauth_state(ctx.user_id, settings.session_secret)
     url, _ = oauth.build_authorize_url(state=state)
@@ -196,30 +209,30 @@ async def hammerhead_callback(
     error: str = "",
 ) -> RedirectResponse:
     if error:
-        return _redirect(error=f"hh_{error}")
+        return _redirect(error=f"hh_{error}", section="connections")
     uid = verify_hammerhead_oauth_state(state, get_settings().session_secret)
     if not uid:
-        return _redirect(error="hh_state")
+        return _redirect(error="hh_state", section="connections")
     session_ctx = user_context_from_session(request)
     if session_ctx and session_ctx.user_id != uid:
-        return _redirect(error="hh_user_mismatch")
+        return _redirect(error="hh_user_mismatch", section="connections")
     if not session_ctx:
         from getsync.web.auth import login_user
 
         login_user(request, uid)
     if not code:
-        return _redirect(error="hh_missing_code")
+        return _redirect(error="hh_missing_code", section="connections")
     oauth = _hammerhead_oauth(request)
     try:
         tokens = await oauth.exchange_code(code)
     except Exception as exc:
-        return _redirect(error=str(exc))
+        return _redirect(error=str(exc), section="connections")
     ctx = UserContext(uid, get_settings())
     save_json(ctx.hammerhead_tokens_path, tokens.to_dict())
     hh_uid = tokens.user_id or None
     if hh_uid:
         _store().update_user(uid, hammerhead_user_id=str(hh_uid))
-    return _redirect("hh_connected")
+    return _redirect("hh_connected", section="connections")
 
 
 @router.post("/hammerhead/disconnect", include_in_schema=False)
@@ -228,14 +241,14 @@ async def hammerhead_disconnect(request: Request) -> RedirectResponse:
     path = ctx.hammerhead_tokens_path
     if path.is_file():
         path.unlink()
-    return _redirect("hh_disconnected")
+    return _redirect("hh_disconnected", section="connections")
 
 
 @router.post("/garmin/refresh", include_in_schema=False)
 async def garmin_refresh(request: Request) -> RedirectResponse:
     ctx = _ctx(request)
     await asyncio.to_thread(refresh_web_session, ctx, force=True, trigger="settings")
-    return _redirect("garmin_refreshed", anchor="garmin-session")
+    return _redirect("garmin_refreshed", section="connections", anchor="garmin-session")
 
 
 @router.post("/garmin/disconnect", include_in_schema=False)
@@ -251,4 +264,4 @@ async def garmin_disconnect(request: Request) -> RedirectResponse:
     from getsync.credentials.garmin import clear_garmin_credentials
 
     clear_garmin_credentials(ctx)
-    return _redirect("garmin_disconnected")
+    return _redirect("garmin_disconnected", section="connections")

@@ -31,7 +31,10 @@ class TestConnectionsBanner(unittest.TestCase):
                 )
                 self.assertEqual(r.status_code, 303)
 
-                settings_page = client.get("/app/settings", follow_redirects=True)
+                settings_page = client.get(
+                    "/app/settings?section=connections",
+                    follow_redirects=True,
+                )
                 self.assertEqual(settings_page.status_code, 200)
                 self.assertIn("Hammerhead", settings_page.text)
                 self.assertIn("Garmin Connect", settings_page.text)

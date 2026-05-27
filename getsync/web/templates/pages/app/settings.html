@@ -4,10 +4,6 @@
 
 {% block page_content %}
 <h2 class="h5 mb-2">{{ t.settings_title }}</h2>
-<p class="text-muted small mb-4">
-  Connect multiple <strong>sources</strong> (where activities come from) and
-  <strong>destinations</strong> (where they are delivered). More providers — in roadmap.
-</p>
 
 {% if flash.ok %}
 <div class="alert alert-success">{{ flash.ok }}</div>
@@ -16,11 +12,14 @@
 <div class="alert alert-danger">{{ flash.error }}</div>
 {% endif %}
 
-{% include "components/settings_subnav.html" %}
+<div class="row getsync-settings-layout g-4">
+  <aside class="col-md-3 col-lg-3">
+    {% include "components/settings_subnav.html" %}
+  </aside>
 
-<div class="row g-4">
-  <div class="col-lg-8">
-    <section id="profile" class="getsync-settings-section mb-4">
+  <div class="col-md-9 col-lg-9 getsync-settings-panel">
+    {% if settings_section == 'profile' %}
+    <section id="profile" class="getsync-settings-section">
       <div class="card shadow-sm">
         <div class="card-body">
           <h3 class="h6 text-primary mb-3">{{ t.profile_h3 }}</h3>
@@ -51,9 +50,11 @@
         </div>
       </div>
     </section>
+    {% endif %}
 
-    <section id="connections" class="getsync-settings-section mb-4">
-      <h3 class="h6 text-primary mb-2">Connections</h3>
+    {% if settings_section == 'connections' %}
+    <section id="connections" class="getsync-settings-section">
+      <h3 class="h6 text-primary mb-2">{{ t.settings_connections_h3 }}</h3>
       <p class="small text-muted mb-3">
         Each integration is a separate connection. Activities use <code>source</code> in the catalog;
         delivery rules (phase 7) will reference these ids.
@@ -78,8 +79,10 @@
         </div>
       </div>
     </section>
+    {% endif %}
 
-    <section id="password" class="getsync-settings-section mb-4">
+    {% if settings_section == 'password' %}
+    <section id="password" class="getsync-settings-section">
       <div class="card shadow-sm">
         <div class="card-body">
           <h3 class="h6 text-primary mb-3">{{ t.password_h3 }}</h3>
@@ -101,6 +104,7 @@
         </div>
       </div>
     </section>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

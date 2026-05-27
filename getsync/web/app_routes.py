@@ -396,7 +396,7 @@ def _render_ui_preview(
         template,
         active=active,
         preview_pages=_PREVIEW_PAGES,
-        settings_section="profile",
+        settings_section=extra.pop("settings_section", "profile"),
         **extra,
     )
 
@@ -435,6 +435,10 @@ async def ui_preview_page(request: Request, page_name: str) -> str:
             today_href="#",
             day_list_href=lambda _d: "#",
         )
+    if page_name == "settings":
+        from getsync.web.settings_routes import _settings_section
+
+        extra["settings_section"] = _settings_section(request)
     return _render_ui_preview(request, template, active=active, **extra)
 
 
@@ -784,7 +788,7 @@ async def sync_log_redirect(request: Request, page: int = Query(1, ge=1)) -> Red
 async def session_page_redirect(request: Request) -> RedirectResponse:
     """Legacy URL — Garmin session monitor lives in Settings."""
     _ctx(request)
-    return RedirectResponse(f"{P}/settings#garmin-session", status_code=303)
+    return RedirectResponse(f"{P}/settings?section=connections#garmin-session", status_code=303)
 
 
 @router.post("/session/refresh", include_in_schema=False)

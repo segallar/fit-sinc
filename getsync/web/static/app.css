@@ -460,23 +460,60 @@ button.getsync-filter-link:focus-visible {
   border-radius: var(--getsync-radius-md);
 }
 
-.getsync-settings-subnav {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--getsync-surface-muted);
-  padding: 0.35rem;
-  border-radius: var(--getsync-radius-md);
-  border: 1px solid var(--getsync-border);
+.getsync-settings-layout {
+  align-items: flex-start;
 }
 
-.getsync-settings-subnav .nav-link {
-  font-size: 0.875rem;
-  padding: 0.35rem 0.75rem;
+.getsync-settings-subnav {
+  position: sticky;
+  top: 1rem;
+}
+
+.getsync-settings-nav-list {
+  gap: 0.125rem;
+  padding: 0.35rem;
+  margin: 0;
+  list-style: none;
+  background: var(--getsync-surface-muted);
+  border: 1px solid var(--getsync-border);
+  border-radius: var(--getsync-radius-md);
+}
+
+.getsync-settings-nav-list .nav-link {
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--getsync-radius-sm);
+  color: var(--getsync-text);
+}
+
+.getsync-settings-nav-list .nav-link:hover {
+  background: var(--getsync-surface);
+}
+
+.getsync-settings-nav-list .nav-link.active {
+  background: var(--getsync-primary);
+  color: #fff;
+  font-weight: 500;
 }
 
 .getsync-settings-section {
   scroll-margin-top: 5rem;
+}
+
+@media (max-width: 767.98px) {
+  .getsync-settings-subnav {
+    position: static;
+    margin-bottom: 0.5rem;
+  }
+
+  .getsync-settings-nav-list {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+  }
+
+  .getsync-settings-nav-list .nav-item {
+    flex: 1 1 auto;
+  }
 }
 
 @media (max-width: 767.98px) {
