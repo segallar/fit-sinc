@@ -12,8 +12,8 @@ from getsync.config import get_settings
 from getsync.state.store import Store
 from getsync.web.auth import APP_ADMIN_PREFIX, user_row_from_session
 from getsync.web.cabinet import render_cabinet
-from getsync.web.admin_health import admin_health_context
-from getsync.web.admin_log import admin_log_context
+from getsync.web.admin_health import admin_health_context, render_admin_health_panel
+from getsync.web.admin_log import admin_log_context, render_admin_log_table
 
 router = APIRouter(prefix=APP_ADMIN_PREFIX, tags=["admin"])
 A = APP_ADMIN_PREFIX
@@ -76,6 +76,20 @@ async def admin_log(
             pager_path=f"{A}/log",
         ),
     )
+
+
+@router.get("/log/fragment", response_class=HTMLResponse, include_in_schema=False)
+async def admin_log_fragment(
+    log_page: int = Query(1, ge=1),
+) -> str:
+    """HTML fragment for WebSocket-driven log refresh."""
+    return render_admin_log_table(_store(), log_page=log_page)
+
+
+@router.get("/health/fragment", response_class=HTMLResponse, include_in_schema=False)
+async def admin_health_fragment() -> str:
+    """HTML fragment for WebSocket-driven health refresh."""
+    return render_admin_health_panel(get_settings(), _store())
 
 
 @router.get("/sync-log", include_in_schema=False)

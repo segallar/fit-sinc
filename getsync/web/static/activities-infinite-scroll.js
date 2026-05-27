@@ -1,5 +1,5 @@
 /** Load next Activities list page when the sentinel row enters the scroll area. */
-(function () {
+function initActivitiesInfiniteScroll() {
   const shell = document.querySelector(
     ".getsync-activities-list-shell[data-infinite-scroll]"
   );
@@ -88,4 +88,6 @@
   }
 
   observeSentinel();
-})();
+}
+
+initActivitiesInfiniteScroll();

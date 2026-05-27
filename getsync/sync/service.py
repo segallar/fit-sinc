@@ -25,6 +25,15 @@ logger = logging.getLogger("getsync.sync")
 RETRY_DELAYS_SEC = (5, 15, 30)
 
 
+async def _notify_activity_ui(user_ctx: UserContext, activity_id: str, sync_status: str) -> None:
+    try:
+        from getsync.web.realtime import notify_activity_updated
+
+        await notify_activity_updated(user_ctx.user_id, activity_id, sync_status)
+    except Exception:
+        logger.debug("realtime notify failed", exc_info=True)
+
+
 @dataclass(frozen=True)
 class SyncResult:
     activity_id: str
@@ -67,6 +76,7 @@ async def sync_activity(
 
     store.log_event("sync_started", "", activity_id, user_id=user_ctx.user_id)
     store.upsert_activity(user_ctx.user_id, activity_id, sync_status="pending")
+    await _notify_activity_ui(user_ctx, activity_id, "pending")
 
     meta: dict[str, Any] = {}
     try:
@@ -112,6 +122,7 @@ async def sync_activity(
         msg = str(last_error or "FIT download failed")
         store.mark_error(user_ctx.user_id, activity_id, msg)
         store.log_event("error", msg, activity_id, user_id=user_ctx.user_id)
+        await _notify_activity_ui(user_ctx, activity_id, "error")
         return SyncResult(activity_id, "error", msg)
 
     artifacts = ActivityStorage(user_ctx)
@@ -152,6 +163,7 @@ async def sync_activity(
                 activity_id,
                 user_ctx.user_id,
             )
+            await _notify_activity_ui(user_ctx, activity_id, "synced")
             return SyncResult(activity_id, "synced", dup_msg)
         msg = f"Garmin upload failed: {exc}"
         store.upsert_activity(
@@ -163,6 +175,7 @@ async def sync_activity(
             **meta,
         )
         store.log_event("error", msg, activity_id, user_id=user_ctx.user_id)
+        await _notify_activity_ui(user_ctx, activity_id, "error")
         return SyncResult(activity_id, "error", msg)
 
     store.mark_synced(
@@ -184,6 +197,7 @@ async def sync_activity(
         user_ctx.user_id,
         len(fit_bytes),
     )
+    await _notify_activity_ui(user_ctx, activity_id, "synced")
     return SyncResult(activity_id, "synced", storage_key)
 
 

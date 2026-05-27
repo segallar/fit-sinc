@@ -1,34 +1,41 @@
-{# row: fit_url, resync, cross_*, garmin_href #}
-<ul class="dropdown-menu getsync-activity-row-menu shadow-sm d-none" role="menu">
-  {% if row.cross_href %}
+{# row: catalog_*, fit_url, resync, garmin_href, catalog_return_url #}
+<ul class="dropdown-menu getsync-activity-row-menu small shadow-sm d-none" role="menu">
   <li>
-    <a class="dropdown-item" href="{{ row.cross_href }}"{% if row.cross_external %} target="_blank" rel="noopener"{% endif %}>
-      {{ row.cross_label }}
-    </a>
+    <form method="post"
+          action="{{ prefix }}/activities/{{ row.catalog_source }}/{{ row.catalog_id | urlencode }}/rename"
+          class="getsync-activity-rename-form"
+          data-current-name="{{ row.catalog_name }}">
+      <input type="hidden" name="next" value="{{ row.catalog_return_url }}">
+      <input type="hidden" name="name" value="">
+      <button type="submit" class="dropdown-item py-1">Rename</button>
+    </form>
   </li>
-  {% elif row.cross_label %}
-  <li><span class="dropdown-item-text text-muted">{{ row.cross_label }}</span></li>
-  {% else %}
-  <li><span class="dropdown-item-text text-muted">—</span></li>
-  {% endif %}
+  <li>
+    <form method="post"
+          action="{{ prefix }}/activities/{{ row.catalog_source }}/{{ row.catalog_id | urlencode }}/delete"
+          onsubmit="return confirm('Remove this activity from GetSync catalog?');">
+      <input type="hidden" name="next" value="{{ row.catalog_return_url }}">
+      <button type="submit" class="dropdown-item py-1 text-danger">Delete</button>
+    </form>
+  </li>
 
   {% if row.fit_url or row.resync or row.garmin_href %}
-  <li><hr class="dropdown-divider"></li>
+  <li><hr class="dropdown-divider my-1"></li>
   {% if row.fit_url %}
-  <li><a class="dropdown-item" href="{{ row.fit_url }}">Download .fit</a></li>
+  <li><a class="dropdown-item py-1" href="{{ row.fit_url }}">Download .fit</a></li>
   {% endif %}
   {% if row.resync %}
   <li>
     <form method="post" action="{{ prefix }}/activities/{{ row.resync.activity_id | urlencode }}/retry"
           {% if row.resync.force_confirm %}onsubmit="return confirm('Already synced. Upload this activity to Garmin again?');"{% endif %}>
       <input type="hidden" name="next" value="{{ row.resync.return_url }}">
-      <button type="submit" class="dropdown-item">{{ row.resync.label }}</button>
+      <button type="submit" class="dropdown-item py-1">{{ row.resync.label }}</button>
     </form>
   </li>
   {% endif %}
   {% if row.garmin_href %}
   <li>
-    <a class="dropdown-item" href="{{ row.garmin_href }}" target="_blank" rel="noopener">Open in Garmin</a>
+    <a class="dropdown-item py-1" href="{{ row.garmin_href }}" target="_blank" rel="noopener">Open in Garmin</a>
   </li>
   {% endif %}
   {% endif %}

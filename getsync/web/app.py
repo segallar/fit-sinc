@@ -32,6 +32,7 @@ from getsync.web.auth import (
 from getsync.web.settings_routes import router as settings_router
 from getsync.web.register_routes import router as register_router
 from getsync.web.site_routes import router as site_router
+from getsync.web.ws_routes import router as ws_router
 logger = logging.getLogger("getsync")
 
 
@@ -104,6 +105,7 @@ app.include_router(register_router)
 app.include_router(settings_router)
 app.include_router(app_router)
 app.include_router(admin_router)
+app.include_router(ws_router)
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

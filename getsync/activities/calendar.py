@@ -59,6 +59,21 @@ class ActivityCalendarView:
     source_note: str
 
 
+def format_activity_chip_name(
+    name: str | None,
+    activity_date: str | None,
+    *,
+    display_tz: str | None = None,
+) -> str:
+    """Calendar chip label: local time + activity name (e.g. ``11:55 Morning Ride``)."""
+    label = (name or "—").strip() or "—"
+    tz_name = normalize_timezone(display_tz or DEFAULT_TIMEZONE)
+    dt = _parse_iso(activity_date or "", tz=tz_name)
+    if dt is None:
+        return label
+    return f"{dt:%H:%M} {label}"
+
+
 def _worst_status(current: str | None, new: str) -> str:
     if not new:
         return current or ""

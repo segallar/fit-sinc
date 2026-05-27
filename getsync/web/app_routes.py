@@ -19,10 +19,15 @@ from getsync.activities.browse import (
     BROWSE_CACHE_TTL_SEC,
     ActivityFilters,
     ActivityBrowseRow,
+    clear_browse_cache,
     fetch_activities_page,
     resolve_activity_filters,
 )
-from getsync.activities.calendar import attach_calendar_row_views, build_activity_calendar
+from getsync.activities.calendar import (
+    attach_calendar_row_views,
+    build_activity_calendar,
+    format_activity_chip_name,
+)
 from getsync.timeutil import zone_info
 from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 from getsync.audit import log as audit_log, request_ip
@@ -266,6 +271,8 @@ def _activity_row_view(
     row: ActivityBrowseRow,
     *,
     return_url: str,
+    calendar_chip_name: bool = False,
+    display_tz: str | None = None,
 ) -> dict[str, Any]:
     hh_id = row.hammerhead_id
 
@@ -284,25 +291,21 @@ def _activity_row_view(
     if row.garmin_id:
         garmin_href = f"https://connect.garmin.com/modern/activity/{row.garmin_id}"
 
-    cross_href = None
-    cross_label = None
-    cross_external = False
-    if row.garmin_id:
-        cross_href = garmin_href
-        cross_label = str(row.garmin_id)
-        cross_external = True
-    elif row.hammerhead_id and row.source == "garmin":
-        cross_label = row.hammerhead_id
-
     duration_fmt = (
         H.fmt_duration(row.duration)
         if row.source == "hammerhead"
         else H.fmt_duration_sec(row.duration)
     )
 
+    name = row.name or "—"
+    if calendar_chip_name:
+        name = format_activity_chip_name(
+            row.name, row.activity_date, display_tz=display_tz
+        )
+
     return {
         "activity_date": row.activity_date,
-        "name": row.name or "—",
+        "name": name,
         "source": row.source,
         "source_label": _SOURCE_LABELS.get(row.source, row.source),
         "activity_type": (
@@ -312,9 +315,10 @@ def _activity_row_view(
         "duration_fmt": duration_fmt,
         "sync_status": row.sync_status,
         "sync_detail": row.sync_detail,
-        "cross_href": cross_href,
-        "cross_label": cross_label,
-        "cross_external": cross_external,
+        "catalog_source": row.source,
+        "catalog_id": row.external_id,
+        "catalog_name": row.name or "",
+        "catalog_return_url": return_url,
         "fit_url": fit_url,
         "resync": resync,
         "garmin_href": garmin_href,
@@ -658,7 +662,12 @@ async def activities_browser(
                 source=src,
                 filters=effective_filters,
             ),
-            lambda row: _activity_row_view(row, return_url=cal_return),
+            lambda row: _activity_row_view(
+                row,
+                return_url=cal_return,
+                calendar_chip_name=True,
+                display_tz=display_tz,
+            ),
         )
         return render_cabinet(
             request,
@@ -741,6 +750,90 @@ async def activities_browser(
         **_sync_panel_context(list_return),
         **{k: v for k, v in common.items() if k != "activities_tab_query"},
     )
+
+
+@router.get("/activities/live", response_class=HTMLResponse, include_in_schema=False)
+async def activities_live_fragment(
+    request: Request,
+    view: str = Query("list", pattern="^(list|calendar)$"),
+    source: str = Query("", pattern="^(|hammerhead|garmin)$"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=10, le=100),
+    year: int | None = Query(None, ge=2000, le=2100),
+    month: int | None = Query(None, ge=1, le=12),
+    q: str = Query(""),
+    status: str = Query(""),
+    activity_type: str = Query(""),
+    date_from: str = Query(""),
+    date_to: str = Query(""),
+    refresh: str = Query(""),
+) -> HTMLResponse:
+    """HTML fragment for WebSocket-driven list refresh."""
+    if view == "calendar":
+        return HTMLResponse('<div id="activities-live-list" data-calendar-reload="1"></div>')
+
+    ctx = _ctx(request)
+    store = _store()
+    user = store.get_user(ctx.user_id)
+    display_tz = user.timezone if user else None
+    filters = ActivityFilters(
+        q=q.strip(),
+        status=status.strip(),
+        activity_type=activity_type.strip(),
+        date_from=date_from.strip(),
+        date_to=date_to.strip(),
+        source=source.strip().lower(),
+    )
+    tz_name = normalize_timezone(display_tz or DEFAULT_TIMEZONE)
+    today = datetime.now(zone_info(tz_name)).date()
+    effective_filters = resolve_activity_filters(
+        filters,
+        view="list",
+        year=year if year is not None else today.year,
+        month=month if month is not None else today.month,
+        today=today,
+    )
+    bust_cache = refresh.strip() in ("1", "true", "yes")
+    result = await fetch_activities_page(
+        page=page,
+        per_page=per_page,
+        filters=effective_filters,
+        ctx=ctx,
+        display_tz=display_tz,
+        refresh=bust_cache or True,
+    )
+    list_return = _activities_return_url(
+        page=result.page,
+        per_page=per_page,
+        filters=effective_filters,
+        view="list",
+    )
+    rows = [_activity_row_view(row, return_url=list_return) for row in result.rows]
+    from_idx = (result.page - 1) * result.per_page + 1 if result.total else 0
+    to_idx = min(result.page * result.per_page, result.total)
+    total_label = f"{from_idx}–{to_idx} of {result.total}"
+    has_more = result.page < result.total_pages
+    sync_ctx = _sync_summary_context(store, ctx.user_id)
+    html = render_template(
+        "components/activities_live_list.html",
+        prefix=P,
+        rows=rows,
+        browse_error=result.error,
+        total_label=total_label,
+        filters_active=filters.is_active(),
+        data_source_hint=(
+            "Hammerhead & Garmin APIs · metadata in SQLite · "
+            f"list cached {BROWSE_CACHE_TTL_SEC // 60} min"
+        ),
+        rows_load_url=_activities_rows_load_url(
+            per_page=per_page, filters=effective_filters
+        ),
+        next_page=result.page + 1,
+        has_more_rows=has_more,
+        activities_return_url=list_return,
+        **sync_ctx,
+    )
+    return HTMLResponse(html)
 
 
 @router.get("/activities/rows", include_in_schema=False)
@@ -848,6 +941,57 @@ async def download_fit(request: Request, activity_id: str) -> FileResponse:
         media_type="application/vnd.ant.fit",
         filename=fit_file.name,
     )
+
+
+_CATALOG_SOURCES = frozenset({"hammerhead", "garmin"})
+
+
+def _validate_catalog_source(source: str) -> str:
+    if source not in _CATALOG_SOURCES:
+        raise HTTPException(status_code=400, detail="Invalid source")
+    return source
+
+
+@router.post("/activities/{source}/{activity_id}/rename", include_in_schema=False)
+async def rename_catalog_activity(
+    request: Request,
+    source: str,
+    activity_id: str,
+    name: str = Form(""),
+    next: str = Form(""),
+) -> RedirectResponse:
+    ctx = _ctx(request)
+    source = _validate_catalog_source(source)
+    store = _store()
+    if not store.update_activity_name(
+        ctx.user_id, activity_id, name, source=source
+    ):
+        raise HTTPException(status_code=404, detail="Activity not found")
+    clear_browse_cache(ctx.user_id)
+    default = _activities_return_url()
+    return RedirectResponse(url=_safe_return_url(next, default), status_code=303)
+
+
+@router.post("/activities/{source}/{activity_id}/delete", include_in_schema=False)
+async def delete_catalog_activity(
+    request: Request,
+    source: str,
+    activity_id: str,
+    next: str = Form(""),
+) -> RedirectResponse:
+    ctx = _ctx(request)
+    source = _validate_catalog_source(source)
+    store = _store()
+    storage_key = store.delete_activity(
+        ctx.user_id, activity_id, source=source
+    )
+    if storage_key is None:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    if storage_key:
+        ActivityStorage(ctx)._backend.delete(ctx.user_id, storage_key)
+    clear_browse_cache(ctx.user_id)
+    default = _activities_return_url()
+    return RedirectResponse(url=_safe_return_url(next, default), status_code=303)
 
 
 @router.post("/activities/{activity_id}/retry", include_in_schema=False)

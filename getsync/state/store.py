@@ -480,6 +480,7 @@ class Store:
         row = self.get_user(uid)
         if not row:
             raise RuntimeError("user create failed")
+        self._signal_admin_health()
         return row
 
     def update_user(
@@ -616,6 +617,7 @@ class Store:
                 """,
                 (user_id, source, activity_id),
             ).fetchone()
+            health_signal = False
             if existing:
                 fields: list[str] = ["updated_at = ?"]
                 values: list[Any] = [now]
@@ -640,6 +642,8 @@ class Store:
                     "WHERE user_id = ? AND source = ? AND activity_id = ?",
                     values,
                 )
+                if storage_key is not None:
+                    health_signal = True
             else:
                 conn.execute(
                     """
@@ -667,6 +671,9 @@ class Store:
                         now,
                     ),
                 )
+                health_signal = True
+        if health_signal:
+            self._signal_admin_health()
 
     def mark_synced(
         self,
@@ -725,6 +732,7 @@ class Store:
             event_type,
             (message or "")[:500],
         )
+        self._signal_admin_log()
 
     def log_admin_audit(
         self,
@@ -758,6 +766,8 @@ class Store:
             subject or "—",
             (msg or "")[:500],
         )
+        self._signal_admin_log()
+        self._signal_admin_health()
 
     def count_activities_by_status(
         self,
@@ -853,6 +863,57 @@ class Store:
                 (user_id, source, source),
             ).fetchone()
         return int(row["n"]) if row else 0
+
+    def update_activity_name(
+        self,
+        user_id: str,
+        activity_id: str,
+        name: str,
+        *,
+        source: str,
+    ) -> bool:
+        label = name.strip()
+        if not label:
+            return False
+        with self._conn() as conn:
+            cur = conn.execute(
+                """
+                UPDATE activities
+                SET name = ?, updated_at = ?
+                WHERE user_id = ? AND source = ? AND activity_id = ?
+                """,
+                (label, _utcnow(), user_id, source, activity_id),
+            )
+        return cur.rowcount > 0
+
+    def delete_activity(
+        self,
+        user_id: str,
+        activity_id: str,
+        *,
+        source: str,
+    ) -> str | None:
+        """Remove catalog row; returns storage_key if a FIT artifact was linked."""
+        with self._conn() as conn:
+            row = conn.execute(
+                """
+                SELECT storage_key FROM activities
+                WHERE user_id = ? AND source = ? AND activity_id = ?
+                """,
+                (user_id, source, activity_id),
+            ).fetchone()
+            if row is None:
+                return None
+            storage_key = row["storage_key"]
+            conn.execute(
+                """
+                DELETE FROM activities
+                WHERE user_id = ? AND source = ? AND activity_id = ?
+                """,
+                (user_id, source, activity_id),
+            )
+        self._signal_admin_health()
+        return storage_key
 
     def get_activity(
         self,
@@ -1083,6 +1144,7 @@ class Store:
             event_type,
             (message or "")[:500],
         )
+        self._signal_admin_log()
 
     def list_session_refresh_events(
         self,
@@ -1112,3 +1174,21 @@ class Store:
             )
             for r in rows
         ]
+
+    @staticmethod
+    def _signal_admin_log() -> None:
+        try:
+            from getsync.web.realtime_signals import schedule_admin_log_refresh
+
+            schedule_admin_log_refresh()
+        except Exception:
+            pass
+
+    @staticmethod
+    def _signal_admin_health() -> None:
+        try:
+            from getsync.web.realtime_signals import schedule_admin_health_refresh
+
+            schedule_admin_health_refresh()
+        except Exception:
+            pass

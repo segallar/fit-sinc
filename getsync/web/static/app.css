@@ -409,7 +409,14 @@ button.getsync-filter-link:focus-visible {
 
 .getsync-activity-row-menu-popover {
   display: block;
-  min-width: 12rem;
+  min-width: 9rem;
+  --bs-dropdown-font-size: var(--bs-small-font-size);
+  --bs-dropdown-item-padding-y: 0.25rem;
+  --bs-dropdown-item-padding-x: 0.75rem;
+}
+
+.getsync-activity-row-menu .dropdown-divider {
+  margin: 0.25rem 0;
 }
 
 .getsync-activity-row-menu-popover .dropdown-item:active {
@@ -433,10 +440,6 @@ button.getsync-filter-link:focus-visible {
 
 .getsync-cal-toolbar {
   min-width: 0;
-}
-
-.getsync-cal-legend-inline {
-  white-space: nowrap;
 }
 
 .getsync-topbar-user-text {
@@ -1238,18 +1241,4 @@ footer.getsync-footer:not(.getsync-site-footer) {
   font-weight: 600;
   color: var(--getsync-primary-700);
   margin-top: auto;
-}
-
-.getsync-cal-legend-dot {
-  display: inline-block;
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 2px;
-  vertical-align: middle;
-  margin-right: 0.25rem;
-  border: 1px solid var(--getsync-border);
-}
-
-.getsync-cal-legend-dot.getsync-cal-day--synced {
-  border-left-width: 3px;
 }

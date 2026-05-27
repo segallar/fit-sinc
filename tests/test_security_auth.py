@@ -28,6 +28,7 @@ ADMIN_GET_PATHS = (
     "/app/admin/",
     "/app/admin/health",
     "/app/admin/log",
+    "/app/admin/log/fragment",
     "/app/admin/users/new",
     "/app/admin/users/default/edit",
 )
@@ -36,6 +37,11 @@ APP_POST_CASES: tuple[tuple[str, dict[str, str]], ...] = (
     ("/app/session/refresh", {}),
     ("/app/activities/act-1/retry", {"next": "/app/activities"}),
     ("/app/activities/retry-errors", {"next": "/app/activities"}),
+    (
+        "/app/activities/hammerhead/act-1/rename",
+        {"name": "Renamed", "next": "/app/activities"},
+    ),
+    ("/app/activities/garmin/99/delete", {"next": "/app/activities"}),
 )
 
 ADMIN_POST_CASES: tuple[tuple[str, dict[str, str]], ...] = (

@@ -1,5 +1,29 @@
 /** Row / calendar chip click opens activity menu near the pointer. */
 (function () {
+  function submitRename(form) {
+    const current = form.dataset.currentName || "";
+    const next = window.prompt("Rename activity", current);
+    if (next === null) {
+      return false;
+    }
+    const trimmed = next.trim();
+    if (!trimmed) {
+      return false;
+    }
+    form.elements.name.value = trimmed;
+    return true;
+  }
+
+  document.addEventListener("submit", (event) => {
+    const form = event.target.closest(".getsync-activity-rename-form");
+    if (!form) {
+      return;
+    }
+    if (!submitRename(form)) {
+      event.preventDefault();
+    }
+  });
+
   let openMenu = null;
   let menuPoint = { x: 0, y: 0 };
 

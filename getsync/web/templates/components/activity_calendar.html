@@ -7,13 +7,8 @@
         <a href="{{ calendar.next_href }}" class="btn btn-outline-secondary btn-sm" aria-label="Next month">›</a>
       </div>
       <div class="d-flex align-items-center gap-2 flex-shrink-0 small text-muted text-nowrap">
-        <span>{{ calendar.total_in_month }} this month</span>
+        <span>total {{ calendar.total_in_month }} activit{% if calendar.total_in_month == 1 %}y{% else %}ies{% endif %} in this month</span>
         <a href="{{ calendar.today_href }}" class="btn btn-outline-primary btn-sm py-0">Today</a>
-        <span class="getsync-cal-legend-inline d-none d-lg-inline" aria-hidden="true">·</span>
-        <span class="getsync-cal-legend-inline d-none d-lg-inline"><span class="getsync-cal-legend-dot getsync-cal-day--synced"></span> synced</span>
-        <span class="getsync-cal-legend-inline d-none d-lg-inline"><span class="getsync-cal-legend-dot getsync-cal-day--pending"></span> pending</span>
-        <span class="getsync-cal-legend-inline d-none d-lg-inline"><span class="getsync-cal-legend-dot getsync-cal-day--error"></span> error</span>
-        <span class="getsync-cal-legend-inline d-none d-lg-inline"><span class="getsync-cal-legend-dot getsync-cal-day--not-synced"></span> not synced</span>
       </div>
     </div>
 

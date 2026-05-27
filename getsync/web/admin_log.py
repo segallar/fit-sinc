@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from getsync.state.store import AdminLogRow, Store
+from getsync.web.auth import APP_ADMIN_PREFIX
 from getsync.web.connections import _session_event_class
-
+from getsync.web.templating import render_template
 
 def _event_status_class(log_kind: str, event_type: str) -> str:
     if log_kind == "garmin":
@@ -88,3 +89,24 @@ def _row_view(row: AdminLogRow, users_by_id: dict) -> dict[str, object]:
         "message": row.message or "",
         "status_class": _event_status_class(row.log_kind, row.event_type),
     }
+
+
+def render_admin_log_table(
+    store: Store,
+    *,
+    log_page: int,
+    user_id: str | None = None,
+    pager_path: str | None = None,
+) -> str:
+    """HTML fragment for HTMX poll or full page include."""
+    path = pager_path or f"{APP_ADMIN_PREFIX}/log"
+    return render_template(
+        "components/admin_log_table.html",
+        admin_prefix=APP_ADMIN_PREFIX,
+        **admin_log_context(
+            store,
+            user_id=user_id,
+            log_page=log_page,
+            pager_path=path,
+        ),
+    )

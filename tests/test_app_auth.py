@@ -126,6 +126,21 @@ class TestAdminAccess(unittest.TestCase):
                 self.assertIn("app restarts and deploys", admin_log.text)
                 self.assertIn("Garmin JWT", admin_log.text)
                 self.assertIn("getsync-admin-col-flag", admin_log.text)
+                self.assertIn("admin-realtime.js", admin_log.text)
+                self.assertIn("Updates live via WebSocket", admin_log.text)
+
+                frag = client.get("/app/admin/log/fragment")
+                self.assertEqual(frag.status_code, 200)
+                self.assertIn('id="admin-log"', frag.text)
+
+                health = client.get("/app/admin/health")
+                self.assertEqual(health.status_code, 200)
+                self.assertIn("admin-realtime.js", health.text)
+                self.assertIn('id="admin-health-live"', health.text)
+
+                health_frag = client.get("/app/admin/health/fragment")
+                self.assertEqual(health_frag.status_code, 200)
+                self.assertIn('id="admin-health-live"', health_frag.text)
 
                 legacy = client.get("/app/admin/sync-log", follow_redirects=False)
                 self.assertEqual(legacy.status_code, 303)

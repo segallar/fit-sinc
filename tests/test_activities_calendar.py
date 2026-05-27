@@ -9,11 +9,26 @@ from getsync.activities.calendar import (
     aggregate_days_by_local_date,
     attach_calendar_row_views,
     build_activity_calendar,
+    format_activity_chip_name,
 )
 from getsync.state.store import Store
 
 
 class TestActivityCalendar(unittest.TestCase):
+    def test_format_activity_chip_name(self) -> None:
+        self.assertEqual(
+            format_activity_chip_name(
+                "Рузский район Бег",
+                "2026-05-02T08:55:00+00:00",
+                display_tz="Europe/Moscow",
+            ),
+            "11:55 Рузский район Бег",
+        )
+        self.assertEqual(
+            format_activity_chip_name("Ride", None, display_tz="UTC"),
+            "Ride",
+        )
+
     def test_aggregate_worst_status(self) -> None:
         rows = [
             ("2026-05-10T08:00:00+00:00", "synced"),
@@ -85,7 +100,12 @@ class TestActivityCalendar(unittest.TestCase):
 
             rendered = attach_calendar_row_views(
                 view,
-                lambda row: {"name": row.name, "source": row.source},
+                lambda row: {
+                    "name": format_activity_chip_name(
+                        row.name, row.activity_date, display_tz="UTC"
+                    ),
+                    "source": row.source,
+                },
             )
             rendered_day = None
             for week in rendered.weeks:
@@ -95,6 +115,42 @@ class TestActivityCalendar(unittest.TestCase):
                         break
             assert rendered_day is not None
             self.assertEqual(len(rendered_day.activity_rows), 2)
+            chip_names = {r["name"] for r in rendered_day.activity_rows}
+            self.assertEqual(
+                chip_names,
+                {"10:00 Morning Ride", "18:00 Evening Run"},
+            )
+
+    def test_catalog_rename_and_delete(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            db = Path(tmp) / "cal.db"
+            store = Store(db)
+            user = store.create_user(
+                slug="mgr",
+                display_name="Mgr",
+                email="mgr@example.com",
+                password="secretpass123",
+            )
+            store.upsert_activity(
+                user.id,
+                "hh-1",
+                source="hammerhead",
+                name="Old",
+                storage_key="activities/hammerhead/hh-1.fit",
+            )
+            self.assertTrue(
+                store.update_activity_name(
+                    user.id, "hh-1", "New name", source="hammerhead"
+                )
+            )
+            row = store.get_activity(user.id, "hh-1", source="hammerhead")
+            assert row is not None
+            self.assertEqual(row.name, "New name")
+            key = store.delete_activity(user.id, "hh-1", source="hammerhead")
+            self.assertEqual(key, "activities/hammerhead/hh-1.fit")
+            self.assertIsNone(
+                store.get_activity(user.id, "hh-1", source="hammerhead")
+            )
 
     def test_catalog_row_to_browse_hammerhead_fit(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
