@@ -1,9 +1,10 @@
 # Roadmap GetSync
 
 
-> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
-> **Prod:** [v0.6.0](#v060--зафиксировано-2026-05-26) · **В разработке:** **v0.7.0** (кабинет / дизайн)  
+> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  > **Prod:** [v0.6.0](#v060--зафиксировано-2026-05-26) · **В разработке:** **v0.7.0** (кабинет / дизайн)  
 > **Выполненное до v0.6** (фазы 0–5, 5b) — [PLAN-ARCHIVE.md](archive/PLAN-ARCHIVE.md) · **~112** тестов (CI `unittest discover`) · HH→Garmin на sirocco.
+
+**Стратегия:** [VISION.md](VISION.md) (product vision, 3 горизонта) · **Domain v0:** [DOMAIN-MODEL.md](DOMAIN-MODEL.md)
 
 **Документы:** [APP-UI.md](APP-UI.md) · [SCREENS.md](design/SCREENS.md) · [CONNECTIONS.md](CONNECTIONS.md) · [CREDENTIALS.md](CREDENTIALS.md) · [STORAGE.md](STORAGE.md) · [DATABASE.md](DATABASE.md) · [2.1e-EMAIL.md](2.1e-EMAIL.md) · [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) · [CHANGELOG.md](../CHANGELOG.md)
 
@@ -16,8 +17,9 @@
 | **1.x** | Запуск, домен, инфра | **1.5** rename/cutover getsync.me ✅ |
 | **2.x** | Продукт: кабинет, лендинг, алерты, i18n | **2.10** дизайн · **2.12** Garmin login |
 | **2.x.y** | Подзадачи одной фичи (детали в секции фичи) | **2.10.1** sidebar |
-| **3.x** | Платформа: хаб, S3, OAuth, модули | **3.1** rule engine · **3.9** модульность |
+| **3.x** | Платформа: хаб, S3, OAuth, модули | **3.1** rule engine · **3.9** модульность · **3.12** public API |
 | **3.11.y** | Эпик Garmin pull (источник) | **3.11.1** spike · **3.11.2** FIT · **3.11.3** wellness · **3.11.4** UI |
+| **4.x** | Долгосрочная платформа (vision) | **4.1** AI · **4.2** clubs |
 
 **Правила:**
 
@@ -166,6 +168,9 @@ flowchart TB
 | **3.6** | H3 | 🔵 | Языки fr/… | по запросу | **2.5** |
 | **3.8** | H3 | 🔵 | Email alerts, Playwright queue | post-scale | — |
 | **3.10** | H3 | 🔵 | Метрики, карты | backlog | **3.5** |
+| **3.12** | H2 | 🔵 | Public API (read-only, scopes) | 1–2 нед | **3.1**, **3.5** |
+| **4.1** | H3 | 🔵 | AI insights / analysis layer | backlog | **3.11**, data layer |
+| **4.2** | H3 | 🔵 | Clubs / teams (collaboration) | backlog | **3.12** |
 
 **Закрыто в v0.6:** **2.1** register · **2.2** tests · **2.3** activities+calendar+admin log · rename **A+B** · legacy runtime removal.
 
@@ -183,6 +188,7 @@ flowchart LR
 
 | Горизонт | Содержание |
 | -------- | ---------- |
+| **Стратегия** | Три горизонта, vision, non-goals — [VISION.md](VISION.md) |
 | **v0.7** | Кабинет: дизайн (**2.10**), Garmin login UI (**2.12**), тесты (**2.13**), **2.14**; backend credentials (**2.16**) ✅ |
 | **H1** | ~~**1.5** getsync.me~~ ✅ |
 | **H2** | **2.11** · **2.4** · **2.6** |
@@ -306,4 +312,7 @@ flowchart LR
 | [CREDENTIALS.md](CREDENTIALS.md) | Per-user secrets, **2.16** |
 | [2.1e-EMAIL.md](2.1e-EMAIL.md) | Mail infra + verify (product 📋) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Потоки, tenants |
+| [VISION.md](VISION.md) | Product vision, стратегия |
+| [DOMAIN-MODEL.md](DOMAIN-MODEL.md) | Domain model v0 |
+| [PLAN.md](PLAN.md) | Тактический roadmap |
 | [APP-UI.md](APP-UI.md) | UI `/app` |

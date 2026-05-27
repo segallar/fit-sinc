@@ -254,7 +254,9 @@ Cutover DNS и legacy host: [1.5-RENAME.md](archive/1.5-RENAME.md), [CI-CD.md](C
 |----------|------------|
 | [README.md](README.md) | Индекс документации |
 | [README](../README.md) | Быстрый старт |
-| [PLAN.md](PLAN.md) | Roadmap |
+| [PLAN.md](PLAN.md) | Тактический roadmap |
+| [VISION.md](VISION.md) | Стратегия |
+| [DOMAIN-MODEL.md](DOMAIN-MODEL.md) | Canonical entities |
 | [APP-UI.md](APP-UI.md) | Страницы `/app`, компоненты |
 | [CONNECTIONS.md](CONNECTIONS.md) | Sources / destinations |
 | [STORAGE.md](STORAGE.md) | FIT, `storage_key`, backends |

@@ -27,6 +27,8 @@
 | [STORAGE.md](STORAGE.md) | Backend | FIT: пути, `storage_key`, миграция, download |
 | [DATABASE.md](DATABASE.md) | Backend | SQLite: таблицы, индексы, tenant, журналы |
 | [PLAN.md](PLAN.md) | Roadmap | v0.6 / v0.7, реестр задач, горизонты |
+| **[VISION.md](VISION.md)** | Product | Vision, стратегия, 3 горизонта, non-goals |
+| **[DOMAIN-MODEL.md](DOMAIN-MODEL.md)** | Backend | Canonical entities v0, mapping на SQLite |
 | [CHANGELOG.md](../CHANGELOG.md) | Releases | Версии и release notes |
 | [archive/](archive/) | Архив | [PLAN-ARCHIVE](archive/PLAN-ARCHIVE.md), [1.5](archive/1.5-RENAME.md), [5b](archive/5b-DECISIONS.md) |
 | [2.1-REGISTER.md](2.1-REGISTER.md) | Auth | Саморегистрация `/register`, план email verify (**2.1e**) |
@@ -47,6 +49,7 @@
 | **История rename** | fit_sinc → GetSync — [archive/1.5-RENAME.md](archive/1.5-RENAME.md) (миграции в коде сняты) |
 | **tenant** | Пользователь сервиса (`users.id`, каталог `data/users/{id}/`) |
 | **Production app** | `https://app.getsync.me` · legacy `fit.romansegalla.online` (301 → новый host — backlog) |
+| **Стратегия** | Vision + domain — [VISION.md](VISION.md) · [DOMAIN-MODEL.md](DOMAIN-MODEL.md); тактика — [PLAN.md](PLAN.md) |
 | **Mail** | Infra ✅ (`getsync/mail`, Resend); verify при register — **2.6** / **2.1e** 📋 |
 
 ---

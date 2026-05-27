@@ -193,7 +193,9 @@ getsync serve                  # http://127.0.0.1:8080 — webhook + UI
 |----------|------------|
 | [docs/README.md](docs/README.md) | Индекс документации, соглашения, URL production |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архитектура v1, tenants, компоненты, фазы |
-| [docs/PLAN.md](docs/PLAN.md) | Roadmap · [архив](docs/archive/) |
+| [docs/PLAN.md](docs/PLAN.md) | Roadmap · [VISION](docs/VISION.md) · [архив](docs/archive/) |
+| [docs/VISION.md](docs/VISION.md) | Product vision, стратегия, 3 горизонта |
+| [docs/DOMAIN-MODEL.md](docs/DOMAIN-MODEL.md) | Canonical domain model v0 |
 | [docs/CREDENTIALS.md](docs/CREDENTIALS.md) | Per-user secrets, auto re-login Garmin |
 | [docs/CI-CD.md](docs/CI-CD.md) | Сервер, nginx, certbot, deploy |
 | [docs/API_HAMMERHEAD.md](docs/API_HAMMERHEAD.md) | OAuth, webhook, REST |
