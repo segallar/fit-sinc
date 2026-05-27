@@ -11,7 +11,7 @@
 | -------- | -------- |
 | Движок | SQLite 3 |
 | Путь по умолчанию | `data/getsync.db` |
-| Legacy | `data/fit_sinc.db` — используется, если `getsync.db` ещё нет ([`config.db_path`](../getsync/config.py)) |
+| Файл | `data/getsync.db` ([`config.db_path`](../getsync/config.py)) |
 | Каталог данных | `DATA_DIR` / `getsync.data_dir` (см. `.env.example`) |
 | API в коде | `Store(db_path)` — один файл на инстанс сервиса |
 
@@ -113,7 +113,7 @@ erDiagram
 | `activity_type` | TEXT | Тип (ride, run, …) |
 | `sync_status` | TEXT NOT NULL | См. [статусы](#sync_status-activities) |
 | `storage_key` | TEXT | Логический ключ FIT в `StorageBackend` |
-| `fit_path` | TEXT | **Legacy** — абсолютный путь на диске; предпочтительно `storage_key` |
+| `fit_path` | TEXT | **Не используется** (остаётся в старых БД после миграций схемы); канон — `storage_key` |
 | `garmin_result` | TEXT | JSON ответа upload Garmin (id, status, …) |
 | `synced_at` | TEXT | ISO UTC успешного sync |
 | `error_message` | TEXT | Текст ошибки (до ~2000 символов в upsert) |
@@ -175,7 +175,7 @@ erDiagram
 | `garmin_uploaded` | Успешный upload в Connect |
 | `skipped` | Уже synced, force не задан |
 | `error` | Ошибка на любом этапе |
-| `duplicate` | (планируется явнее в **2.3a**) |
+| `duplicate` | (планируется явнее в **2.14**) |
 
 Сортировка в UI: `ORDER BY id DESC` (новые сверху).
 
@@ -210,7 +210,7 @@ erDiagram
 
 Описаны в roadmap; **код `Store` их пока не создаёт**.
 
-### Wellness — **3.11b**
+### Wellness — **3.11.3**
 
 [`3.11-GARMIN-PULL.md`](3.11-GARMIN-PULL.md): `daily_steps`, `daily_sleep` — PK `(user_id, calendar_date)`.
 

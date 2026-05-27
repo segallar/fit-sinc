@@ -58,9 +58,6 @@ jobs:
           GETSYNC_SSH_HOST: ${{ vars.GETSYNC_SSH_HOST }}
           GETSYNC_SSH_USER: ${{ vars.GETSYNC_SSH_USER }}
           GETSYNC_DEPLOY_PATH: ${{ vars.GETSYNC_DEPLOY_PATH }}
-          FIT_SINC_SSH_HOST: ${{ vars.FIT_SINC_SSH_HOST }}
-          FIT_SINC_SSH_USER: ${{ vars.FIT_SINC_SSH_USER }}
-          FIT_SINC_DEPLOY_PATH: ${{ vars.FIT_SINC_DEPLOY_PATH }}
         run: |
           chmod +x scripts/ci/deploy.sh
           ./scripts/ci/deploy.sh

@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
 # Deploy GetSync to sirocco via rsync + systemd restart.
 # CI: set SSH_PRIVATE_KEY (file), optional GETSYNC_SSH_HOST / GETSYNC_SSH_USER / GETSYNC_DEPLOY_PATH.
-# Legacy env names FIT_SINC_* are still accepted.
-#
 # Speed: rsync --chown (no chown -R), skip pip when pyproject.toml unchanged (editable install),
 # health poll from 0s (1s between retries).
 
 set -euo pipefail
 
-: "${GETSYNC_SSH_HOST:=${FIT_SINC_SSH_HOST:-sirocco.romansegalla.online}}"
-: "${GETSYNC_SSH_USER:=${FIT_SINC_SSH_USER:-root}}"
-: "${GETSYNC_DEPLOY_PATH:=${FIT_SINC_DEPLOY_PATH:-/opt/getsync}}"
+: "${GETSYNC_SSH_HOST:=sirocco.romansegalla.online}"
+: "${GETSYNC_SSH_USER:=root}"
+: "${GETSYNC_DEPLOY_PATH:=/opt/getsync}"
 HOST="$GETSYNC_SSH_HOST"
 SSH_USER="$GETSYNC_SSH_USER"
 DEPLOY_PATH="$GETSYNC_DEPLOY_PATH"

@@ -132,7 +132,6 @@ async def sync_activity(
             activity_id,
             sync_status="error",
             storage_key=storage_key,
-            fit_path=str(fit_path) if fit_path else None,
             error_message=msg,
             **meta,
         )
@@ -144,7 +143,6 @@ async def sync_activity(
         activity_id,
         garmin_result,
         storage_key=storage_key,
-        fit_path=str(fit_path) if fit_path else None,
         **meta,
     )
     store.log_event(

@@ -92,6 +92,6 @@ Admin subnav: **Users** · **Sync log** · **Garmin log**.
 | HH/Garmin не на Activities | Connections в Settings — APP-UI §1 |
 | Log/session в nav | Убраны; sync log в admin, session в settings |
 | Календарь без облачных дней | v6.1 в PLAN **2.3** 📋 |
-| Sync log: duplicate vs error | PLAN **2.3a** 📋 · APP-UI §6.4 |
+| Sync log: duplicate vs error | PLAN **2.14** 📋 · APP-UI §6.4 |
 
 Детали layout, tokens, a11y — [APP-UI.md §3–9](../APP-UI.md).

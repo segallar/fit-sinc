@@ -67,7 +67,7 @@ sequenceDiagram
 
 ```text
 data/
-  getsync.db                    # предпочтительно; legacy: fit_sinc.db
+  getsync.db
   users/{user_id}/
     activities/                 # артефакты каталога (FIT, позже GPX)
       hammerhead/{id}.fit
@@ -75,13 +75,13 @@ data/
     hammerhead_tokens.json      # OAuth Hammerhead
     garmin_web/session.json     # JWT_WEB, session, …
     garth/                      # OAuth garth-ng (fallback upload)
-    fits/                       # legacy; миграция → activities/
+    activities/                 # FIT per source
 ```
 
 Каталог в SQLite: `activities(user_id, source, activity_id)` + `storage_key`, `activity_type`, … — [DATABASE.md](DATABASE.md) · файлы — [STORAGE.md](STORAGE.md).  
 Бэкенд: `getsync.storage.StorageBackend` — **local** ✅; S3 — roadmap **3.3**.
 
-**Миграция v1:** плоские `data/hammerhead_tokens.json`, `data/garth/`, … → `data/users/default/` ([`getsync/users/migrate.py`](../getsync/users/migrate.py)). Legacy `fits/` → `activities/hammerhead/` — [`storage/migrate.py`](../getsync/storage/migrate.py).
+Данные tenant: `data/users/{user_id}/` — см. [STORAGE.md](STORAGE.md), [DATABASE.md](DATABASE.md).
 
 **Пользователь в БД:** `slug`, `email`, `password_hash`, `timezone`, `telegram`, `hammerhead_user_id`, `is_admin`, `disabled`. Подробнее — [PLAN.md](PLAN.md).
 
@@ -149,7 +149,7 @@ getsync --user <slug> garmin status   # upload_ready
 |------|-----|----------|
 | `/` | Все | Лендинг ([`site_routes.py`](../getsync/web/site_routes.py)) |
 | `/webhooks/hammerhead` | Hammerhead | Приём событий |
-| `/health` | Мониторинг | `{"service":"getsync","version":"0.5.0"}` |
+| `/health` | Мониторинг | `{"service":"getsync","version":"0.6.0"}` |
 | `/app/login` | Гость | Вход email + password |
 | `/app/activities` | Пользователь | **Главный экран:** List \| Calendar, unified sources; sync summary внизу |
 | `/app/` | Пользователь | **303** → `/app/activities` |
@@ -192,7 +192,7 @@ getsync serve
 | Механизм | Реализация |
 |----------|------------|
 | Webhook | HMAC-SHA256 (`HAMMERHEAD_WEBHOOK_SECRET`) |
-| Кабинет | Cookie `getsync_session` (HttpOnly); legacy `fit_sinc_session` читается 14 дней ([`legacy_session.py`](../getsync/web/legacy_session.py)) |
+| Кабинет | Cookie `getsync_session` (HttpOnly) |
 | Production cookie | `SESSION_COOKIE_SECURE=true`, длинный `SESSION_SECRET` |
 | Сеть | nginx TLS → `127.0.0.1:8080` |
 | Админ | `users.is_admin` + `/app/admin/*` (без отдельного пароля в `.env`) |

@@ -1,6 +1,6 @@
 # Хранение FIT-файлов
 
-> **Статус:** local filesystem ✅ · S3 — [PLAN.md](PLAN.md#33--s3) **3.3** · Garmin pull FIT — [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) **3.11a**.  
+> **Статус:** local filesystem ✅ · S3 — [PLAN.md](PLAN.md) **3.3** · Garmin pull FIT — [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) **3.11.2**.  
 > **SQLite:** `activities.storage_key` — [DATABASE.md](DATABASE.md).
 
 ---
@@ -43,7 +43,7 @@ sequenceDiagram
   AS-->>Sync: storage_key
   Sync->>DB: mark_synced(storage_key, garmin_result)
   Sync->>GC: upload_fit(bytes, filename)
-  Note over DB: fit_path опционально legacy
+  Note over DB: storage_key
 ```
 
 **Код:** [`getsync/sync/service.py`](../getsync/sync/service.py) — после успешного download вызывается `ActivityStorage.put_fit`, затем `upload_fit` читает те же байты (путь нужен в основном для имени файла при upload).
@@ -62,10 +62,8 @@ data/
       activities/                    ← основное хранилище FIT
         hammerhead/
           {activity_id}.fit          ← id после sanitize_external_id
-        garmin/                      ← план 3.11a (пока обычно пусто)
+        garmin/                      ← план 3.11.2 (пока обычно пусто)
           {activity_id}.fit
-      fits/                          ← LEGACY: до миграции
-        {activity_id}.fit
       hammerhead_tokens.json         ← не FIT
       garmin_web/                    ← сессия Garmin (JSON)
       garth/                         ← OAuth garth-ng
@@ -127,7 +125,6 @@ build_object_key(source, external_id, kind="fit")
 | `put_fit(source, id, bytes)` | записывает файл → `storage_key` |
 | `has_fit(storage_key)` | файл есть на backend |
 | `open_fit_path(storage_key)` | `Path \| None` для `FileResponse` |
-| `legacy_fit_path(id)` | `fits/{id}.fit` — fallback |
 
 ---
 
@@ -138,7 +135,7 @@ build_object_key(source, external_id, kind="fit")
 | Колонка | Роль для FIT |
 | ------- | ------------ |
 | `storage_key` | **Каноническая** ссылка на объект в `StorageBackend` |
-| `fit_path` | **Legacy** — абсолютный путь; читается только если `open_fit_path(storage_key)` не нашёл файл |
+| `fit_path` | Колонка в старых БД; приложение **не читает/не пишет** — только `storage_key` |
 | `sync_status` | `synced` обычно означает, что FIT был сохранён и upload прошёл |
 | `garmin_result` | JSON ответа Garmin (не содержит сам FIT) |
 
@@ -150,30 +147,14 @@ build_object_key(source, external_id, kind="fit")
 
 `GET /app/activities/{activity_id}/fit` — [`app_routes.download_fit`](../getsync/web/app_routes.py)
 
-Порядок поиска файла (только **`source=hammerhead`**):
-
-1. `storage_key` → `ActivityStorage.open_fit_path`
-2. `fit_path` из БД (если файл ещё существует)
-3. Legacy `data/users/{id}/fits/{activity_id}.fit`
+Только **`storage_key`** → `ActivityStorage.open_fit_path` (только **`source=hammerhead`**).
 
 Ответ: `FileResponse`, `Content-Type: application/vnd.ant.fit`.  
-В списке Activities кнопка «.fit» видна, если `fit_available` (есть `storage_key` или `fit_path` в индексе HH) — [`browse.py`](../getsync/activities/browse.py).
+В списке Activities кнопка «.fit» — если есть `storage_key` в индексе HH — [`browse.py`](../getsync/activities/browse.py).
 
 **Tenant isolation:** чужой `activity_id` → 404 (`get_activity` с `user_id` из сессии).
 
 ---
-
-## Миграция legacy
-
-Запускается при старте CLI / bootstrap: [`migrate_legacy_files`](../getsync/users/migrate.py).
-
-| Шаг | Функция | Действие |
-| --- | ------- | -------- |
-| 1 | `migrate_legacy_files` | Копирует `data/fits/`, `garth/`, … → `data/users/{id}/` |
-| 2 | `migrate_user_fit_files` | `fits/*.fit` → `activities/hammerhead/{id}.fit`, проставляет `storage_key` |
-| 3 | `migrate_legacy_fit_path_column` | Если в БД только `fit_path` — копирует в layout по ключу |
-
-Идемпотентно: повторный запуск не дублирует файлы, если цель уже есть.
 
 ---
 
@@ -212,7 +193,7 @@ STORAGE_BACKEND=local
 
 ---
 
-## Garmin как source (план **3.11a**)
+## Garmin как source (план **3.11.2**)
 
 После pull ожидается тот же layout:
 
@@ -242,7 +223,7 @@ activities/garmin/{garmin_activity_id}.fit
 | ID | Содержание |
 | -- | ---------- |
 | **3.3** | `S3StorageBackend`, migrate CLI, signed download URL |
-| **3.11a** | FIT pull Garmin → `activities/garmin/` |
+| **3.11.2** | FIT pull Garmin → `activities/garmin/` |
 | backlog | `activity_objects` — несколько артефактов (GPX, preview) на одну активность |
 | backlog | LRU-кэш на VPS при `STORAGE_BACKEND=s3` |
 
@@ -255,10 +236,9 @@ activities/garmin/{garmin_activity_id}.fit
 | [`storage/keys.py`](../getsync/storage/keys.py) | `build_object_key`, `sanitize_external_id` |
 | [`storage/backend.py`](../getsync/storage/backend.py) | `LocalFilesystemBackend`, `get_storage_backend` |
 | [`storage/activity.py`](../getsync/storage/activity.py) | `ActivityStorage.put_fit` / `open_fit_path` |
-| [`storage/migrate.py`](../getsync/storage/migrate.py) | Перенос `fits/` → `activities/hammerhead/` |
 | [`sync/service.py`](../getsync/sync/service.py) | Запись FIT после HH download |
 | [`users/context.py`](../getsync/users/context.py) | `user_data_dir`, `activities_dir` |
-| [`users/migrate.py`](../getsync/users/migrate.py) | Стартовая миграция layout |
+| [`users/migrate.py`](../getsync/users/migrate.py) | `infer_hammerhead_user_id` при bootstrap |
 
 ---
 

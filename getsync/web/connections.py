@@ -46,7 +46,7 @@ class ConnectionGroups:
 
 
 def connection_status(ctx: UserContext, user: UserRow | None = None) -> dict[str, Any]:
-    """Structured HH + Garmin state (legacy banner / helpers)."""
+    """Structured HH + Garmin state for Settings / helpers."""
     hh = HammerheadClient(ctx).status()
     gm = garmin_status(ctx)
     mon = session_monitor(ctx)

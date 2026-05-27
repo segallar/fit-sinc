@@ -1,6 +1,6 @@
 [project]
 name = "get-sync"
-version = "0.5.0"
+version = "0.6.0"
 description = "GetSync — sync workouts across fitness platforms (Hammerhead → Garmin)"
 requires-python = ">=3.11"
 dependencies = [

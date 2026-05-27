@@ -280,15 +280,15 @@ class TestTenantIsolation(unittest.TestCase):
                 bob_ctx = __import__(
                     "getsync.users.context", fromlist=["resolve_user_context"]
                 ).resolve_user_context("bob")
-                bob_ctx.fits_dir.mkdir(parents=True, exist_ok=True)
-                fit_path = bob_ctx.fits_dir / "bob-act.fit"
-                fit_path.write_bytes(b"FIT")
+                from getsync.storage.activity import ActivityStorage
+
+                key = ActivityStorage(bob_ctx).put_fit("hammerhead", "bob-act", b"FIT")
                 store.upsert_activity(
                     "bob",
                     "bob-act",
                     name="Bob ride",
                     sync_status="synced",
-                    fit_path=str(fit_path),
+                    storage_key=key,
                 )
 
                 _login(client, "alice@test.local", "alice-pass")

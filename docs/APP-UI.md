@@ -261,7 +261,7 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 | Pager | `/app/admin/sync-log?log_page=N#sync-log` |
 
 Данные: `sync_events` в SQLite, `list_events(user_id=None)` — общий журнал.  
-Legacy `/app/log` → **303** сюда (нужен `is_admin`). **Осталось (2.3a 📋):** фильтры duplicate vs error — [SCREENS.md](design/SCREENS.md).
+Legacy `/app/log` → **303** сюда (нужен `is_admin`). **Осталось (2.14 📋):** фильтры duplicate vs error — [SCREENS.md](design/SCREENS.md).
 
 ### 6.4 Admin — `/app/admin/`
 

@@ -1,327 +1,262 @@
 # Roadmap GetSync
 
-> **Обновлено:** 2026-05-26 · **Фокус сейчас:** [дизайн-ревью кабинета → вёрстка **2.10**](#фокус-сейчас-тестирование-и-кабинет-app) · замечания → [DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md).  
-> Выполненное (фазы 0–5, 5b, ядро **2.3**) — [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md). **~124** тестов · prod: HH→Garmin.
+> **Обновлено:** 2026-05-26  
+> **Prod:** [v0.6.0](#v060--зафиксировано-2026-05-26) · **В разработке:** **v0.7.0** (кабинет / дизайн)  
+> **Выполненное до v0.6** (фазы 0–5, 5b) — [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md) · **~123** теста · HH→Garmin на sirocco.
 
-**Документы:** [APP-UI.md](APP-UI.md) · [design/SCREENS.md](design/SCREENS.md) · [CONNECTIONS.md](CONNECTIONS.md) · [STORAGE.md](STORAGE.md) · [DATABASE.md](DATABASE.md) · [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md)
+**Документы:** [APP-UI.md](APP-UI.md) · [SCREENS.md](design/SCREENS.md) · [CONNECTIONS.md](CONNECTIONS.md) · [STORAGE.md](STORAGE.md) · [DATABASE.md](DATABASE.md) · [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) · [CHANGELOG.md](../CHANGELOG.md)
 
 ---
 
-## Базовая линия (уже в production)
+## Схема ID задач
 
-Не в backlog — контекст для приоритетов:
+| Префикс | Область | Примеры |
+| ------- | ------- | ------- |
+| **1.x** | Запуск, домен, инфра | **1.5** rename/cutover getsync.me |
+| **2.x** | Продукт: кабинет, лендинг, алерты, i18n | **2.10** дизайн · **2.12** Garmin login |
+| **2.x.y** | Подзадачи одной фичи (детали в секции фичи) | **2.10.1** sidebar |
+| **3.x** | Платформа: хаб, S3, OAuth, модули | **3.1** rule engine · **3.9** модульность |
+| **3.11.y** | Эпик Garmin pull (источник) | **3.11.1** spike · **3.11.2** FIT · **3.11.3** wellness · **3.11.4** UI |
+
+**Правила:**
+
+- В [реестре](#реестр-задач) — только **2.x** и **3.x** (и **3.11.y** для Garmin pull).
+- Старые метки **2.3a** → **2.14**, **2.3b** → **2.15**, **3.11.0/a/b/c** → **3.11.1–3.11.4** (см. [таблицу переименований](#переименования-id)).
+- **ops** — без номера, в [Ops](#ops-и-качество).
+
+---
+
+## Переименования ID
+
+| Было | Стало | Комментарий |
+| ---- | ----- | ----------- |
+| 2.3 (остаток UX) | **2.3** ✅ + **2.14**, **2.15** | Ядро activities закрыто в v0.6 |
+| 2.3a | **2.14** | Sync log: фильтры / типы событий |
+| 2.3b | **2.15** | Календарь: дни только в облаке |
+| 3.11.0 | **3.11.1** | Spike download FIT |
+| 3.11a | **3.11.2** | FIT → storage + UI |
+| 3.11b | **3.11.3** | Wellness SQLite + job |
+| 3.11c | **3.11.4** | Widget шагов/сна |
+
+---
+
+## v0.6.0 — зафиксировано (2026-05-26)
+
+См. [CHANGELOG.md](../CHANGELOG.md).
+
+| Область | Содержание |
+| ------- | ---------- |
+| Sync | Webhook HH → FIT → Garmin; re-sync; Playwright на VPS |
+| Кабинет | **Activities** (list \| calendar, фильтры); sync summary; **Admin** sync log + Garmin JWT log |
+| IA | Нет Dashboard; `/app/` → activities; legacy runtime снят |
+| Данные | `getsync.db`, `storage_key`, [STORAGE.md](STORAGE.md), [DATABASE.md](DATABASE.md) |
+| Документация | PLAN, APP-UI, ARCHITECTURE, STORAGE, DATABASE |
+
+---
+
+## Базовая линия (prod после v0.6)
 
 | Область | Состояние |
 | ------- | --------- |
-| Sync | Webhook HH → FIT → Garmin; dedup SQLite; re-sync |
-| Tenants | `user_id`, `data/users/{id}/`, session auth, security tests |
-| Кабинет | Activities (List \| Calendar, HH+Garmin, sync summary + retry), Settings; Admin: users, sync log, Garmin JWT log |
-| Garmin | **Upload** FIT ✅ · **list** активностей в browse ✅ · **pull** FIT / шаги / сон 📋 [**3.11**](3.11-GARMIN-PULL.md) |
-| Хранение | `StorageBackend` local, `storage_key`, `activities/{source}/` — [STORAGE.md](STORAGE.md) |
+| Pipeline | **Hammerhead → Garmin** (Garmin — приёмник) |
+| Кабинет | Activities · Settings · Admin (users, logs) |
+| Garmin в UI | Upload ✅ · list в browse ✅ · pull FIT/wellness — **3.11** 📋 |
+| Tenants | `user_id`, `data/users/{id}/`, session `getsync_session` |
 | Регистрация | `/register` при `REGISTRATION_OPEN` — без email verify (**2.6**) |
-| Бренд в коде | Пакет `getsync`, cookie dual-read — **A+B** ✅ |
-| Домен prod (сейчас) | `romansegalla.online` / legacy hosts до **1.5 C** |
+| Домен | `romansegalla.online` · cutover **getsync.me** — **1.5** ⏸ |
+
+### Снимок кабинета `/app`
+
+| Экран | URL |
+| ----- | --- |
+| Activities | `/app/activities` — list \| calendar, sync summary |
+| Settings | `/app/settings` — profile, connections, `#garmin-session` |
+| Admin | `/app/admin/` · `/app/admin/sync-log` · `/app/admin/log` |
+
+Редиректы: `/app/` → activities · `/app/log` → admin sync-log · `/app/session` → settings.  
+Спека: [APP-UI.md](APP-UI.md) · [SCREENS.md](design/SCREENS.md).
 
 ---
 
-## Идея продукта (цель)
+## v0.7.0 — фокус (кабинет)
 
-**GetSync** — хаб спортивных активностей: **источники** → каталог + хранение → **анализ в UI** → доставка в **приёмники** по правилам.
+**Цель:** согласованный дизайн и стабильное поведение `/app` + **Garmin login в UI**.
 
-```text
-Источники ──► Ingest ──► Каталог (SQLite + файлы) ──► UI (list, calendar, log)
-                              │
-                              └──► Правила ──► Приёмники (Garmin, S3, …)
-```
-
-**Сейчас в prod:** один pipeline **Hammerhead → Garmin** (Garmin — приёмник). Список активностей Garmin в UI — metadata only; локальные `.fit` и wellness — [**3.11**](3.11-GARMIN-PULL.md).
-
-**Не в фокусе:** тренировочный планировщик (TP/Intervals), соцсеть. Приоритет — **надёжный ingest + статус + self-service**.
-
----
-
-## Снимок кабинета /app
-
-> Спека экранов: [APP-UI.md](APP-UI.md) · карта URL: [design/SCREENS.md](design/SCREENS.md)
-
-| Экран | URL | Роль |
-| ----- | --- | ---- |
-| **Activities** | `/app/activities` | Главный: `view=list\|calendar`, unified sources, **sync summary** внизу |
-| **Settings** | `/app/settings` | Profile, connections, `#garmin-session`, password |
-| **Admin** | `/app/admin/` | Users CRUD · **Sync log** (все tenants) · **Garmin log** (JWT refresh) |
-
-**Layout кабинета (2026-05):** все страницы `/app` и `/app/admin` — **на всю ширину экрана**, контент **к левому краю** (без центрированной колонки 64rem). Спека: [APP-UI.md §1](APP-UI.md#1-принятые-решения-qa-2026-05).
-
-Редиректы: `/app/` → `/app/activities` · `/app/log` → `/app/admin/sync-log` · `/app/session` → `/settings#garmin-session`.  
-**Убрано (2026-05):** отдельный Dashboard и sync log на Activities — журнал только в admin.
-
----
-
-## Фокус сейчас: тестирование и кабинет `/app`
-
-**Цель волны (2–3 недели):** довести **основной интерфейс** `/app` до согласованного дизайна и стабильного поведения.
-
-**Сейчас (шаг 0):** сбор **замечаний к дизайну** — [design/DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md). Можно прислать большим списком в чат или править файл напрямую.
-
-**Не в этой волне:** **1.5 C**, **3.x** хаб, лендинг SEO (**2.11**).
-
-### Критерий «кабинет готов»
-
-| Критерий | Проверка |
-| -------- | -------- |
-| Все экраны без регрессий | Activities (list+calendar), Settings, Admin (users + logs) |
-| Сценарии из [SCREENS.md](design/SCREENS.md) проходят вручную | login → activities → day filter → re-sync → settings |
-| Автотесты зелёные | CI + новые тесты на routes/calendar/browse |
-| Известные UX-долги закрыты или в backlog с приоритетом | sync log UX (фильтры), sidebar, Garmin login UI |
-| [APP-UI.md](APP-UI.md) §11 чеклист | 2.10.1–2.10.2 минимум для prod |
-
-### План волны (порядок)
+**Не в v0.7:** **1.5** DNS cutover · **3.x** хаб · полный **3.11**.
 
 ```mermaid
 flowchart TB
-  T0["0. Замечания к дизайну\nDESIGN-FEEDBACK"]
-  T1["1. Согласовать scope P0/P1"]
-  T2["2. Вёрстка 2.10\nsidebar + экраны"]
-  T3["3. UX долги\n2.3a log · 2.12 Garmin"]
-  T4["4. Тесты 2.13\nрегрессия"]
-  T0 --> T1 --> T2 --> T3 --> T4
+  T0["2.0 Design feedback\nDESIGN-FEEDBACK"]
+  T1["2.10 Sidebar + экраны"]
+  T2["2.12 Garmin login UI"]
+  T3["2.13 Тесты"]
+  T4["2.14 Sync log UX"]
+  T0 --> T1 --> T2 --> T3
+  T1 --> T4
 ```
 
-| Этап | ID | Содержание | Оценка |
-| ---- | -- | ---------- | ------ |
-| **0** | — | Сбор замечаний → [DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md) | пока идёт |
-| **1** | **2.10** | Sidebar prod + правки по замечаниям (activities, settings, admin) | 4–7 дней |
-| **2** | **2.3a** | Sync log UX: фильтры duplicate/error (лог в admin ✅) | 0.5 вечера |
-| **3** | **2.12** | Garmin login в UI | 1–2 вечера |
-| **4** | **2.13** | Автотесты + регрессия **после** дизайна | 2–4 дня |
-| **5** | **2.5** | i18n (опционально) | 1–2 вечера |
+| Порядок | ID | Содержание | Оценка |
+| ------- | -- | ---------- | ------ |
+| 0 | — | Замечания → [DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md) | идёт |
+| 1 | **2.10** | Sidebar prod; полировка activities / settings / admin | 4–7 дн |
+| 2 | **2.12** | Garmin login в Settings (не CLI) | 1–2 веч |
+| 3 | **2.13** | Автотесты + регрессия после **2.10** | 2–4 дн |
+| 4 | **2.14** | Admin sync log: фильтры, duplicate ≠ error | 0.5 веч |
+| опц. | **2.5** | i18n тел кабинета | 1–2 веч |
+| опц. | **2.15** | Календарь: дни только в облаке | 1 веч |
 
-### Замечания к дизайну (шаг 0)
+### Критерий «v0.7 готов»
 
-Файл: **[design/DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md)** — таблицы по экранам, приоритет P0–P3.
-
-Присылай в любом виде, например:
-
-- экран (Activities / Settings / …)
-- что не так
-- как хочешь (если есть)
-- prod или ui-preview
-
-Локально: [UI.md](UI.md).
+| Критерий | Проверка |
+| -------- | -------- |
+| Регрессии | Activities, Settings, Admin |
+| Ручные сценарии | [SCREENS.md](design/SCREENS.md) |
+| CI | тесты зелёные |
+| **2.10.1–2.10.2** | [APP-UI.md](APP-UI.md) §11 |
 
 ---
 
-## Горизонты (после текущей волны)
+## Реестр задач
 
-| Горизонт | Когда | Содержание |
-| -------- | ----- | ---------- |
-| ⏸ **H1 — Запуск** | После стабильного кабинета | **1.5 C** — getsync.me, certbot, HH redirect |
-| 🟡 **H2 — остаток продукта** | Параллельно/следом | **2.11** SEO/скрины · **2.4** алерты · **2.6** email |
-| 🔵 **H3 — Платформа** | 1–3 месяца+ | **2.8** → **3.11** (Garmin pull) → **3.9** → **3.1** · **3.3** → **3.5** |
+| ID | Версия | Приор. | Задача | Оценка | Завис. |
+| -- | ------ | ------ | ------ | ------ | ------ |
+| — | **0.7** | ▶ | Design feedback — [DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md) | — | — |
+| **2.10** | 0.7 | P0 | Sidebar + вёрстка кабинета — [APP-UI.md](APP-UI.md) §11 | 4–7 дн | feedback |
+| **2.12** | 0.7 | P1 | Garmin login в Settings | 1–2 веч | **2.10.2** |
+| **2.13** | 0.7 | P1 | Тесты после **2.10** | 2–4 дн | **2.10** |
+| **2.14** | 0.7 | P1 | Sync log UX (фильтры; таблица в admin ✅) | 0.5 веч | — |
+| **2.5** | 0.7 | P2 | i18n кабинета | 1–2 веч | **2.10** |
+| **2.15** | backlog | P3 | Календарь: облачные дни без SQLite | 1 веч | browse |
+| ? | — | — | Кэш browse/calendar (обсуждение, не делать до решения) | — | — |
+| **1.5** | H1 | ⏸ | DNS getsync.me — [1.5-RENAME.md](1.5-RENAME.md) | 1–2 дн | **v0.7** |
+| **2.11** | H2 | ⏸ | Лендинг SEO / скрины | 2–3 веч | **1.5**, **2.10** |
+| **2.4** | H2 | ⏸ | Telegram-алерты | 1–2 веч | **2.14** |
+| **2.6** | H2 | ⏸ | Email verify — [2.1e-EMAIL.md](2.1e-EMAIL.md) | 2–4 веч | публичный register |
+| **2.7** | H2 | ⏸ | Connections/rules в БД | 1–2 нед | **3.1** |
+| **2.8** | H3 | 🔵 | Spike Source/Sink models | 2–3 веч | — |
+| **2.9** | H3 | 🔵 | Manual FIT upload | 1–2 веч | storage ✅ |
+| **3.11.1** | H3 | 🔵 | Spike Garmin download FIT | ½–1 веч | **2.12** |
+| **3.11.2** | H3 | 🔵 | Garmin FIT pull — [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) | 2–3 веч | **3.11.1** |
+| **3.11.3** | H3 | 🔵 | Garmin wellness (steps, sleep) | 1–2 веч | **3.11.1** |
+| **3.11.4** | H3 | 🔵 | UI wellness widget | 1–2 веч | **3.11.3**, **2.5** |
+| **3.9** | H3 | 🔵 | Модульность | 1–2 нед | **2.8** |
+| **3.1** | H3 | 🔵 | Rule engine | ~1 нед | **3.9** |
+| **3.3** | H3 | 🔵 | S3 — [STORAGE.md](STORAGE.md) | 3–5 дн | local ✅ |
+| **3.4** | H3 | 🔵 | OAuth login — [3.4-OAUTH-LOGIN.md](3.4-OAUTH-LOGIN.md) | 2–3 веч | **1.5**, **2.6** |
+| **3.5** | H3 | 🔵 | Полный хаб (Strava, …) | 2–3 нед | **3.1**, **3.3** |
+| **3.2** | H3 | 🔵 | Маршруты / courses | 1–2 нед | **3.1** |
+| **3.6** | H3 | 🔵 | Языки fr/… | по запросу | **2.5** |
+| **3.8** | H3 | 🔵 | Email alerts, Playwright queue | post-scale | — |
+| **3.10** | H3 | 🔵 | Метрики, карты | backlog | **3.5** |
+
+**Закрыто в v0.6:** **2.1** register · **2.2** tests · **2.3** activities+calendar+admin log · rename **A+B** · legacy runtime removal.
+
+---
+
+## Горизонты
 
 ```mermaid
 flowchart LR
-  NOW["▶ Сейчас\n2.10·2.12·2.13"]
-  H1["H1\n1.5 C"]
-  H3["H3\n3.11 pull\nхаб 3.1"]
-  NOW --> H1 --> H3
+  V07["v0.7\n2.10·2.12·2.13"]
+  H1["H1\n1.5"]
+  H3["H3\n3.11·3.9·3.1"]
+  V07 --> H1 --> H3
+```
+
+| Горизонт | Содержание |
+| -------- | ---------- |
+| **v0.7** | Кабинет: дизайн, Garmin login UI, тесты, **2.14** |
+| **H1** | **1.5** getsync.me |
+| **H2** | **2.11** · **2.4** · **2.6** |
+| **H3** | **2.8** → **3.11.*** → **3.9** → **3.1** ∥ **3.3** → **3.5** |
+
+**Порядок H3 (Garmin + хаб):**
+
+```text
+2.8 → 3.11.1 → 3.11.2 ∥ 3.11.3 → 3.11.4 → 3.9 ∥ 3.3 → 3.1 → 3.5 → 3.4
 ```
 
 ---
 
-## Реестр открытых задач
-
-| ID | Приоритет | Задача | Оценка | Зависимости |
-| -- | --------- | ------ | ------ | ----------- |
-| **—** | **▶** | **Сбор замечаний к дизайну** — [DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md) | сейчас | — |
-| **2.10** | **P0** | Вёрстка по замечаниям: sidebar + activities/settings/admin — [APP-UI.md](APP-UI.md) §11 | 4–7 дней | после шага 0 |
-| **2.3a** | **P1** | Sync log UX: фильтры/типы (таблица в `/app/admin/sync-log` ✅) | 0.5 вечера | — |
-| **2.13** | **P1** | Тесты и регрессия **после** 2.10 | 2–4 дня | **2.10** |
-| **2.12** | **P1** | Garmin login в Settings (не CLI) | 1–2 вечера | **2.10.2** |
-| **2.5** | **P2** | i18n тел страниц кабинета; lang в шапке | 1–2 вечера | лучше с **2.10** |
-| **2.3b** | **P3** | Календарь v6.1: дни только в облаке | 1 вечер | browse API |
-| **?** | **Обсуждение** | **Кэш browse/calendar:** нужен ли server-side кэш каталога (SQLite + повторные HH/Garmin API) при infinite scroll и фильтрах? | — | **не делать до решения** |
-| **1.5 C** | ⏸ H1 | DNS getsync.me, certbot — [1.5-RENAME.md](1.5-RENAME.md) | 1–2 дня | после волны UI |
-| **2.11** | ⏸ | Лендинг SEO/скрины (**2.11.3–4**) | 2–3 вечера | **1.5 C**, **2.10** |
-| **2.4** | ⏸ | Telegram-алерты | 1–2 вечера | стабильный log UX |
-| **2.6** | ⏸ | Email confirm, invite — [2.1e-EMAIL.md](2.1e-EMAIL.md) | 2–4 вечера | перед публичным register |
-| **2.7b** | ⏸ | Правила + реестр connections в БД | 1–2 недели | **3.1** |
-| **2.8** | 🔵 | Spike ActivityRecord, Source/Sink | 2–3 вечера | — |
-| **2.9** | 🔵 | Manual FIT upload | 1–2 вечера | storage ✅ |
-| **3.1** | 🔵 | Rule engine, реестр источников/приёмников в БД | ~1 неделя | **2.8**, **3.9** |
-| **3.2** | 🔵 | Маршруты в хабе; spike Garmin courses | 1–2 недели | **3.1** |
-| **3.3** | 🔵 | S3 adapter, миграция FIT, signed URL — [STORAGE.md](STORAGE.md) | 3–5 дней | local ✅ |
-| **3.4** | 🔵 | OAuth/OIDC (Google, …) — [3.4-OAUTH-LOGIN.md](3.4-OAUTH-LOGIN.md) | 2–3 вечера | **1.5 C**, **2.6** |
-| **3.5** | 🔵 | Полный хаб: Strava/Wahoo, архив, сложные правила | 2–3 недели | **3.1**, **3.3** |
-| **3.6** | 🔵 | Языки fr/…; перевод docs/CLI | по запросу | **2.5** |
-| **3.8** | 🔵 | Email-алерты, очередь Playwright (много tenants) | post-scale | — |
-| **3.9** | 🔵 | Модули, контракты, границы — [§ 3.9](#39-модульность) | 1–2 недели | **2.8** |
-| **3.10** | 🔵 | Расширенные метрики тренировок, карты | backlog | **3.5** |
-| **3.11** | 🔵 | Garmin pull: FIT, шаги, сон — [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) | 5–8 вечеров | **2.12**, browse ✅ |
-
-**Admin:** Users · Sync log (все tenants) · Garmin JWT log ✅ · Statistics — 📋 H2.
-
----
-
-## ⏸ H1 — Запуск (после кабинета)
-
-### 1.5 C — Cutover getsync.me
-
-> **Отложено** до завершения [фокуса на кабинете](#фокус-сейчас-тестирование-и-кабинет-app). Cutover на «сыром» UI дороже откатом.
-
-| Шаг | Статус |
-| --- | ------ |
-| Код A+B, `deploy/nginx/getsync.conf` | ✅ |
-| DNS A → sirocco | 📋 |
-| certbot | 📋 |
-| Hammerhead OAuth redirect | 📋 |
-| Smoke: webhook, login, sync, **все экраны /app** | 📋 |
-
-[1.5-RENAME.md](1.5-RENAME.md).
-
----
-
-## Детали текущей волны (кабинет)
-
-### 2.13 — Тестирование
-
-См. [таблицу выше](#213--тестирование-кабинета-новая-задача-волны). Приоритетные автотесты:
-
-- `GET /app/activities?view=calendar&year=&month=`
-- redirects `/app/`, `/app/log`, `/app/session`
-- `test_activities_calendar`, browse/catalog (расширить)
-- smoke: login → activities → settings (TestClient)
-
-### 2.3a — Sync log UX
-
-| Задача | Статус |
-| ------ | ------ |
-| Перенос журнала в admin (`/app/admin/sync-log`, все tenants, колонка User) | ✅ 2026-05 |
-| Фильтры / визуал duplicate vs error | 📋 **2.3a** |
-| **2.3b** Calendar облачные дни | **P3** |
+## Детали: v0.7 (кабинет)
 
 ### 2.10 — Дизайн UI/UX
 
-Цель: prod = sidebar + плотный SaaS-кабинет (сейчас nav-pills).
+Цель: prod = sidebar + плотный SaaS (сейчас nav-pills). Прототип: `/app/ui-preview`.
 
 | Подзадача | Содержание | Оценка |
 | --------- | ---------- | ------ |
-| **2.10.1** | Перенос `cabinet.html` → `cabinet_sidebar.html` на все `/app` | 1–2 вечера |
-| **2.10.2** | Полировка activities, settings, admin; **2.12** в Connections; infinite scroll; **?** кэш — [реестр](#реестр-открытых-задач) | 3–5 дней |
-| **2.10.3** | Admin, mobile, a11y | 2–3 дня |
-
-Прототип: `/app/ui-preview` · [design/README.md](design/README.md).
+| **2.10.1** | `cabinet_sidebar.html` на все `/app` | 1–2 веч |
+| **2.10.2** | Activities, Settings, Admin; **2.12** в Connections | 3–5 дн |
+| **2.10.3** | Mobile, a11y | 2–3 дн |
 
 ### 2.12 — Garmin login в UI
 
-**P1** в текущей волне — часть «основного интерфейса» Settings.  
-**Блокер для [3.11](#311--garmin-pull-fit-шаги-сон):** без стабильной сессии tenant pull FIT/wellness упирается в CLI.
+Блокер для **3.11.2+** без CLI. См. [APP-UI.md](APP-UI.md) §6.3.
 
-### 2.5 — i18n
+### 2.13 — Тестирование
 
-**P2** — в конце волны или сразу после **2.10.2** (один проход по шаблонам).
+- `GET /app/activities?view=calendar&year=&month=`
+- redirects `/app/`, `/app/log`, `/app/session`
+- browse/calendar tests; smoke login → activities → settings
 
-### Отложено (H2 остаток)
+### 2.14 — Sync log UX (admin)
 
-| ID | Когда |
-| -- | ----- |
-| **2.11** | После **1.5 C** + стабильный кабинет |
-| **2.4** | После **2.3a** |
-| **2.6** | Перед публичным register на getsync.me |
-| **2.9** | По запросу |
-| **2.7b** | С **3.1** |
+| Шаг | Статус |
+| --- | ------ |
+| Журнал в `/app/admin/sync-log` (все tenants) | ✅ v0.6 |
+| Фильтры / duplicate vs error | 📋 v0.7 |
+
+### 2.15 — Календарь v6.1
+
+Дни «только в облаке» без записи в SQLite — опционально после v0.7.
 
 ---
 
-## 🔵 H3 — Платформа
+## Детали: H1 — запуск
 
-### Целевая архитектура хаба
+### 1.5 — Cutover getsync.me
 
-```mermaid
-flowchart LR
-  SRC[Sources] --> ING[Ingest]
-  ING --> DB[(Catalog)]
-  DB --> UI[UI]
-  DB --> ENG[Rules]
-  ENG --> SNK[Sinks]
-```
+| Шаг | Статус |
+| --- | ------ |
+| Код rename, `deploy/nginx/getsync.conf` | ✅ |
+| DNS, certbot, HH OAuth redirect | 📋 |
+| Smoke всех экранов `/app` | 📋 |
 
-Каталог MVP в UI уже есть (HH+Garmin); не хватает **rule engine**, **Garmin как source** ([**3.11**](#311--garmin-pull-fit-шаги-сон)) и вторых адаптеров.
+[1.5-RENAME.md](1.5-RENAME.md) — исторический чеклист rename.
 
-**Порядок H3 (рекомендация):**
+---
 
-```text
-2.8 (spike моделей)
-  → 3.11.0 spike download FIT
-  → 3.11a FIT pull + 3.11b wellness (можно параллельно после spike)
-  → 3.11c UI (steps/sleep widget)
-  → 3.9 ∥ 3.3
-  → 3.1 rule engine
-  → 3.5 полный хаб
-  → 3.4 OAuth login (после 1.5 C + 2.6)
-```
+## Детали: H3 — платформа
 
-| ID | Кратко | Детали |
-| -- | ------ | ------ |
-| **3.11** | Garmin **source**: download `.fit`, `daily_steps`, `daily_sleep` | [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) |
-| **3.11a** | FIT → `activities/garmin/` | spike auth, CLI backfill, Download в UI |
-| **3.11b** | Wellness SQLite + daily job | garth `DailySteps`, `DailySleepData` |
-| **3.11c** | Widget шагов/сна в UI | шаги + сон; i18n с **2.5** |
+### 3.11 — Garmin Pull (эпик)
 
-### 3.11 — Garmin Pull (FIT, шаги, сон)
+> [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) · подзадачи **3.11.1–3.11.4**
 
-> **Детали:** [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md)
-
-Расширить Garmin Connect: не только **destination** (upload HH), но и **source** — скачивание артефактов и ежедневных wellness-метрик.
-
-| Поток | Сейчас | После 3.11 |
-| ----- | ------ | ----------- |
-| HH → Garmin upload | ✅ | ✅ |
-| Garmin activities в browse | metadata ✅ | + локальный `.fit` |
-| Шаги / сон | ❌ | SQLite + UI |
-
-**Зависимости:** **2.12** (login в Settings), browse ✅, [STORAGE.md](STORAGE.md) (`activities/garmin/`).  
-**Не блокирует:** **3.1** rule engine — можно выпустить раньше хаба.  
-**Связь с 3.10:** дедуп HH↔Garmin одной поездки — backlog, не в 3.11.
-
-**Оценка:** 5–8 вечеров (FIT ~2–3, wellness+UI ~3–5).
+| ID | Содержание |
+| -- | ---------- |
+| **3.11.1** | Spike: auth download FIT / wellness API |
+| **3.11.2** | FIT → `activities/garmin/`, UI download |
+| **3.11.3** | `daily_steps`, `daily_sleep`, daily job |
+| **3.11.4** | Widget шагов/сна в кабинете |
 
 ### 3.9 — Модульность
 
-| Шаг | Содержание |
-| --- | ---------- |
-| 3.9.0 | Граф импортов, hot spots |
-| 3.9.1 | `docs/MODULES.md` — целевая схема |
-| 3.9.2 | Protocols: Source, Sink, Store, Storage |
-| 3.9.3 | Рефактор pipeline без смены поведения |
-| 3.9.4 | Контрактные тесты на границах |
+3.9.0 граф · 3.9.1 MODULES.md · 3.9.2 protocols · 3.9.3 refactor · 3.9.4 contract tests
 
-**Порядок H3 (сводка):** **2.8** → **3.11** → **3.9** → **3.1** ∥ **3.3** → **3.5** · **3.4** после **1.5 C** + **2.6**.
+### 3.1 / 3.3 / 3.4 / 3.5
 
-### 3.3 — S3
-
-Local `StorageBackend` ✅. Открыто: boto3 adapter, migrate CLI, signed download URL.
-
-### 3.4 — OAuth/OIDC
-
-Детали: [3.4-OAUTH-LOGIN.md](3.4-OAUTH-LOGIN.md). После email/identity (**2.6**) и cutover домена.
-
-### 3.5 — Полный хаб
-
-Strava/Wahoo, импорт архива, сложные правила — только после **3.1** + **3.9**.  
-Garmin как **source** (FIT archive, wellness) — [**3.11**](#311--garmin-pull-fit-шаги-сон), до Strava/Wahoo.
+См. [CONNECTIONS.md](CONNECTIONS.md), [STORAGE.md](STORAGE.md), [3.4-OAUTH-LOGIN.md](3.4-OAUTH-LOGIN.md).
 
 ---
 
-## Ops и качество (открытое)
+## Ops и качество
 
-| Задача | ID | Примечание |
-| ------ | -- | ---------- |
-| Garmin upload на sirocco: `upload_ready` в мониторинге | ops | Код ✅, проверка на VPS |
-| Убрать prod-зависимость от `GARMIN_EMAIL` в `.env` | ops | Multi-tenant |
-| Admin: Statistics | H2 | Отдельная страница (sync/Garmin logs ✅) |
-
-Закрыто (не трекать): CI smoke, security tests, build footer, legacy cookie — см. [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md).
+| Задача | Примечание |
+| ------ | ---------- |
+| `upload_ready` на sirocco | мониторинг |
+| Убрать `GARMIN_EMAIL` из `.env` prod | multi-tenant |
+| Admin Statistics | H2 |
 
 ---
 
@@ -329,13 +264,11 @@ Garmin как **source** (FIT archive, wellness) — [**3.11**](#311--garmin-pul
 
 | Риск | Mitigation |
 | ---- | ---------- |
-| Garmin меняет auth/upload | JWT + HTTP + Playwright + garth; pin versions |
-| Garmin download/wellness API (**3.11**) | Spike **3.11.0**; обёртка `getsync/garmin/`; pin `garth-ng` |
-| Нет FIT у manual activity в Connect | `sync_status=no_file`, не error (**3.11a**) |
-| Календарь пустой до browse | Подсказка в UI; **2.3b** не блокирует волну |
-| Регрессия при **2.10** | Сначала **2.13**, потом sidebar — тесты до merge |
-| Регистрация без **2.6** | `REGISTRATION_OPEN=false` на prod |
-| Cutover до готовности UI | **1.5 C** только после чеклиста кабинета |
+| Garmin auth/upload меняется | pin garth; JWT + Playwright |
+| Garmin download (**3.11.1**) | spike до реализации |
+| Manual activity без FIT | `no_file`, не error (**3.11.2**) |
+| Регрессия **2.10** | **2.13** после вёрстки |
+| Cutover до v0.7 | **1.5** после чеклиста кабинета |
 
 ---
 
@@ -343,27 +276,7 @@ Garmin как **source** (FIT archive, wellness) — [**3.11**](#311--garmin-pul
 
 | Документ | Назначение |
 | -------- | ---------- |
-| [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md) | История фаз 0–5, 5b, выполненные чеклисты |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Поток данных, tenants, модули |
-| [APP-UI.md](APP-UI.md) | Страницы и компоненты `/app` |
-| [1.5-RENAME.md](1.5-RENAME.md) | Cutover бренда |
-| [2.1-REGISTER.md](2.1-REGISTER.md) | Регистрация (реализовано) |
-| [2.1e-EMAIL.md](2.1e-EMAIL.md) | Email (**2.6**) |
-| [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) | Garmin pull: FIT, steps, sleep (**3.11**) |
-
----
-
-## Чеклист открытого (сводка)
-
-| ID | Задача | Статус |
-| -- | ------ | ------ |
-| **2.10**–**2.13** | Кабинет: дизайн, Garmin login UI, тесты | ▶ волна |
-| — | Sync log в admin (не на Activities) | ✅ |
-| **1.5 C** | DNS getsync.me | ⏸ H1 |
-| **2.6** | Email verify | ⏸ [2.1e-EMAIL.md](2.1e-EMAIL.md) |
-| **3.11** | Garmin pull: FIT, шаги, сон | 📋 [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) |
-| **3.11.0** | Spike download FIT auth | 📋 |
-| **3.11a** | FIT → storage + UI download | 📋 |
-| **3.11b** | Wellness tables + daily sync | 📋 |
-| **3.11c** | Widget шагов/сна | 📋 |
-| **3.1** | Rule engine, полный хаб | 🔵 после **3.11** / **3.9** |
+| [CHANGELOG.md](../CHANGELOG.md) | Версии релизов |
+| [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md) | История фаз 0–5 |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Потоки, tenants |
+| [APP-UI.md](APP-UI.md) | UI `/app` |

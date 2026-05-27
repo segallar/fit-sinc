@@ -31,7 +31,6 @@ class ActivityRow:
     activity_type: str | None
     sync_status: str
     storage_key: str | None
-    fit_path: str | None
     synced_at: str | None
     error_message: str | None
 
@@ -53,7 +52,6 @@ class SyncIndexEntry:
     garmin_id: int | None
     garmin_upload_status: str | None
     storage_key: str | None
-    fit_path: str | None
     synced_at: str | None
     error_message: str | None
 
@@ -562,7 +560,6 @@ class Store:
         activity_type: str | None = None,
         sync_status: str | None = None,
         storage_key: str | None = None,
-        fit_path: str | None = None,
         garmin_result: dict[str, Any] | str | None = None,
         synced_at: str | None = None,
         error_message: str | None = None,
@@ -592,7 +589,6 @@ class Store:
                     ("activity_type", activity_type),
                     ("sync_status", sync_status),
                     ("storage_key", storage_key),
-                    ("fit_path", fit_path),
                     ("garmin_result", garmin_json),
                     ("synced_at", synced_at),
                     ("error_message", error_message),
@@ -611,9 +607,9 @@ class Store:
                     """
                     INSERT INTO activities (
                         user_id, source, activity_id, name, activity_date, distance, duration,
-                        activity_type, sync_status, storage_key, fit_path, garmin_result,
+                        activity_type, sync_status, storage_key, garmin_result,
                         synced_at, error_message, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         user_id,
@@ -626,7 +622,6 @@ class Store:
                         activity_type,
                         sync_status or "pending",
                         storage_key,
-                        fit_path,
                         garmin_json,
                         synced_at,
                         error_message,
@@ -642,7 +637,6 @@ class Store:
         garmin_result: dict[str, Any],
         *,
         storage_key: str,
-        fit_path: str | None = None,
         name: str | None = None,
         activity_date: str | None = None,
         distance: float | None = None,
@@ -657,7 +651,6 @@ class Store:
             duration=duration,
             sync_status="synced",
             storage_key=storage_key,
-            fit_path=fit_path,
             garmin_result=garmin_result,
             synced_at=_utcnow(),
             error_message=None,
@@ -717,7 +710,7 @@ class Store:
             rows = conn.execute(
                 """
                 SELECT user_id, source, activity_id, name, activity_date, distance, duration,
-                       activity_type, sync_status, storage_key, fit_path, synced_at,
+                       activity_type, sync_status, storage_key, synced_at,
                        error_message
                 FROM activities
                 WHERE user_id = ?
@@ -760,7 +753,7 @@ class Store:
             rows = conn.execute(
                 """
                 SELECT user_id, source, activity_id, name, activity_date, distance, duration,
-                       activity_type, sync_status, storage_key, fit_path, synced_at,
+                       activity_type, sync_status, storage_key, synced_at,
                        error_message
                 FROM activities
                 WHERE user_id = ?
@@ -794,7 +787,7 @@ class Store:
             r = conn.execute(
                 """
                 SELECT user_id, source, activity_id, name, activity_date, distance, duration,
-                       activity_type, sync_status, storage_key, fit_path, synced_at,
+                       activity_type, sync_status, storage_key, synced_at,
                        error_message
                 FROM activities
                 WHERE user_id = ? AND source = ? AND activity_id = ?
@@ -817,7 +810,6 @@ class Store:
             activity_type=r["activity_type"] if "activity_type" in keys else None,
             sync_status=r["sync_status"],
             storage_key=r["storage_key"] if "storage_key" in keys else None,
-            fit_path=r["fit_path"],
             synced_at=r["synced_at"],
             error_message=r["error_message"],
         )
@@ -907,7 +899,7 @@ class Store:
         with self._conn() as conn:
             rows = conn.execute(
                 """
-                SELECT activity_id, sync_status, garmin_result, storage_key, fit_path,
+                SELECT activity_id, sync_status, garmin_result, storage_key,
                        synced_at, error_message
                 FROM activities
                 WHERE user_id = ? AND source = 'hammerhead'
@@ -924,7 +916,6 @@ class Store:
                 garmin_id=self._garmin_id_from_result(garmin_result),
                 garmin_upload_status=self._upload_status_from_result(garmin_result),
                 storage_key=r["storage_key"] if "storage_key" in keys else None,
-                fit_path=r["fit_path"],
                 synced_at=r["synced_at"],
                 error_message=r["error_message"],
             )

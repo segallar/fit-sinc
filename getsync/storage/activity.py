@@ -51,11 +51,3 @@ class ActivityStorage:
         if not storage_key:
             return None
         return self._backend.open_path(self.user_id, storage_key)
-
-    def legacy_fits_dir(self) -> Path:
-        """Pre-layout: data/users/{id}/fits/ — used for migration fallback."""
-        return self._ctx.user_data_dir / "fits"
-
-    def legacy_fit_path(self, external_id: str) -> Path:
-        safe = external_id.replace("/", "_")
-        return self.legacy_fits_dir() / f"{safe}.fit"

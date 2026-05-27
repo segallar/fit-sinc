@@ -10,7 +10,6 @@ from getsync.config import get_settings
 from getsync.state.store import Store
 from getsync.users.context import UserContext, resolve_user_context
 from getsync.users.models import UserRow
-from getsync.web.legacy_session import legacy_session_payload
 from getsync.web.templating import render_template
 
 SESSION_USER_KEY = "user_id"
@@ -47,19 +46,7 @@ def warn_insecure_session_config() -> list[str]:
 
 def _session_user_id(request: Request) -> str | None:
     uid = request.session.get(SESSION_USER_KEY)
-    if uid:
-        return str(uid)
-    settings = get_settings()
-    legacy = legacy_session_payload(
-        request,
-        secret_key=settings.session_secret,
-        max_age=SESSION_MAX_AGE,
-    )
-    if legacy:
-        legacy_uid = legacy.get(SESSION_USER_KEY)
-        if legacy_uid:
-            return str(legacy_uid)
-    return None
+    return str(uid) if uid else None
 
 
 def user_context_from_session(request: Request) -> UserContext | None:
@@ -137,17 +124,5 @@ def install_auth_middleware(app: FastAPI) -> None:
 
         if path == "/register" or path.startswith("/register?"):
             return await call_next(request)
-
-        legacy = (
-            "/activities",
-            "/log",
-            "/session",
-        )
-        if path == legacy[0] or path.startswith(legacy[0] + "/"):
-            return RedirectResponse("/app" + path, status_code=307)
-        if path == legacy[1] or path.startswith(legacy[1] + "?"):
-            return RedirectResponse("/app" + path, status_code=307)
-        if path == legacy[2] or path.startswith(legacy[2]):
-            return RedirectResponse("/app" + path, status_code=307)
 
         return await call_next(request)

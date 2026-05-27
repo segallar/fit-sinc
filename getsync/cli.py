@@ -21,7 +21,7 @@ from getsync.sync.service import backfill_since, sync_activity
 from getsync.timeutil import format_ts
 from getsync.users.bootstrap import apply_bootstrap_admin
 from getsync.users.context import UserContext, resolve_user_context
-from getsync.users.migrate import infer_hammerhead_user_id, migrate_legacy_files
+from getsync.users.migrate import infer_hammerhead_user_id
 from getsync.users.models import UserRow
 from getsync.mail import MailConfigurationError, MailSendError, send_email
 
@@ -74,7 +74,6 @@ def _bootstrap_store() -> Store:
     store = Store(settings.db_path)
     hh_uid = infer_hammerhead_user_id(settings)
     store.ensure_default_user(hammerhead_user_id=hh_uid)
-    migrate_legacy_files(settings, settings.default_user_id)
     apply_bootstrap_admin(store, settings)
     return store
 

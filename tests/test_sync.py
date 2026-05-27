@@ -25,7 +25,6 @@ class TestSyncActivity(unittest.IsolatedAsyncioTestCase):
                     "act-done",
                     {"id": 1},
                     storage_key="activities/hammerhead/act-done.fit",
-                    fit_path="/tmp/fake.fit",
                     name="Done ride",
                 )
 

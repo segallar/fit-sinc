@@ -42,7 +42,7 @@
 | Функциональность list/calendar/connections | ✅ | см. PLAN снимок кабинета |
 | **2.13** тестирование + багфикс | ▶ **P0** | чеклист в PLAN |
 | Sidebar prod (**2.10**) | ▶ **P0** | `cabinet_sidebar.html`, ui-preview |
-| Sync log UX (**2.3a**) | ▶ **P0** | `sync_log_section.html` |
+| Sync log UX (**2.14**) | ▶ **P0** | `sync_log_section.html` |
 | Garmin login UI (**2.12**) | P1 | Connections |
 | Admin / mobile (**2.10.3**) | 📋 | после основной волны |
 

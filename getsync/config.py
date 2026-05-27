@@ -53,17 +53,8 @@ class Settings(BaseSettings):
         return self.data_dir / "garth"
 
     @property
-    def fits_dir(self) -> Path:
-        return self.data_dir / "fits"
-
-    @property
     def db_path(self) -> Path:
-        """Prefer getsync.db; use fit_sinc.db if legacy file exists (R8)."""
-        preferred = self.data_dir / "getsync.db"
-        legacy = self.data_dir / "fit_sinc.db"
-        if preferred.is_file() or not legacy.is_file():
-            return preferred
-        return legacy
+        return self.data_dir / "getsync.db"
 
     def session_secret_is_default(self) -> bool:
         return self.session_secret.strip() in (

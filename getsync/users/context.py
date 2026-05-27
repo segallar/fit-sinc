@@ -36,11 +36,6 @@ class UserContext:
         """Per-user activity artifacts (FIT/GPX): activities/{source}/…"""
         return self.user_data_dir / "activities"
 
-    @property
-    def fits_dir(self) -> Path:
-        """Legacy layout; new files use activities_dir via ActivityStorage."""
-        return self.user_data_dir / "fits"
-
     def activity_storage(self) -> "ActivityStorage":
         from getsync.storage.activity import ActivityStorage
 
@@ -55,11 +50,6 @@ def resolve_user_context(user_id: str | None = None) -> UserContext:
     settings = get_settings()
     uid = (user_id or settings.default_user_id or DEFAULT_USER_ID).strip()
     return UserContext(user_id=uid, settings=settings)
-
-
-def legacy_data_dir(settings: Settings) -> Path:
-    """Pre-v2 flat layout under data/."""
-    return settings.data_dir
 
 
 def as_context(ctx: UserContext | None = None, user_id: str | None = None) -> UserContext:

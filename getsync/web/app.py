@@ -17,7 +17,7 @@ from getsync.state.store import Store
 from getsync.sync.service import resolve_user_for_webhook, sync_activity
 from getsync.users.context import UserContext
 from getsync.users.bootstrap import apply_bootstrap_admin, registration_is_open
-from getsync.users.migrate import infer_hammerhead_user_id, migrate_legacy_files
+from getsync.users.migrate import infer_hammerhead_user_id
 from getsync.web.admin_routes import router as admin_router
 from getsync.web.app_routes import router as app_router
 from getsync.web.auth import (
@@ -36,7 +36,6 @@ def _bootstrap() -> None:
     store = Store(settings.db_path)
     hh_uid = infer_hammerhead_user_id(settings)
     store.ensure_default_user(hammerhead_user_id=hh_uid)
-    migrate_legacy_files(settings, settings.default_user_id)
     apply_bootstrap_admin(store, settings)
     logger.info("bootstrap: default user ready (hh_user_id=%s)", hh_uid)
     for msg in warn_insecure_session_config():

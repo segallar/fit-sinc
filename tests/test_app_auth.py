@@ -60,37 +60,6 @@ class TestAppLogin(unittest.TestCase):
                 ).get_settings()
                 self.assertTrue(settings.session_cookie_secure)
 
-    def test_legacy_fit_sinc_session_cookie(self) -> None:
-        import json
-        from base64 import b64encode
-
-        import itsdangerous
-
-        with tempfile.TemporaryDirectory() as tmp:
-            with isolated_env(Path(tmp)):
-                settings = __import__(
-                    "getsync.config", fromlist=["get_settings"]
-                ).get_settings()
-                store = Store(settings.db_path)
-                store.ensure_default_user(
-                    email="owner@test.local",
-                    password="good-pass",
-                )
-
-                signer = itsdangerous.TimestampSigner(settings.session_secret)
-                payload = b64encode(
-                    json.dumps({"user_id": "default"}).encode("utf-8")
-                )
-                legacy = signer.sign(payload).decode("utf-8")
-
-                from getsync.web.app import app
-
-                client = TestClient(app)
-                client.cookies.set("fit_sinc_session", legacy)
-                dash = client.get("/app/activities", follow_redirects=False)
-                self.assertEqual(dash.status_code, 200)
-                self.assertIn("owner@test.local", dash.text)
-
     def test_login_wrong_password_redirects_with_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):

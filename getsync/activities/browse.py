@@ -581,7 +581,7 @@ def _rows_from_hammerhead(
                 hammerhead_id=aid,
                 garmin_id=entry.garmin_id if entry else None,
                 fit_available=bool(
-                    entry and (entry.storage_key or entry.fit_path)
+                    entry and entry.storage_key
                 ),
             )
         )
@@ -610,7 +610,7 @@ def _rows_from_garmin(
                 hammerhead_id=hh_id,
                 garmin_id=item.activity_id,
                 fit_available=bool(
-                    entry and (entry.storage_key or entry.fit_path)
+                    entry and entry.storage_key
                 ),
             )
         )
@@ -644,9 +644,8 @@ def catalog_row_to_browse_row(
             detail = row.error_message
         garmin_id = entry.garmin_id if entry else None
         fit_available = bool(
-            (entry and (entry.storage_key or entry.fit_path))
+            (entry and entry.storage_key)
             or row.storage_key
-            or row.fit_path
         )
         return ActivityBrowseRow(
             source="hammerhead",
@@ -673,7 +672,7 @@ def catalog_row_to_browse_row(
         status = row.sync_status
         detail = row.error_message
         hh_id = None
-    fit_available = bool(entry and (entry.storage_key or entry.fit_path))
+    fit_available = bool(entry and entry.storage_key)
     return ActivityBrowseRow(
         source="garmin",
         external_id=row.activity_id,

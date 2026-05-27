@@ -368,14 +368,12 @@ async def app_logout(request: Request) -> RedirectResponse:
 
 _PREVIEW_PAGES: list[tuple[str, str, str]] = [
     (f"{P}/ui-preview", "Overview", "All wireframe screens"),
-    (f"{P}/ui-preview/dashboard", "Dashboard", "Recent activities table"),
     (f"{P}/ui-preview/activities", "Activities", "Calendar + filters + table"),
     (f"{P}/ui-preview/settings", "Settings", "Profile, connections, password"),
     (f"{P}/ui-preview/admin", "Admin", "Users list"),
 ]
 
 _PREVIEW_TEMPLATES: dict[str, tuple[str, str]] = {
-    "dashboard": ("pages/app/ui_preview_dashboard.html", f"{P}/"),
     "activities": ("pages/app/ui_preview_activities.html", f"{P}/activities"),
     "settings": ("pages/app/ui_preview_settings.html", f"{P}/settings"),
     "admin": ("pages/app/ui_preview_admin.html", f"{P}/admin/"),
@@ -804,17 +802,7 @@ async def download_fit(request: Request, activity_id: str) -> FileResponse:
     ctx = _ctx(request)
     storage = ActivityStorage(ctx)
     row = _store().get_activity(ctx.user_id, activity_id, source="hammerhead")
-    fit_file: Path | None = None
-    if row:
-        fit_file = storage.open_fit_path(row.storage_key)
-        if fit_file is None and row.fit_path:
-            legacy = Path(row.fit_path)
-            if legacy.is_file():
-                fit_file = legacy
-    if fit_file is None:
-        candidate = storage.legacy_fit_path(activity_id)
-        if candidate.is_file():
-            fit_file = candidate
+    fit_file = storage.open_fit_path(row.storage_key) if row else None
     if fit_file is None:
         raise HTTPException(status_code=404, detail="FIT file not found")
     return FileResponse(

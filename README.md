@@ -150,7 +150,7 @@ getsync serve                  # http://127.0.0.1:8080 — webhook + UI
 | `GARMIN_EMAIL` / `PASSWORD` | Опционально для CLI |
 | `DATA_DIR` | Каталог данных (по умолчанию `data`) |
 
-Файлы данных (не коммитить): `data/getsync.db`, per-tenant `data/users/{id}/` (tokens, `garmin_web/`, `garth/`, `fits/`). При апгрейде со старой установки возможен файл `fit_sinc.db` — см. [`getsync/config.py`](getsync/config.py); плоский `data/*` копируется в `data/users/default/`.
+Файлы данных (не коммитить): `data/getsync.db`, per-tenant `data/users/{id}/` (tokens, `activities/`, `garmin_web/`, `garth/`). См. [docs/STORAGE.md](docs/STORAGE.md), [docs/DATABASE.md](docs/DATABASE.md).
 
 ## Веб-интерфейс
 

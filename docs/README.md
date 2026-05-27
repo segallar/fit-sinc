@@ -22,7 +22,8 @@
 | [CONNECTIONS.md](CONNECTIONS.md) | Product / FE | Sources и destinations в Settings |
 | [STORAGE.md](STORAGE.md) | Backend | FIT: пути, `storage_key`, миграция, download |
 | [DATABASE.md](DATABASE.md) | Backend | SQLite: таблицы, индексы, tenant, журналы |
-| [PLAN.md](PLAN.md) | Roadmap | Открытые задачи, горизонты H1–H3 |
+| [PLAN.md](PLAN.md) | Roadmap | v0.6 / v0.7, реестр задач, горизонты |
+| [CHANGELOG.md](../CHANGELOG.md) | Releases | Версии и release notes |
 | [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md) | Roadmap | История фаз 0–5 / выполненное (до 2026-05-26) |
 | [1.5-RENAME.md](1.5-RENAME.md) | Cutover | Бренд GetSync, DNS, cookie, SQLite |
 | [5b-DECISIONS.md](5b-DECISIONS.md) | Auth | Регистрация, bootstrap admin |
@@ -39,7 +40,7 @@
 |--------|----------|
 | **GetSync** | Публичное имя продукта |
 | **getsync** | Python-пакет и основная CLI-команда |
-| **Legacy** | cookie `fit_sinc_session` (14 дней), файл `fit_sinc.db` — см. [1.5-RENAME.md](1.5-RENAME.md) |
+| **История rename** | fit_sinc → GetSync — [1.5-RENAME.md](1.5-RENAME.md) (миграции в коде сняты) |
 | **tenant** | Пользователь сервиса (`users.id`, каталог `data/users/{id}/`) |
 | **Production app** | `https://app.getsync.me` (целевой); legacy `fit.romansegalla.online` до DNS cutover |
 
@@ -61,19 +62,19 @@
 
 ```text
 data/
-  getsync.db              # SQLite — см. DATABASE.md (или legacy fit_sinc.db)
+  getsync.db              # SQLite — см. DATABASE.md
   users/
     {user_id}/
       activities/           # FIT: hammerhead/, garmin/, …
       hammerhead_tokens.json
       garmin_web/session.json
       garth/                # OAuth garth-ng (fallback upload)
-      fits/                 # legacy → activities/hammerhead/
+      activities/           # FIT: hammerhead/, garmin/ — см. STORAGE.md
 ```
 
 Подробнее: [STORAGE.md](STORAGE.md) · [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Миграция с плоского `data/*` → `data/users/default/` при старте: [`getsync/users/migrate.py`](../getsync/users/migrate.py).
+Bootstrap Hammerhead user id: [`getsync/users/migrate.py`](../getsync/users/migrate.py).
 
 ---
 
