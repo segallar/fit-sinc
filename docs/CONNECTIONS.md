@@ -41,9 +41,13 @@ Connections
 - `components/connection_card.html`
 - `components/connections/{id}_actions.html` — кнопки для реализованных типов
 
-## Хранение credentials (сейчас)
+## Хранение credentials
 
-Per user, **не** в SQLite:
+**Целевая модель (auto-login, много систем):** [CREDENTIALS.md](CREDENTIALS.md) — шифрование per user, `connections/`, задачи **2.16** / **2.7**.
+
+### Сейчас
+
+Per user, **не** в SQLite (пароли Garmin **не** хранятся):
 
 ```text
 data/users/{user_id}/

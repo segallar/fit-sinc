@@ -124,6 +124,9 @@ flowchart TB
 | — | **0.7** | ▶ | Design feedback — [DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md) | — | — |
 | **2.10** | 0.7 | P0 | Sidebar + вёрстка кабинета — [APP-UI.md](APP-UI.md) §11 | 4–7 дн | feedback |
 | **2.12** | 0.7 | P1 | Garmin login в Settings | 1–2 веч | **2.10.2** |
+| **2.16** | 0.7 | ✅ | Credentials: Fernet store, auto re-login Garmin | — | **2.12** UI |
+| **2.16.1** | 0.7 | ✅ | Garmin: `--save-credentials`, per-user `connections/garmin/` | — | **2.16** |
+| **2.16.2** | 0.7 | ✅ | `ensure_garmin_*`, retry OAuth, `GarminSessionError` | — | **2.16.1** |
 | **2.13** | 0.7 | P1 | Тесты после **2.10** | 2–4 дн | **2.10** |
 | **2.14** | 0.7 | P1 | Sync log UX (фильтры; таблица в admin ✅) | 0.5 веч | — |
 | **2.5** | 0.7 | P2 | i18n кабинета | 1–2 веч | **2.10** |
@@ -133,7 +136,7 @@ flowchart TB
 | **2.11** | H2 | ⏸ | Лендинг SEO / скрины | 2–3 веч | **2.10** |
 | **2.4** | H2 | ⏸ | Telegram-алерты | 1–2 веч | **2.14** |
 | **2.6** | H2 | ⏸ | Email verify — [2.1e-EMAIL.md](2.1e-EMAIL.md) | 2–4 веч | публичный register |
-| **2.7** | H2 | ⏸ | Connections/rules в БД | 1–2 нед | **3.1** |
+| **2.7** | H2 | ⏸ | Connections/rules в БД | 1–2 нед | **2.16**, **3.1** |
 | **2.8** | H3 | 🔵 | Spike Source/Sink models | 2–3 веч | — |
 | **2.9** | H3 | 🔵 | Manual FIT upload | 1–2 веч | storage ✅ |
 | **3.11.1** | H3 | 🔵 | Spike Garmin download FIT | ½–1 веч | **2.12** |

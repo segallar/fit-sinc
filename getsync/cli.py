@@ -285,6 +285,11 @@ def garmin_login_cmd(
     ctx: typer.Context,
     email: str = typer.Option("", "--email", envvar="GARMIN_EMAIL"),
     password: str = typer.Option("", "--password", envvar="GARMIN_PASSWORD", hide_input=True),
+    save_credentials: bool = typer.Option(
+        True,
+        "--save-credentials/--no-save-credentials",
+        help="Store email/password for auto re-login (requires GETSYNC_SECRETS_KEY)",
+    ),
 ) -> None:
     """Login to Garmin Connect and save session."""
     user_ctx = _ctx_from_cli(ctx)
@@ -292,9 +297,17 @@ def garmin_login_cmd(
         email = typer.prompt("Garmin email")
     if not password:
         password = getpass("Garmin password: ")
-    garmin_login(email, password, user_ctx)
+    garmin_login(
+        email,
+        password,
+        user_ctx,
+        save_credentials=save_credentials,
+        store_password=save_credentials,
+    )
     typer.echo(f"OAuth session: {user_ctx.garth_dir}")
     typer.echo(f"Web session: {user_ctx.garmin_web_dir}")
+    if save_credentials:
+        typer.echo(f"Credentials: {user_ctx.user_data_dir}/connections/garmin/")
 
 
 @garmin_app.command("web-login")

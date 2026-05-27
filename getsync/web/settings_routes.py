@@ -248,4 +248,7 @@ async def garmin_disconnect(request: Request) -> RedirectResponse:
     if garth.is_dir():
         shutil.rmtree(garth)
     garth.mkdir(parents=True, exist_ok=True)
+    from getsync.credentials.garmin import clear_garmin_credentials
+
+    clear_garmin_credentials(ctx)
     return _redirect("garmin_disconnected")

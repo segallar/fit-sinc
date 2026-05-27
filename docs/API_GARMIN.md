@@ -49,8 +49,9 @@ garth.resume("data/users/default/garth")
 ### CLI
 
 ```bash
-getsync --user <slug> garmin login
-getsync --user <slug> garmin status      # upload_ready = web JWT valid
+# GETSYNC_SECRETS_KEY in .env required for --save-credentials (auto re-login)
+getsync --user <slug> garmin login --save-credentials
+getsync --user <slug> garmin status      # upload_ready = web JWT valid; auto_login_configured
 getsync --user <slug> garmin refresh-web
 getsync --user <slug> garmin import-web-cookies '{"JWT_WEB":"...","session":"..."}'
 ```

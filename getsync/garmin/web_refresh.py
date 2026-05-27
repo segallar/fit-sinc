@@ -206,11 +206,17 @@ def refresh_web_session(
             method = "playwright"
 
     if not updated:
-        if settings.garmin_email and settings.garmin_password:
-            from getsync.garmin.web_session import web_login
+        from getsync.credentials.garmin import load_garmin_login
+        from getsync.garmin.ensure import try_garmin_auto_login
+        from getsync.garmin.web_session import web_login
 
+        creds = load_garmin_login(user_ctx)
+        if not creds and settings.garmin_email and settings.garmin_password:
+            creds = (settings.garmin_email, settings.garmin_password)
+        if creds:
+            email, password = creds
             try:
-                web_login(settings.garmin_email, settings.garmin_password, user_ctx)
+                web_login(email, password, user_ctx)
                 method = "login"
                 stored = _load_session(user_ctx)
                 cookies = dict(stored.get("cookies") or {}) if stored else {}
@@ -226,6 +232,19 @@ def refresh_web_session(
             except Exception as exc:
                 logger.warning("Garmin web login refresh failed: %s", exc)
                 _log_refresh(trigger, "failed", f"web login: {exc}", user_id=user_ctx.user_id)
+
+        if try_garmin_auto_login(user_ctx):
+            stored = _load_session(user_ctx)
+            cookies = dict(stored.get("cookies") or {}) if stored else {}
+            if _jwt_valid(cookies.get("JWT_WEB")):
+                exp = _jwt_expires_at(cookies.get("JWT_WEB"))
+                _log_refresh(
+                    trigger,
+                    "refreshed",
+                    f"via auto-login, expires {format_ts(exp)}",
+                    user_id=user_ctx.user_id,
+                )
+                return {"refreshed": True, "method": "auto-login", "expires_at": exp}
         result = {"refreshed": False, "reason": "refresh failed — re-import browser cookies"}
         _log_refresh(trigger, "failed", result["reason"], user_id=user_ctx.user_id)
         return result

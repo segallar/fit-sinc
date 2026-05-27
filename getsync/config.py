@@ -23,8 +23,12 @@ class Settings(BaseSettings):
     hammerhead_web_redirect_uri: str = ""
     hammerhead_scope: str = "activity:read"
 
+    # Legacy global fallback — prefer per-user store (2.16); avoid on multi-tenant prod
     garmin_email: str = ""
     garmin_password: str = ""
+
+    # Fernet key for data/users/{id}/connections/*/secrets.enc (44-char url-safe base64)
+    getsync_secrets_key: str = ""
 
     garmin_jwt_refresh_interval_sec: int = 1800
     garmin_jwt_refresh_before_sec: int = 3600

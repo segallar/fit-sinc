@@ -23,6 +23,7 @@
 | [design/DESIGN-FEEDBACK.md](design/DESIGN-FEEDBACK.md) | Frontend | Замечания к дизайну кабинета (текущий ввод) |
 | [design/README.md](design/README.md) | Frontend | Дизайн-индекс, статус **2.10** / **2.3** |
 | [CONNECTIONS.md](CONNECTIONS.md) | Product / FE | Sources и destinations в Settings |
+| [CREDENTIALS.md](CREDENTIALS.md) | Backend / security | Секреты per user, auto re-login, много провайдеров |
 | [STORAGE.md](STORAGE.md) | Backend | FIT: пути, `storage_key`, миграция, download |
 | [DATABASE.md](DATABASE.md) | Backend | SQLite: таблицы, индексы, tenant, журналы |
 | [PLAN.md](PLAN.md) | Roadmap | v0.6 / v0.7, реестр задач, горизонты |

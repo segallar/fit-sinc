@@ -5,7 +5,6 @@ from typing import Any
 
 import garth
 
-from getsync.config import Settings, get_settings
 from getsync.users.context import UserContext, as_context
 from getsync.garmin.browser_upload import upload_fit_via_browser
 from getsync.garmin.web_session import (
@@ -14,7 +13,6 @@ from getsync.garmin.web_session import (
     web_resume,
     web_status,
 )
-from getsync.garmin.web_refresh import ensure_web_session
 
 logger = logging.getLogger("getsync.garmin")
 
@@ -23,7 +21,14 @@ def _garth_dir(ctx: UserContext | None = None) -> Path:
     return as_context(ctx).garth_dir
 
 
-def garmin_login(email: str, password: str, ctx: UserContext | None = None) -> None:
+def garmin_login(
+    email: str,
+    password: str,
+    ctx: UserContext | None = None,
+    *,
+    save_credentials: bool = True,
+    store_password: bool = True,
+) -> None:
     user_ctx = as_context(ctx)
     garth_dir = _garth_dir(user_ctx)
     garth_dir.mkdir(parents=True, exist_ok=True)
@@ -36,6 +41,15 @@ def garmin_login(email: str, password: str, ctx: UserContext | None = None) -> N
         else:
             raise
     web_login(email, password, user_ctx)
+    if save_credentials:
+        from getsync.credentials.garmin import save_garmin_login
+
+        save_garmin_login(
+            user_ctx,
+            email,
+            password if store_password else None,
+            store_password=store_password,
+        )
 
 
 def garmin_resume(ctx: UserContext | None = None) -> bool:
@@ -63,12 +77,15 @@ def garmin_status(ctx: UserContext | None = None) -> dict[str, Any]:
 
     web = web_status(user_ctx)
     connected = oauth.get("connected") or web.get("connected")
+    from getsync.credentials.garmin import garmin_auto_login_configured
+
     return {
         "connected": connected,
         "tenant_user_id": user_ctx.user_id,
         "oauth": oauth,
         "web": web,
         "upload_ready": web.get("connected", False),
+        "auto_login_configured": garmin_auto_login_configured(user_ctx),
     }
 
 
@@ -78,12 +95,9 @@ def upload_fit(
     ctx: UserContext | None = None,
 ) -> dict[str, Any]:
     user_ctx = as_context(ctx)
-    settings = user_ctx.settings
-    ensure_web_session(user_ctx)
+    from getsync.garmin.ensure import ensure_garmin_web_session
 
-    if not web_resume(user_ctx) and settings.garmin_email and settings.garmin_password:
-        logger.info("Garmin web session missing or expired — re-login")
-        web_login(settings.garmin_email, settings.garmin_password, user_ctx)
+    ensure_garmin_web_session(user_ctx, trigger="upload")
 
     if web_resume(user_ctx):
         try:
@@ -97,10 +111,13 @@ def upload_fit(
 
     garth_dir = _garth_dir(user_ctx)
     if not garmin_resume(user_ctx):
-        raise RuntimeError(
-            f"Garmin session not available for {user_ctx.user_id} — "
-            f"run: getsync --user {user_ctx.user_id} garmin login"
-        )
+        from getsync.garmin.ensure import try_garmin_auto_login
+
+        if not try_garmin_auto_login(user_ctx) or not garmin_resume(user_ctx):
+            raise RuntimeError(
+                f"Garmin session not available for {user_ctx.user_id} — "
+                f"run: getsync --user {user_ctx.user_id} garmin login --save-credentials"
+            )
     buf = io.BytesIO(fit_bytes)
     buf.name = filename if filename.endswith(".fit") else f"{filename}.fit"
     result = garth.upload(buf)

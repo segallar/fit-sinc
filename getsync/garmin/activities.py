@@ -7,7 +7,7 @@ from datetime import datetime
 
 import garth
 
-from getsync.garmin.session import garmin_resume
+from getsync.garmin.ensure import call_garmin_oauth_api
 from getsync.users.context import UserContext, as_context
 
 
@@ -36,12 +36,12 @@ def list_garmin_activities(
     ctx: UserContext | None = None,
 ) -> list[GarminActivityItem]:
     user_ctx = as_context(ctx)
-    if not garmin_resume(user_ctx):
-        raise RuntimeError("Garmin OAuth not connected — run: getsync garmin login")
-
     from garth.data.activity import Activity
 
-    items = Activity.list(limit=limit, start=start)
+    items = call_garmin_oauth_api(
+        user_ctx,
+        lambda: Activity.list(limit=limit, start=start),
+    )
     out: list[GarminActivityItem] = []
     for item in items:
         type_key = None
