@@ -84,7 +84,7 @@ def connection_status(ctx: UserContext, user: UserRow | None = None) -> dict[str
             "web_reason": web.get("reason") or "",
         },
         "settings_path": "/settings",
-        "session_path": "/settings?section=connections#garmin-session",
+        "session_path": "/settings?section=garmin#garmin-session",
     }
 
 

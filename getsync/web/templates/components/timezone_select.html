@@ -1,6 +1,13 @@
+{% if settings_inline %}
+<div class="row getsync-settings-field align-items-center mb-2">
+  <label class="col-sm-4 col-lg-3 col-form-label getsync-settings-label text-sm-end mb-0" for="{{ select_name }}">{{ label or 'Timezone' }}</label>
+  <div class="col-sm-8 col-lg-9">
+    <select name="{{ select_name }}" id="{{ select_name }}" class="form-select form-select-sm">
+{% else %}
 <div class="mb-3">
   <label class="form-label">{{ label or 'Timezone' }}</label>
   <select name="{{ select_name }}" class="form-select">
+{% endif %}
     {% set ns = namespace(current_group=None) %}
     {% for opt in timezone_options(selected) %}
     {% if opt.group != ns.current_group %}
@@ -14,4 +21,9 @@
     {% endfor %}
     {% if ns.current_group %}</optgroup>{% endif %}
   </select>
+{% if settings_inline %}
+  </div>
 </div>
+{% else %}
+</div>
+{% endif %}

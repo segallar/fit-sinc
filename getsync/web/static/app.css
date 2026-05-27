@@ -500,6 +500,84 @@ button.getsync-filter-link:focus-visible {
   scroll-margin-top: 5rem;
 }
 
+.getsync-settings-page-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--getsync-text);
+}
+
+.getsync-settings-panel {
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.getsync-settings-panel .form-control,
+.getsync-settings-panel .form-select,
+.getsync-settings-panel .btn {
+  font-size: 0.9rem;
+}
+
+.getsync-settings-heading {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--getsync-primary-700);
+  margin: 0;
+}
+
+.getsync-settings-label {
+  font-size: 0.9rem;
+  color: var(--getsync-text-muted);
+}
+
+.getsync-settings-form {
+  max-width: 42rem;
+}
+
+.getsync-settings-card-body {
+  padding: 0.875rem 1rem;
+  font-size: 0.9rem;
+}
+
+.getsync-settings-card-body .small,
+.getsync-settings-card-body dl {
+  font-size: 0.9rem;
+}
+
+.getsync-settings-nav-group {
+  margin-top: 0.125rem;
+}
+
+.getsync-settings-nav-group-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--getsync-text-muted);
+  padding: 0.35rem 0.75rem 0.2rem;
+}
+
+.getsync-settings-nav-sublist {
+  gap: 0.0625rem;
+  padding: 0 0 0.25rem 0.35rem;
+  margin: 0 0 0 0.5rem;
+  list-style: none;
+  border-left: 2px solid var(--getsync-primary-100);
+}
+
+.getsync-settings-nav-sublist .nav-link {
+  font-size: 0.875rem;
+  padding: 0.4rem 0.65rem;
+}
+
+.getsync-settings-nav-sublist .nav-link.active {
+  font-size: 0.875rem;
+}
+
+.getsync-settings-nav-link--muted {
+  color: var(--getsync-text-muted);
+}
+
 @media (max-width: 767.98px) {
   .getsync-settings-subnav {
     position: static;

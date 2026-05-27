@@ -1,7 +1,6 @@
-<div class="card shadow-sm mb-3{% if not connection.available %} opacity-75{% endif %}">
-  <div class="card-body">
+<div class="card shadow-sm mb-3 getsync-settings-card{% if not connection.available %} opacity-75{% endif %}">
+  <div class="card-body getsync-settings-card-body">
     <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-      <h3 class="h6 text-primary mb-0">{{ connection.name }}</h3>
       <span class="badge text-bg-light border">{{ connection.role_label }}</span>
       {% if not connection.available %}
       <span class="badge text-bg-secondary">Soon</span>

@@ -436,9 +436,22 @@ async def ui_preview_page(request: Request, page_name: str) -> str:
             day_list_href=lambda _d: "#",
         )
     if page_name == "settings":
-        from getsync.web.settings_routes import _settings_section
+        from getsync.web.settings_routes import (
+            _active_connection,
+            _settings_nav_connections,
+            _settings_section,
+        )
+        from getsync.web.connections import list_connections
 
-        extra["settings_section"] = _settings_section(request)
+        ctx = _ctx(request)
+        user = _store().get_user(ctx.user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="user not found")
+        groups = list_connections(ctx, user)
+        section = _settings_section(request)
+        extra["settings_section"] = section
+        extra["settings_nav_connections"] = _settings_nav_connections(groups)
+        extra["active_connection"] = _active_connection(groups, section)
     return _render_ui_preview(request, template, active=active, **extra)
 
 
@@ -788,7 +801,7 @@ async def sync_log_redirect(request: Request, page: int = Query(1, ge=1)) -> Red
 async def session_page_redirect(request: Request) -> RedirectResponse:
     """Legacy URL — Garmin session monitor lives in Settings."""
     _ctx(request)
-    return RedirectResponse(f"{P}/settings?section=connections#garmin-session", status_code=303)
+    return RedirectResponse(f"{P}/settings?section=garmin#garmin-session", status_code=303)
 
 
 @router.post("/session/refresh", include_in_schema=False)

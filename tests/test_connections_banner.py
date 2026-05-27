@@ -10,7 +10,7 @@ from helpers import isolated_env
 
 
 class TestConnectionsBanner(unittest.TestCase):
-    def test_settings_shows_connections_section(self) -> None:
+    def test_settings_connection_sections(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 from getsync.config import get_settings
@@ -32,12 +32,17 @@ class TestConnectionsBanner(unittest.TestCase):
                 self.assertEqual(r.status_code, 303)
 
                 settings_page = client.get(
-                    "/app/settings?section=connections",
+                    "/app/settings?section=garmin",
                     follow_redirects=True,
                 )
                 self.assertEqual(settings_page.status_code, 200)
-                self.assertIn("Hammerhead", settings_page.text)
                 self.assertIn("Garmin Connect", settings_page.text)
+                self.assertIn("Garmin web session", settings_page.text)
+
+                hh_page = client.get("/app/settings?section=hammerhead")
+                self.assertEqual(hh_page.status_code, 200)
+                self.assertIn("Hammerhead", hh_page.text)
+                self.assertNotIn("Garmin web session", hh_page.text)
 
     def test_connection_status_structure(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

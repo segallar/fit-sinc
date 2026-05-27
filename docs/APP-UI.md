@@ -1,6 +1,6 @@
 # GetSync — UI приложения (единая спецификация)
 
-> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-28 · **Версия:** 0.7.0  
 > **Назначение:** один документ для всех страниц `/app` и `/app/admin` — layout, компоненты, плотность, поведение.  
 > **Roadmap:** [PLAN.md](PLAN.md) **2.10** · **Стек:** [UI.md](UI.md) · **Карта URL / flows:** [design/SCREENS.md](design/SCREENS.md)
 
@@ -24,11 +24,11 @@
 | Тема | Решение |
 |------|---------|
 | **Sidebar** | Пункты nav + внизу **блок user** (display/email, slug, Logout). Пункт **Admin** в nav только если `is_admin` |
-| **HH / Garmin** | **Только Settings** → `#connections` (+ `#garmin-session` внутри) — **нет** `connections_banner` на Activities |
+| **HH / Garmin** | **Только Settings** → `?section=hammerhead|garmin` (+ `#garmin-session` на Garmin) — **нет** banner на Activities |
 | **Activities** | **Главный экран**; List \| Calendar; unified HH+Garmin; внизу **sync summary** + retry errors (без таблицы лога) |
 | **Sync log** | **Только admin** → `/app/admin/sync-log` (все tenants, колонка User); legacy `/app/log` → redirect |
 | **Dashboard** | **Снят** — `/app/` → `/app/activities` |
-| **Settings** | Одна страница: `#profile` · `#connections` · `#password` — `settings_subnav.html` ✅ |
+| **Settings** | Одна страница `/app/settings?section=…` — слева subnav: Profile · Connections (подменю по системам) · Password ✅ |
 | **Garmin login** | Status/refresh в карточке Garmin; **первичный login** — CLI (**2.12** 📋 UI в Connections) |
 | **Ширина кабинета** | **На всю ширину viewport**, контент **прижат к левому краю** — без `max-width` и без `margin: auto` по центру (`getsync-app-main` в [`app.css`](../getsync/web/static/app.css)). Лендинг и `/app/login` — отдельно (узкая колонка допустима). |
 | **Calendar view** | Сетка месяца дополнительно **растягивается по высоте** доступной области (`getsync-app-main--activities-calendar`). |
@@ -58,9 +58,9 @@
 |------------|------|
 | `/app/` | `303` → `/app/activities` |
 | `/app/log` | `303` → `/app/admin/sync-log` |
-| `/app/session` | `303` → `/settings#garmin-session` |
+| `/app/session` | `303` → `/settings?section=garmin#garmin-session` |
 
-HH/Garmin — **Settings → Connections**; монитор сессии — **`#garmin-session`** под карточками destinations.
+HH/Garmin — **Settings → подменю Connections** (отдельный `section` на интеграцию); монитор сессии Garmin — **`#garmin-session`** на `section=garmin`.
 
 **Целевой layout (2.10):** sidebar `.getsync-sidebar` · прототип — [`/app/ui-preview`](../getsync/web/app_routes.py) + `layouts/cabinet_sidebar.html`.
 
@@ -130,7 +130,8 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 |---------|-------|-----|
 | Заголовок страницы | `h4 fw-semibold` | `page_header` → один **h1** на страницу |
 | Заголовок карточки | `h5 mb-0` или `h6` | `.card-header` |
-| Подзаголовок секции | `h6 text-primary mb-3` | Внутри card (Settings) |
+| Подзаголовок секции (Settings) | `.getsync-settings-heading` | `0.9rem`, как пункты subnav |
+| Подзаголовок секции (прочее) | `h6 text-primary mb-3` | Cards вне Settings |
 | Lead / meta | `small text-muted` | Под заголовком, под таблицей |
 | ID / время | `font-monospace small` | activity_id, log time |
 | Код | `<code>` | slug, CLI hints |
@@ -157,7 +158,8 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 | **Garmin session** | `components/garmin_session_section.html` | Settings `#garmin-session` (внутри Connections) |
 | **Status badge** | `status_badge` macro | Только macro для sync status |
 | **Connections** | секция в Settings | HH OAuth + Garmin status/login |
-| **Settings subnav** | `components/settings_subnav.html` *(цель)* | Якоря Profile \| Connections \| Password |
+| **Settings subnav** | `components/settings_subnav.html` | Profile · **Connections** (вложенный список: Hammerhead, Garmin, …) · Password |
+| **Settings form row** | `components/settings_form_macros.html` → `settings_field` | Label и control **в одну строку** (`col-sm-4` / `col-sm-8`, `form-control-sm`) |
 | **Re-sync** | `resync_form.html` | POST + confirm для force |
 | **Pager** | `pager.html` | Log, activities |
 | **Datetime** | `datetime_cell.html` | TZ пользователя |
@@ -239,18 +241,44 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 
 ### 6.2 Settings — `/app/settings` ✅
 
-Одна прокручиваемая страница · subnav: Profile \| Connections \| Password.
+Одна страница, **без прокрутки всех блоков сразу**: слева subnav, справа **одна** секция по query `section`.
 
-| Секция | id | Содержание |
-|--------|-----|------------|
-| **Profile** | `profile` | display_name, email, telegram, locale, timezone, slug, Save |
-| **Connections** | `connections` | Sources + Destinations — `list_connections()` → `connection_card.html`; Strava/Wahoo planned; «Add connection» disabled |
-| **Garmin session** | `garmin-session` | Внутри Connections: upload_ready, refresh history, POST refresh — `garmin_session_section.html` |
-| **Password** | `password` | current, new, confirm |
+#### Layout
 
-Модель соединений: [CONNECTIONS.md](CONNECTIONS.md) · код: [`connections.py`](../getsync/web/connections.py).
+```text
+┌─────────────────┬──────────────────────────────────────┐
+│ Profile         │  [заголовок секции .getsync-settings-heading]
+│ CONNECTIONS     │  label ───────────── input (одна строка)
+│   Hammerhead    │  …
+│   Garmin Connect│
+│   Strava        │
+│   Wahoo         │
+│ Password        │
+└─────────────────┴──────────────────────────────────────┘
+```
 
-**Garmin:** status/refresh/disconnect в карточке destination; **первичный login** — CLI (**2.12** 📋).
+| Класс / token | Значение |
+|---------------|----------|
+| Subnav link | `font-size: 0.9rem` — `.getsync-settings-nav-list .nav-link` |
+| Панель + поля | `0.9rem` — `.getsync-settings-panel`, `.getsync-settings-label`, controls |
+| Заголовок секции | `.getsync-settings-heading` — тот же размер, `font-weight: 500`, primary-700 |
+
+#### Query `section`
+
+| `section` | Содержание |
+|-----------|------------|
+| `profile` (default) | display_name, email, telegram, locale, timezone, slug — горизонтальные строки, Save |
+| `hammerhead` | Карточка Hammerhead (`connection_card.html`) |
+| `garmin` | Карточка Garmin + **`#garmin-session`** (`garmin_session_section.html`) |
+| `strava`, `wahoo` | Planned — карточка disabled |
+| `password` | current, new, confirm — горизонтальные строки |
+
+Legacy: `?section=connections` → **`hammerhead`**.  
+Редиректы после OAuth/refresh/disconnect — на соответствующий `section` (HH → `hammerhead`, Garmin → `garmin`).
+
+Модель соединений: [CONNECTIONS.md](CONNECTIONS.md) · список для subnav: `list_connections()` в [`connections.py`](../getsync/web/connections.py).
+
+**Garmin:** status/refresh/disconnect в карточке; **первичный login** — CLI (**2.12** 📋).
 
 ### 6.3 Sync log — Admin `/app/admin/sync-log` ✅
 
@@ -322,7 +350,8 @@ Legends: `h6 text-primary` — как в settings.
 | Breakpoint | Поведение |
 |------------|-----------|
 | `< md` | Sidebar → offcanvas / hamburger; таблицы в `table-responsive` |
-| `≥ lg` | Settings: subnav + секции; activities: calendar grid 7 col, list filters 2–3 col |
+| `≥ md` | Settings: колонка subnav + панель; `< md` — subnav горизонтально сверху |
+| `≥ lg` | Activities: calendar grid 7 col, list filters 2–3 col |
 | Touch | Кнопки в actions не менее ~44px height где primary CTA |
 
 ---
@@ -363,7 +392,7 @@ Legends: `h6 text-primary` — как в settings.
 - [x] Activities — вкладки List \| Calendar, `activity_calendar.html`
 - [x] Sync log в admin (`/app/admin/sync-log`, все tenants); `/app/log` redirect
 - [x] Activities — sync summary (`activities_sync_panel`); Dashboard снят; `/app/` → activities
-- [x] Settings — connections list, `#garmin-session`; `/app/session` redirect
+- [x] Settings — subnav + подменю по интеграциям (`?section=`), inline form rows, 0.9rem; Garmin session на `section=garmin`; `/app/session` redirect
 - [ ] Sync log — UX duplicate vs error (фильтры / badge по типу события)
 - [ ] Calendar v6.1 — дни только в облаке (опционально)
 
@@ -410,3 +439,4 @@ Legends: `h6 text-primary` — как в settings.
 | 2026-05-26 | Документ создан; Q&A блок 1 |
 | 2026-05-26 | Q&A блок 2: sidebar+user, connections только Settings, calendar+activities, settings anchors, Garmin UI v1 |
 | 2026-05-26 | Dashboard снят; sync log → admin; Activities sync summary; List/Calendar; connections+garmin-session |
+| 2026-05-27 | Settings: subnav 0.9rem, подменю по интеграциям (`section=hammerhead|garmin|…`), горизонтальные form rows |

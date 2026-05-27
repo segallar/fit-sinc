@@ -6,7 +6,7 @@
         onsubmit="return confirm('Remove Garmin web and OAuth files for this account?');">
     <button type="submit" class="btn btn-outline-secondary btn-sm">Disconnect</button>
   </form>
-  <a href="{{ prefix }}/settings?section=connections#garmin-session" class="btn btn-outline-secondary btn-sm">Session details</a>
+  <a href="{{ prefix }}/settings?section=garmin#garmin-session" class="btn btn-outline-secondary btn-sm">Session details</a>
 </div>
 <p class="small text-muted mt-3 mb-0">
   CLI: <code>getsync --user {{ user.slug }} garmin login</code>

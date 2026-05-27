@@ -1,15 +1,16 @@
 {% extends "layouts/cabinet.html" %}
+{% from "components/settings_form_macros.html" import settings_field %}
 
 {% block title %}{{ t.settings_title }} — GetSync{% endblock %}
 
 {% block page_content %}
-<h2 class="h5 mb-2">{{ t.settings_title }}</h2>
+<h2 class="getsync-settings-page-title mb-2">{{ t.settings_title }}</h2>
 
 {% if flash.ok %}
-<div class="alert alert-success">{{ flash.ok }}</div>
+<div class="alert alert-success py-2 small">{{ flash.ok }}</div>
 {% endif %}
 {% if flash.error %}
-<div class="alert alert-danger">{{ flash.error }}</div>
+<div class="alert alert-danger py-2 small">{{ flash.error }}</div>
 {% endif %}
 
 <div class="row getsync-settings-layout g-4">
@@ -20,89 +21,69 @@
   <div class="col-md-9 col-lg-9 getsync-settings-panel">
     {% if settings_section == 'profile' %}
     <section id="profile" class="getsync-settings-section">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h3 class="h6 text-primary mb-3">{{ t.profile_h3 }}</h3>
-          <form method="post" action="{{ prefix }}/settings/profile">
-            <div class="mb-3">
-              <label class="form-label">{{ t.display_name }}</label>
-              <input name="display_name" value="{{ user.display_name }}" class="form-control" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">{{ t.email }}</label>
-              <input type="email" name="email" value="{{ user.email }}" class="form-control" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">{{ t.telegram }}</label>
-              <input name="telegram" value="{{ user.telegram or '' }}" class="form-control" placeholder="@username">
-            </div>
-            {% set select_name = 'locale' %}
-            {% set selected = user.locale %}
-            {% set label = t.locale_label %}
-            {% include "components/locale_select.html" %}
-            {% set select_name = 'timezone' %}
-            {% set selected = user.timezone %}
-            {% set label = t.timezone_label %}
-            {% include "components/timezone_select.html" %}
-            <p class="small text-muted">{{ t.slug_label }}: <code>{{ user.slug }}</code></p>
-            <button type="submit" class="btn btn-primary">{{ t.save_profile }}</button>
-          </form>
+      <h3 class="getsync-settings-heading mb-3">{{ t.profile_h3 }}</h3>
+      <form method="post" action="{{ prefix }}/settings/profile" class="getsync-settings-form">
+        {% call settings_field(t.display_name, "display_name") %}
+        <input name="display_name" id="display_name" value="{{ user.display_name }}" class="form-control form-control-sm" required>
+        {% endcall %}
+        {% call settings_field(t.email, "email") %}
+        <input type="email" name="email" id="email" value="{{ user.email }}" class="form-control form-control-sm" required>
+        {% endcall %}
+        {% call settings_field(t.telegram, "telegram") %}
+        <input name="telegram" id="telegram" value="{{ user.telegram or '' }}" class="form-control form-control-sm" placeholder="@username">
+        {% endcall %}
+        {% set select_name = 'locale' %}
+        {% set selected = user.locale %}
+        {% set label = t.locale_label %}
+        {% set settings_inline = true %}
+        {% include "components/locale_select.html" %}
+        {% set select_name = 'timezone' %}
+        {% set selected = user.timezone %}
+        {% set label = t.timezone_label %}
+        {% include "components/timezone_select.html" %}
+        <div class="row getsync-settings-field align-items-center mb-3">
+          <div class="col-sm-4 col-lg-3 col-form-label getsync-settings-label text-sm-end mb-0">{{ t.slug_label }}</div>
+          <div class="col-sm-8 col-lg-9"><code class="small">{{ user.slug }}</code></div>
         </div>
-      </div>
+        <div class="row">
+          <div class="col-sm-8 col-lg-9 offset-sm-4 offset-lg-3">
+            <button type="submit" class="btn btn-primary btn-sm">{{ t.save_profile }}</button>
+          </div>
+        </div>
+      </form>
     </section>
     {% endif %}
 
-    {% if settings_section == 'connections' %}
-    <section id="connections" class="getsync-settings-section">
-      <h3 class="h6 text-primary mb-2">{{ t.settings_connections_h3 }}</h3>
-      <p class="small text-muted mb-3">
-        Each integration is a separate connection. Activities use <code>source</code> in the catalog;
-        delivery rules (phase 7) will reference these ids.
-      </p>
-
-      <h4 class="small text-uppercase text-muted fw-semibold mb-2">Sources</h4>
-      {% for connection in connection_groups.sources %}
+    {% if active_connection %}
+    <section id="{{ active_connection.id }}" class="getsync-settings-section">
+      <h3 class="getsync-settings-heading mb-3">{{ active_connection.name }}</h3>
+      {% set connection = active_connection %}
       {% include "components/connection_card.html" %}
-      {% endfor %}
-
-      <h4 class="small text-uppercase text-muted fw-semibold mb-2 mt-4">Destinations</h4>
-      {% for connection in connection_groups.sinks %}
-      {% include "components/connection_card.html" %}
-      {% endfor %}
-
+      {% if settings_section == 'garmin' %}
       {% include "components/garmin_session_section.html" %}
-
-      <div class="card border border-dashed bg-light mb-0">
-        <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
-          <span class="small text-muted mb-0">Add Strava, Wahoo, object storage, …</span>
-          <button type="button" class="btn btn-outline-secondary btn-sm" disabled>Add connection</button>
-        </div>
-      </div>
+      {% endif %}
     </section>
     {% endif %}
 
     {% if settings_section == 'password' %}
     <section id="password" class="getsync-settings-section">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h3 class="h6 text-primary mb-3">{{ t.password_h3 }}</h3>
-          <form method="post" action="{{ prefix }}/settings/password">
-            <div class="mb-3">
-              <label class="form-label">{{ t.current_password }}</label>
-              <input type="password" name="current_password" class="form-control" required autocomplete="current-password">
-            </div>
-            <div class="mb-3">
-              <label class="form-label">{{ t.new_password }}</label>
-              <input type="password" name="new_password" class="form-control" required minlength="8" autocomplete="new-password">
-            </div>
-            <div class="mb-3">
-              <label class="form-label">{{ t.confirm_password }}</label>
-              <input type="password" name="new_password_confirm" class="form-control" required minlength="8" autocomplete="new-password">
-            </div>
-            <button type="submit" class="btn btn-outline-secondary">{{ t.change_password }}</button>
-          </form>
+      <h3 class="getsync-settings-heading mb-3">{{ t.password_h3 }}</h3>
+      <form method="post" action="{{ prefix }}/settings/password" class="getsync-settings-form col-lg-10">
+        {% call settings_field(t.current_password, "current_password") %}
+        <input type="password" name="current_password" id="current_password" class="form-control form-control-sm" required autocomplete="current-password">
+        {% endcall %}
+        {% call settings_field(t.new_password, "new_password") %}
+        <input type="password" name="new_password" id="new_password" class="form-control form-control-sm" required minlength="8" autocomplete="new-password">
+        {% endcall %}
+        {% call settings_field(t.confirm_password, "new_password_confirm") %}
+        <input type="password" name="new_password_confirm" id="new_password_confirm" class="form-control form-control-sm" required minlength="8" autocomplete="new-password">
+        {% endcall %}
+        <div class="row">
+          <div class="col-sm-8 col-lg-9 offset-sm-4 offset-lg-3">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">{{ t.change_password }}</button>
+          </div>
         </div>
-      </div>
+      </form>
     </section>
     {% endif %}
   </div>

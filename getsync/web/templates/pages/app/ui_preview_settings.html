@@ -1,13 +1,12 @@
 {% extends "layouts/cabinet_sidebar.html" %}
+{% from "components/settings_form_macros.html" import settings_field %}
 
 {% block title %}UI preview — Settings{% endblock %}
 
 {% block page_content %}
-<div class="alert alert-info small mb-3">Wireframe — no form fields</div>
+<div class="alert alert-info py-2 small mb-3">Wireframe — Settings layout</div>
 
-{% with title="Settings", lead="Left nav: Profile · Connections · Password." %}
-{% include "components/page_header.html" %}
-{% endwith %}
+<h2 class="getsync-settings-page-title mb-2">Settings</h2>
 
 <div class="row getsync-settings-layout g-4">
   <aside class="col-md-3 col-lg-3">
@@ -17,43 +16,65 @@
   <div class="col-md-9 col-lg-9 getsync-settings-panel">
     {% if settings_section == 'profile' %}
     <section id="profile" class="getsync-settings-section">
-      <div class="card getsync-data-card shadow-sm">
-        <div class="card-body">
-          <h2 class="h6 text-primary mb-3">Profile</h2>
-          <div class="row g-0">
-            {% with label="Display name" %}{% include "components/wireframe_field.html" %}{% endwith %}
-            {% with label="Email" %}{% include "components/wireframe_field.html" %}{% endwith %}
-            {% with label="Telegram" %}{% include "components/wireframe_field.html" %}{% endwith %}
-            {% with label="Language" %}{% include "components/wireframe_field.html" %}{% endwith %}
-            {% with label="Timezone" %}{% include "components/wireframe_field.html" %}{% endwith %}
+      <h3 class="getsync-settings-heading mb-3">Profile</h3>
+      <div class="getsync-settings-form">
+        {% call settings_field("Display name", "wf_display_name") %}
+        <div class="getsync-wireframe-field"></div>
+        {% endcall %}
+        {% call settings_field("Email", "wf_email") %}
+        <div class="getsync-wireframe-field"></div>
+        {% endcall %}
+        {% call settings_field("Telegram", "wf_telegram") %}
+        <div class="getsync-wireframe-field"></div>
+        {% endcall %}
+        {% call settings_field("Language", "wf_locale") %}
+        <div class="getsync-wireframe-field"></div>
+        {% endcall %}
+        {% call settings_field("Timezone", "wf_timezone") %}
+        <div class="getsync-wireframe-field"></div>
+        {% endcall %}
+        <div class="row">
+          <div class="col-sm-8 col-lg-9 offset-sm-4 offset-lg-3">
+            <button type="button" class="btn btn-primary btn-sm" disabled>Save profile</button>
           </div>
-          <button type="button" class="btn btn-primary btn-sm" disabled>Save profile</button>
         </div>
       </div>
     </section>
     {% endif %}
 
-    {% if settings_section == 'connections' %}
-    <section id="connections" class="getsync-settings-section">
-      <h2 class="h6 text-primary mb-2">Connections</h2>
-      <p class="small text-muted mb-3">Sources and destinations — list grows per user.</p>
+    {% if active_connection %}
+    <section class="getsync-settings-section">
+      <h3 class="getsync-settings-heading mb-3">{{ active_connection.name }}</h3>
       <div class="card getsync-data-card shadow-sm mb-3">
-        <div class="card-body small text-muted">Connection cards · Garmin session (wireframe)</div>
+        <div class="card-body getsync-settings-card-body small text-muted">
+          Connection card · actions · status (wireframe)
+        </div>
       </div>
+      {% if settings_section == 'garmin' %}
+      <div class="card getsync-data-card shadow-sm">
+        <div class="card-body getsync-settings-card-body small text-muted">Garmin web session monitor (wireframe)</div>
+      </div>
+      {% endif %}
     </section>
     {% endif %}
 
     {% if settings_section == 'password' %}
     <section id="password" class="getsync-settings-section">
-      <div class="card getsync-data-card shadow-sm">
-        <div class="card-body">
-          <h2 class="h6 text-primary mb-3">Password</h2>
-          <div class="row g-0 col-lg-6">
-            {% with label="Current password" %}{% include "components/wireframe_field.html" %}{% endwith %}
-            {% with label="New password" %}{% include "components/wireframe_field.html" %}{% endwith %}
-            {% with label="Confirm password" %}{% include "components/wireframe_field.html" %}{% endwith %}
+      <h3 class="getsync-settings-heading mb-3">Password</h3>
+      <div class="getsync-settings-form">
+        {% call settings_field("Current password", "wf_current") %}
+        <div class="getsync-wireframe-field"></div>
+        {% endcall %}
+        {% call settings_field("New password", "wf_new") %}
+        <div class="getsync-wireframe-field"></div>
+        {% endcall %}
+        {% call settings_field("Confirm password", "wf_confirm") %}
+        <div class="getsync-wireframe-field"></div>
+        {% endcall %}
+        <div class="row">
+          <div class="col-sm-8 col-lg-9 offset-sm-4 offset-lg-3">
+            <button type="button" class="btn btn-outline-secondary btn-sm" disabled>Change password</button>
           </div>
-          <button type="button" class="btn btn-outline-secondary btn-sm" disabled>Change password</button>
         </div>
       </div>
     </section>

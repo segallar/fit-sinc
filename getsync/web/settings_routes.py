@@ -43,11 +43,34 @@ def _ctx(request: Request) -> UserContext:
     return ctx
 
 
+SETTINGS_BASE_SECTIONS = frozenset({"profile", "password"})
+SETTINGS_CONNECTION_SECTIONS = frozenset({"hammerhead", "garmin", "strava", "wahoo"})
+SETTINGS_SECTIONS = SETTINGS_BASE_SECTIONS | SETTINGS_CONNECTION_SECTIONS
+
+
 def _settings_section(request: Request) -> str:
     raw = request.query_params.get("section", "profile").strip().lower()
-    if raw in ("profile", "connections", "password"):
+    if raw == "connections":
+        return "hammerhead"
+    if raw in SETTINGS_SECTIONS:
         return raw
     return "profile"
+
+
+def _settings_nav_connections(groups) -> list[dict[str, object]]:
+    return [
+        {"id": c.id, "name": c.name, "available": c.available}
+        for c in (*groups.sources, *groups.sinks)
+    ]
+
+
+def _active_connection(groups, section: str):
+    if section not in SETTINGS_CONNECTION_SECTIONS:
+        return None
+    for c in (*groups.sources, *groups.sinks):
+        if c.id == section:
+            return c
+    return None
 
 
 def _redirect(
@@ -64,8 +87,10 @@ def _redirect(
         params["error"] = error
     sec = section.strip().lower()
     if not sec and anchor.startswith("garmin"):
-        sec = "connections"
-    if sec in ("profile", "connections", "password"):
+        sec = "garmin"
+    if sec == "connections":
+        sec = "hammerhead"
+    if sec in SETTINGS_SECTIONS:
         params["section"] = sec
     q = H.query_string(params)
     url = f"{P}?{q}" if q else P
@@ -121,6 +146,8 @@ async def settings_page(request: Request) -> str:
     user = _store().get_user(ctx.user_id)
     if not user:
         raise HTTPException(status_code=404)
+    connection_groups = list_connections(ctx, user)
+    section = _settings_section(request)
     return render_cabinet(
         request,
         "pages/app/settings.html",
@@ -128,8 +155,10 @@ async def settings_page(request: Request) -> str:
         user=user,
         flash=_flash_from_query(request, user.locale),
         conn=connection_settings_view(ctx, user),
-        connection_groups=list_connections(ctx, user),
-        settings_section=_settings_section(request),
+        connection_groups=connection_groups,
+        settings_section=section,
+        settings_nav_connections=_settings_nav_connections(connection_groups),
+        active_connection=_active_connection(connection_groups, section),
         **garmin_session_context(ctx),
     )
 
@@ -194,7 +223,7 @@ async def hammerhead_connect(request: Request) -> RedirectResponse:
     ctx = _ctx(request)
     settings = get_settings()
     if not settings.hammerhead_client_id or not settings.hammerhead_client_secret:
-        return _redirect(error="hh_not_configured", section="connections")
+        return _redirect(error="hh_not_configured", section="hammerhead")
     oauth = _hammerhead_oauth(request)
     state = sign_hammerhead_oauth_state(ctx.user_id, settings.session_secret)
     url, _ = oauth.build_authorize_url(state=state)
@@ -209,30 +238,30 @@ async def hammerhead_callback(
     error: str = "",
 ) -> RedirectResponse:
     if error:
-        return _redirect(error=f"hh_{error}", section="connections")
+        return _redirect(error=f"hh_{error}", section="hammerhead")
     uid = verify_hammerhead_oauth_state(state, get_settings().session_secret)
     if not uid:
-        return _redirect(error="hh_state", section="connections")
+        return _redirect(error="hh_state", section="hammerhead")
     session_ctx = user_context_from_session(request)
     if session_ctx and session_ctx.user_id != uid:
-        return _redirect(error="hh_user_mismatch", section="connections")
+        return _redirect(error="hh_user_mismatch", section="hammerhead")
     if not session_ctx:
         from getsync.web.auth import login_user
 
         login_user(request, uid)
     if not code:
-        return _redirect(error="hh_missing_code", section="connections")
+        return _redirect(error="hh_missing_code", section="hammerhead")
     oauth = _hammerhead_oauth(request)
     try:
         tokens = await oauth.exchange_code(code)
     except Exception as exc:
-        return _redirect(error=str(exc), section="connections")
+        return _redirect(error=str(exc), section="hammerhead")
     ctx = UserContext(uid, get_settings())
     save_json(ctx.hammerhead_tokens_path, tokens.to_dict())
     hh_uid = tokens.user_id or None
     if hh_uid:
         _store().update_user(uid, hammerhead_user_id=str(hh_uid))
-    return _redirect("hh_connected", section="connections")
+    return _redirect("hh_connected", section="hammerhead")
 
 
 @router.post("/hammerhead/disconnect", include_in_schema=False)
@@ -241,14 +270,14 @@ async def hammerhead_disconnect(request: Request) -> RedirectResponse:
     path = ctx.hammerhead_tokens_path
     if path.is_file():
         path.unlink()
-    return _redirect("hh_disconnected", section="connections")
+    return _redirect("hh_disconnected", section="hammerhead")
 
 
 @router.post("/garmin/refresh", include_in_schema=False)
 async def garmin_refresh(request: Request) -> RedirectResponse:
     ctx = _ctx(request)
     await asyncio.to_thread(refresh_web_session, ctx, force=True, trigger="settings")
-    return _redirect("garmin_refreshed", section="connections", anchor="garmin-session")
+    return _redirect("garmin_refreshed", section="garmin", anchor="garmin-session")
 
 
 @router.post("/garmin/disconnect", include_in_schema=False)
@@ -264,4 +293,4 @@ async def garmin_disconnect(request: Request) -> RedirectResponse:
     from getsync.credentials.garmin import clear_garmin_credentials
 
     clear_garmin_credentials(ctx)
-    return _redirect("garmin_disconnected", section="connections")
+    return _redirect("garmin_disconnected", section="garmin")
