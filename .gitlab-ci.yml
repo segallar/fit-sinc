@@ -1,4 +1,5 @@
-# GetSync — test on MR/push, deploy to sirocco on main
+# GetSync — test on MR/push, deploy to sirocco on main/master/hotfix/*
+# Primary CI: GitHub Actions (.github/workflows/test.yml)
 # Variables (Settings → CI/CD → Variables):
 #   SSH_PRIVATE_KEY (File, masked) — private key for root@sirocco
 # Optional:
@@ -38,9 +39,12 @@ deploy:production:
     - chmod +x scripts/ci/deploy.sh
   script:
     - ./scripts/ci/deploy.sh
+  variables:
+    GETSYNC_DEPLOY_NUMBER: $CI_PIPELINE_IID
   environment:
     name: production
-    url: https://fit.romansegalla.online
+    url: https://app.getsync.me
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
     - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH =~ /^hotfix\//

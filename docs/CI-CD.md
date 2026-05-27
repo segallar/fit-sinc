@@ -1,8 +1,20 @@
 # CI/CD и деплой GetSync
 
 > **Создано:** 2026-05-25 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
-> Личный сервис на одном VPS. **CI:** GitHub Actions — [`test.yml`](../.github/workflows/test.yml) (test + deploy в одном workflow на `main` / `hotfix/*`). Badges в [README](../README.md). Альтернатива: [`.gitlab-ci.yml`](../.gitlab-ci.yml).  
+> Личный сервис на одном VPS. **CI/CD:** [GitHub Actions](#github-actions) — основной путь; репозиторий [github.com/segallar/getsync](https://github.com/segallar/getsync). Альтернатива: [GitLab CI](#gitlab-ci).  
 > Индекс документации: [docs/README.md](README.md).
+
+## Содержание
+
+- [Схема](#схема)
+- [DNS и домены](#dns-и-домены)
+- [Первичная настройка сервера](#первичная-настройка-сервера-один-раз)
+- [Continuous Deployment](#continuous-deployment) — [GitHub Actions](#основной-путь-github-actions) (основной) · [ручной deploy](#ручной-deploy-fallback)
+- [GitHub Actions](#github-actions) — workflow, secrets, оптимизации
+- [GitLab CI](#gitlab-ci) — legacy/alternative
+- [Проверка после деплоя](#проверка-после-деплоя)
+- [nginx](#nginx) · [systemd](#systemd) · [Rollback](#rollback)
+- [Чеклист релиза](#чеклист-релиза)
 
 ## Схема
 
@@ -124,7 +136,21 @@ sudo -u getsync /opt/getsync/.venv/bin/playwright install chromium
 
 ## Continuous Deployment
 
-### 1. Код приложения
+### Основной путь (GitHub Actions)
+
+**Репозиторий:** [github.com/segallar/getsync](https://github.com/segallar/getsync) · badge CI в [README](../README.md).
+
+Push или merge в `main` / `master` / `hotfix/*` → workflow [**CI**](../.github/workflows/test.yml) → job `test` → job `deploy` → [`deploy.sh`](../scripts/ci/deploy.sh) (rsync + restart на sirocco).
+
+| Триггер | `test` | `deploy` |
+|---------|--------|----------|
+| push `main` / `master` / `hotfix/*` | да | да (после успешного `test`) |
+| pull_request | да | **нет** |
+| `workflow_dispatch` | да | **нет** (deploy только при `push`) |
+
+Подробности: [GitHub Actions](#github-actions) (secrets, concurrency, оптимизации). Экстренный деплой без CI — [ручной deploy](#ручной-deploy-fallback).
+
+### Ручной deploy (fallback)
 
 UI: Bootstrap 5 с CDN в шаблонах; [`getsync/web/static/app.css`](../getsync/web/static/app.css) — только переопределение темы (коммитится). Node.js для деплоя **не нужен**. Скрипт [`scripts/ci/build-frontend-css.sh`](../scripts/ci/build-frontend-css.sh) — заглушка для совместимости.
 
@@ -137,7 +163,8 @@ rsync -avz --delete --exclude-from=.rsyncignore \
   -e "ssh -i ~/.ssh/id_ed25519" \
   ./ root@sirocco.romansegalla.online:/opt/getsync/
 
-# или: ./scripts/ci/deploy.sh
+# предпочтительно: полный цикл как в CI
+SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519)" ./scripts/ci/deploy.sh
 ```
 
 **Не синхронизируем** ([`.rsyncignore`](../.rsyncignore)):
@@ -161,7 +188,7 @@ systemctl restart getsync
 curl -sf http://127.0.0.1:8080/health
 ```
 
-### 2. Секреты и сессии
+### Секреты и сессии
 
 ```bash
 scp -i ~/.ssh/id_ed25519 .env root@sirocco:/opt/getsync/
@@ -175,7 +202,7 @@ scp -i ~/.ssh/id_ed25519 -r data/users/default/garth data/users/default/garmin_w
 ssh root@sirocco 'chown -R getsync:getsync /opt/getsync/data && systemctl restart getsync'
 ```
 
-### 3. Локальная настройка auth (Mac)
+### Локальная настройка auth (Mac)
 
 ```bash
 cd /path/to/getsync
@@ -256,14 +283,23 @@ systemctl restart getsync
 
 ## GitHub Actions
 
-Workflow: [`.github/workflows/test.yml`](../.github/workflows/test.yml) — `actions/checkout@v6`, `actions/setup-python@v6` (Node 24 runtime).
+Workflow: [`.github/workflows/test.yml`](../.github/workflows/test.yml) — один pipeline **CI** (`actions/checkout@v6`, `actions/setup-python@v6`, Node 24 runtime).
+
+**Настройка (один раз):** репозиторий → **Settings → Secrets and variables → Actions** — secret `SSH_PRIVATE_KEY` (приватный ключ `root@sirocco`); variables `GETSYNC_SSH_*` — через [`sync-github-vars.sh`](../scripts/ci/sync-github-vars.sh) или UI.
 
 | Job | Когда | Действие |
 |-----|--------|----------|
 | `test` | push, PR, `workflow_dispatch` | `pip install -e .`, `compileall getsync`, unittest |
-| `deploy` | push `main` / `master` / `hotfix/*` после `test` | rsync → `/opt/getsync`, restart, `/health` |
+| `deploy` | **только push** `main` / `master` / `hotfix/*` после `test` | rsync → `/opt/getsync`, restart, `/health` |
 
-Скрипт: [`scripts/ci/deploy.sh`](../scripts/ci/deploy.sh)
+Поведение workflow:
+
+- **`concurrency`** — группа `ci-<workflow>-<ref>`, `cancel-in-progress: true` (новый push отменяет предыдущий run на той же ветке).
+- **`environment: production`** — job `deploy` привязан к GitHub Environment (опционально protection rules).
+- **PR** — только gate `test`; prod не трогаем.
+- **`GETSYNC_DEPLOY_NUMBER`** — `github.run_number` в metadata деплоя.
+
+Скрипт деплоя: [`scripts/ci/deploy.sh`](../scripts/ci/deploy.sh).
 
 ### Ускорение deploy
 
@@ -274,9 +310,9 @@ Workflow: [`.github/workflows/test.yml`](../.github/workflows/test.yml) — `act
 | **rsync без tests/docs/.github** | Меньше файлов на wire (см. [`.rsyncignore`](../.rsyncignore)) |
 | **`rsync --chown=getsync:getsync`** | Без `chown -R /opt/getsync` (в т.ч. не трогаем `data/`) |
 | **skip `pip install -e .`** если `pyproject.toml` не менялся | Обычный код-фикс: rsync + restart (~10–30 с на сервере) |
-| **health poll** с 0 с, затем sleep 1 | Быстрее happy-path, чем 6× sleep 2 |
+| **health poll** — первая попытка сразу, далее до 10× с `sleep 2` | Быстрый happy-path; retry при медленном старте uvicorn |
 
-Ручной полный прогон: Actions → **CI** → **Run workflow**. Экстренно без CI: [`scripts/ci/deploy.sh`](../scripts/ci/deploy.sh) с Mac.
+Прогон только тестов: Actions → **CI** → **Run workflow** (deploy не запустится). Экстренный деплой: [ручной deploy](#ручной-deploy-fallback).
 
 ### Secrets / variables
 
@@ -307,17 +343,22 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 Полная стратегия, каталог тестов и назначение скриптов: [TESTING.md](TESTING.md). Метаданные документов: [DOC-CONVENTION.md](DOC-CONVENTION.md).
 
-### Ручной deploy
-
-```bash
-SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519)" ./scripts/ci/deploy.sh
-```
-
 ---
 
 ## GitLab CI
 
-[`.gitlab-ci.yml`](../.gitlab-ci.yml) — зеркало job'ов; переменная `SSH_PRIVATE_KEY` (File).
+**Статус:** legacy / alternative — основной pipeline на GitHub. Файл [`.gitlab-ci.yml`](../.gitlab-ci.yml) сохранён для зеркала или миграции; job'ы те же по смыслу (`test` → `deploy`), общий [`deploy.sh`](../scripts/ci/deploy.sh).
+
+| | GitHub Actions | GitLab CI |
+|--|----------------|-----------|
+| Основной | да | нет |
+| Deploy branches | `main`, `master`, `hotfix/*` | `main`, `master`, `hotfix/*` |
+| Deploy number | `github.run_number` | `CI_PIPELINE_IID` |
+| pip cache в test | да | нет |
+| Secret SSH | `SSH_PRIVATE_KEY` (Secret) | `SSH_PRIVATE_KEY` (File, masked) |
+| Environment URL | — | `https://app.getsync.me` |
+
+Переменные (Settings → CI/CD → Variables): `SSH_PRIVATE_KEY` (File); опционально `GETSYNC_SSH_HOST`, `GETSYNC_SSH_USER`, `GETSYNC_DEPLOY_PATH`.
 
 ---
 
