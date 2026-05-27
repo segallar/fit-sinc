@@ -104,7 +104,7 @@ source .venv/bin/activate
 pip install -e .
 
 cp .env.example .env
-# заполнить HAMMERHEAD_* и при необходимости GARMIN_*
+# заполнить HAMMERHEAD_* и GETSYNC_SECRETS_KEY; Garmin — в Settings / CLI per-user
 ```
 
 ### Hammerhead
@@ -154,8 +154,8 @@ getsync serve                  # http://127.0.0.1:8080 — webhook + UI
 | `HAMMERHEAD_CLIENT_ID` / `SECRET` | OAuth приложение Hammerhead |
 | `HAMMERHEAD_WEBHOOK_SECRET` | HMAC для `X-Hmac-Signature` |
 | `HAMMERHEAD_REDIRECT_URI` | По умолчанию `http://127.0.0.1:8765/callback` |
-| `GARMIN_EMAIL` / `PASSWORD` | Опционально для CLI |
 | `GETSYNC_SECRETS_KEY` | Fernet-ключ для encrypted credentials (**2.16**) |
+| Garmin login/password | Только per-user (Settings / `getsync garmin login --save-credentials`), не в `.env` |
 | `REGISTRATION_OPEN` | Разрешить `/register` (по умолчанию `false`) |
 | `MAIL_BACKEND` / `RESEND_*` | Почта: `null` \| `console` \| `resend` — см. `.env.example` |
 | `DATA_DIR` | Каталог данных (по умолчанию `data`) |
