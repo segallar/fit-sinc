@@ -264,8 +264,8 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 | Subnav link | `font-size: 0.9rem` — `.getsync-settings-nav-list .nav-link`; фон **белый** + border primary-100 + shadow (не сливаться с `bg-light`) |
 | Subnav icon | справа — `.getsync-settings-nav-icon` 18×18, **цветные** по провайдеру |
 | Connections | `<details>` — клик по заголовку раскрывает подменю; `open` если активна интеграция |
-| Active nav item | `primary-50` фон + inset border (не белый текст на белом) |
-| Settings gear | `icons/settings_gear.html` — строгий outline (круг + лучи) |
+| Active nav item | `primary-50` фон + тёмный текст (без полоски слева) |
+| Settings gear | `icons/settings_gear.html` — классическая 6-зубая шестерёнка outline |
 | Панель + поля | `0.9rem` — `.getsync-settings-panel`, `.getsync-settings-label`, controls |
 | Заголовок секции | `.getsync-settings-heading` — тот же размер, `font-weight: 500`, primary-700 |
 

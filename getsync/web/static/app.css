@@ -542,7 +542,6 @@ button.getsync-filter-link:focus-visible {
   background: var(--getsync-primary-50);
   color: var(--getsync-primary-900);
   font-weight: 600;
-  box-shadow: inset 3px 0 0 var(--getsync-primary-600);
 }
 
 .getsync-settings-nav-list .nav-link.active .getsync-settings-nav-text {
@@ -695,7 +694,7 @@ button.getsync-filter-link:focus-visible {
 }
 
 .getsync-topbar-icon-btn .getsync-topbar-icon {
-  stroke-width: 2;
+  stroke-width: 1.5;
 }
 
 .getsync-topbar-icon {
