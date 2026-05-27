@@ -1,5 +1,6 @@
 # База данных SQLite
 
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
 > **Код:** [`getsync/state/store.py`](../getsync/state/store.py) — схема, миграции, CRUD.  
 > **Файлы FIT:** [STORAGE.md](STORAGE.md) · **Архитектура:** [ARCHITECTURE.md](ARCHITECTURE.md).
 

@@ -1,5 +1,6 @@
 # Web UI (Jinja2 + Bootstrap 5)
 
+> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-26 · **Версия:** 0.7.0  
 > Индекс: [docs/README.md](README.md) · **Страницы `/app`:** [APP-UI.md](APP-UI.md) · карта URL: [design/SCREENS.md](design/SCREENS.md) · архитектура: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Кабинет `/app`, админка `/app/admin` и публичные страницы — Jinja2 + **Bootstrap 5.3** (CDN) + HTMX.

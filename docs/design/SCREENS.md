@@ -1,5 +1,6 @@
 # Карта экранов `/app`
 
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
 > Полная спецификация: **[APP-UI.md](../APP-UI.md)** · архитектура: [ARCHITECTURE.md](../ARCHITECTURE.md) · roadmap: [PLAN.md](../PLAN.md#снимок-кабинета-app).
 
 **Статус (2026-05-26):** функциональная IA в prod (`cabinet.html`, nav-pills). Sidebar — прототип `/app/ui-preview`. Dashboard снят; sync log — admin.

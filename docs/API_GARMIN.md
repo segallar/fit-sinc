@@ -1,5 +1,6 @@
 # Garmin Connect API (GetSync)
 
+> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-26 · **Версия:** 0.7.0  
 > **Неофициальный доступ** через [`garth-ng`](https://pypi.org/project/garth-ng/) (`import garth`).  
 > Официальный [Garmin Connect Developer Program](https://developer.garmin.com/gc-developer-program/overview/) **не подходит** для личной загрузки `.fit` — Activity API для pull с устройств партнёров, не upload от имени пользователя.
 

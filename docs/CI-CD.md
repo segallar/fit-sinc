@@ -1,5 +1,6 @@
 # CI/CD и деплой GetSync
 
+> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
 > Личный сервис на одном VPS. **CI:** GitHub Actions — [`test.yml`](../.github/workflows/test.yml) (test + deploy в одном workflow на `main` / `hotfix/*`). Badges в [README](../README.md). Альтернатива: [`.gitlab-ci.yml`](../.gitlab-ci.yml).  
 > Индекс документации: [docs/README.md](README.md).
 
@@ -20,7 +21,7 @@ flowchart LR
 | Сервер | `sirocco.romansegalla.online` (`134.209.133.187`) |
 | SSH | `ssh -i ~/.ssh/id_ed25519 root@sirocco.romansegalla.online` |
 | **App (целевой)** | `getsync.me`, `app.getsync.me` |
-| App (legacy DNS) | `fit.romansegalla.online` — до cutover [1.5-C](1.5-RENAME.md) |
+| App (legacy DNS) | `fit.romansegalla.online` — 301 на `app.getsync.me` 📋 backlog |
 | Лендинг (личный) | `romansegalla.online` — proxy на `:8080` |
 | Каталог приложения | `/opt/getsync` |
 | Пользователь сервиса | `getsync:getsync` |
@@ -89,7 +90,7 @@ curl -sk -o /dev/null -w "%{http_code}\n" https://app.getsync.me/app/login
 #### Чеклист DNS
 
 - [ ] A `@` и `app` → `134.209.133.187`
-- [ ] `getsync.conf` + certbot
+- [x] `getsync.conf` + certbot (2026-05-27)
 - [ ] `/health` на обоих хостах
 - [ ] Hammerhead webhook URL обновлён
 
@@ -302,6 +303,8 @@ python -m compileall -q getsync
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
+Полная стратегия, каталог тестов и назначение скриптов: [TESTING.md](TESTING.md). Метаданные документов: [DOC-CONVENTION.md](DOC-CONVENTION.md).
+
 ### Ручной deploy
 
 ```bash
@@ -320,7 +323,7 @@ SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519)" ./scripts/ci/deploy.sh
 
 - [ ] rsync + `pip install -e .`
 - [ ] `systemctl is-active getsync` → `active`
-- [ ] `https://app.getsync.me/health` → 200
+- [x] `https://app.getsync.me/health` → 200
 - [ ] Webhook без HMAC → 403
 - [ ] `SESSION_COOKIE_SECURE=true` в `/opt/getsync/.env`
 - [ ] `/app/login` без nginx Basic Auth

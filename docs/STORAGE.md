@@ -1,5 +1,6 @@
 # Хранение FIT-файлов
 
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
 > **Статус:** local filesystem ✅ · S3 — [PLAN.md](PLAN.md) **3.3** · Garmin pull FIT — [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) **3.11.2**.  
 > **SQLite:** `activities.storage_key` — [DATABASE.md](DATABASE.md).
 

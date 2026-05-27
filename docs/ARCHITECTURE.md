@@ -1,5 +1,6 @@
 # Архитектура GetSync
 
+> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
 > **Статус (2026-05-26):** production — фазы 0–5; кабинет **5b** + **2.3** (unified activities, calendar, local storage) — [PLAN.md](PLAN.md).  
 > UI-спека: [APP-UI.md](APP-UI.md) · connections: [CONNECTIONS.md](CONNECTIONS.md) · FIT: [STORAGE.md](STORAGE.md) · БД: [DATABASE.md](DATABASE.md)  
 > Быстрый старт — [README](../README.md) · индекс — [docs/README.md](README.md).
@@ -224,7 +225,7 @@ getsync serve
 | VPS | `/opt/getsync`, user `getsync`, unit `getsync.service` |
 | nginx | [`deploy/nginx/getsync.conf`](../deploy/nginx/getsync.conf) |
 
-Cutover DNS и legacy host: [1.5-RENAME.md](1.5-RENAME.md), [CI-CD.md](CI-CD.md).
+Cutover DNS и legacy host: [1.5-RENAME.md](archive/1.5-RENAME.md), [CI-CD.md](CI-CD.md).
 
 ## Реализованные фазы
 
@@ -239,7 +240,7 @@ Cutover DNS и legacy host: [1.5-RENAME.md](1.5-RENAME.md), [CI-CD.md](CI-CD.md)
 | **5b** | Settings, security tests, без nginx Basic Auth |
 | **2.3** (часть) | Unified activities, SQLite catalog, calendar tab, sync summary, admin sync log, connections UI |
 | **11.0** (часть) | `StorageBackend` local, `storage_key`, per-user `activities/{source}/` |
-| **1.5** | Rename GetSync — A+B в коде; **C** DNS/certbot на prod |
+| **1.5** | Rename GetSync — A+B+C ✅ ([1.5-RENAME.md](archive/1.5-RENAME.md)) |
 
 ## Связанная документация
 
@@ -256,4 +257,4 @@ Cutover DNS и legacy host: [1.5-RENAME.md](1.5-RENAME.md), [CI-CD.md](CI-CD.md)
 | [API_HAMMERHEAD.md](API_HAMMERHEAD.md) | OAuth, webhook |
 | [API_GARMIN.md](API_GARMIN.md) | JWT, upload |
 | [UI.md](UI.md) | Шаблоны и Bootstrap |
-| [1.5-RENAME.md](1.5-RENAME.md) | Переименование |
+| [1.5-RENAME.md](archive/1.5-RENAME.md) | Переименование |

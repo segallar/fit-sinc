@@ -1,14 +1,16 @@
 # Фаза 5b.0 — решения
 
+> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-26 · **Версия:** 0.6.0  
+> **Статус:** архив — не обновлять под новые задачи; актуально [PLAN.md](../PLAN.md).  
 > Реализовано в коде: `users.is_admin`, bootstrap, CLI, `REGISTRATION_OPEN`.  
-> Решения закрыты (5b ✅). Актуальный roadmap: [PLAN.md](PLAN.md) · история: [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md).
+> Решения закрыты (5b ✅). Актуальный roadmap: [PLAN.md](../PLAN.md) · история: [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md).
 
 ## Регистрация
 
 | Режим | `REGISTRATION_OPEN` | Кто создаёт пользователей |
 |-------|---------------------|---------------------------|
 | **Invite-only (prod)** | `false` (по умолчанию) | Админ через `/app/admin` или `getsync user create` |
-| **Открытая** | `true` | Саморегистрация на `/register` — [2.1-REGISTER.md](2.1-REGISTER.md) |
+| **Открытая** | `true` | Саморегистрация на `/register` — [2.1-REGISTER.md](../2.1-REGISTER.md) |
 
 На production **app.getsync.me** оставляем `REGISTRATION_OPEN=false` до готовности rate limit и UI регистрации (**2.1**).
 
@@ -42,4 +44,4 @@ getsync user list                             # флаг [admin]
 | `BOOTSTRAP_ADMIN_EMAIL` | — | Email admin при старте |
 | `DEFAULT_USER_ID` | `default` | Tenant для fallback bootstrap |
 
-См. [`.env.example`](../.env.example).
+См. [`.env.example`](../../.env.example).

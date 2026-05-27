@@ -1,5 +1,8 @@
 # Changelog
 
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-26 · **Версия:** 0.7.0  
+> Релизы продукта; версии в шапках `docs/` должны соответствовать актуальному содержанию.  
+
 Формат основан на [Keep a Changelog](https://keepachangelog.com/). Версии — [SemVer](https://semver.org/).
 
 ## [0.7.0] — в разработке
@@ -46,4 +49,4 @@
 
 ## [0.5.0] — ранее
 
-MVP: Hammerhead → Garmin sync, multi-tenant, кабинет, регистрация. Детали — [PLAN-ARCHIVE.md](docs/PLAN-ARCHIVE.md).
+MVP: Hammerhead → Garmin sync, multi-tenant, кабинет, регистрация. Детали — [PLAN-ARCHIVE.md](docs/archive/PLAN-ARCHIVE.md).

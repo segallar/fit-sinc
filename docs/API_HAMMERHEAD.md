@@ -1,5 +1,6 @@
 # Hammerhead API (GetSync)
 
+> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-26 · **Версия:** 0.7.0  
 > **Официальный API** Hammerhead Karoo. OpenAPI: https://api.hammerhead.io/v1/docs/openapi.yml  
 > Developer Portal: https://www.hammerhead.io/pages/developer-platform  
 > Регистрация client: https://support.hammerhead.io/hc/en-us/articles/43558376710683-Creating-a-Developer-Account

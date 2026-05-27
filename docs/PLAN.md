@@ -1,8 +1,9 @@
 # Roadmap GetSync
 
-> **Обновлено:** 2026-05-26  
+
+> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
 > **Prod:** [v0.6.0](#v060--зафиксировано-2026-05-26) · **В разработке:** **v0.7.0** (кабинет / дизайн)  
-> **Выполненное до v0.6** (фазы 0–5, 5b) — [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md) · **~123** теста · HH→Garmin на sirocco.
+> **Выполненное до v0.6** (фазы 0–5, 5b) — [PLAN-ARCHIVE.md](archive/PLAN-ARCHIVE.md) · **~123** теста · HH→Garmin на sirocco.
 
 **Документы:** [APP-UI.md](APP-UI.md) · [SCREENS.md](design/SCREENS.md) · [CONNECTIONS.md](CONNECTIONS.md) · [STORAGE.md](STORAGE.md) · [DATABASE.md](DATABASE.md) · [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) · [CHANGELOG.md](../CHANGELOG.md)
 
@@ -12,7 +13,7 @@
 
 | Префикс | Область | Примеры |
 | ------- | ------- | ------- |
-| **1.x** | Запуск, домен, инфра | **1.5** rename/cutover getsync.me |
+| **1.x** | Запуск, домен, инфра | **1.5** rename/cutover getsync.me ✅ |
 | **2.x** | Продукт: кабинет, лендинг, алерты, i18n | **2.10** дизайн · **2.12** Garmin login |
 | **2.x.y** | Подзадачи одной фичи (детали в секции фичи) | **2.10.1** sidebar |
 | **3.x** | Платформа: хаб, S3, OAuth, модули | **3.1** rule engine · **3.9** модульность |
@@ -63,7 +64,7 @@
 | Garmin в UI | Upload ✅ · list в browse ✅ · pull FIT/wellness — **3.11** 📋 |
 | Tenants | `user_id`, `data/users/{id}/`, session `getsync_session` |
 | Регистрация | `/register` при `REGISTRATION_OPEN` — без email verify (**2.6**) |
-| Домен | `romansegalla.online` · cutover **getsync.me** — **1.5** ⏸ |
+| Домен | **`getsync.me`** / **`app.getsync.me`** ✅ — [1.5-RENAME.md](archive/1.5-RENAME.md) |
 
 ### Снимок кабинета `/app`
 
@@ -82,7 +83,7 @@
 
 **Цель:** согласованный дизайн и стабильное поведение `/app` + **Garmin login в UI**.
 
-**Не в v0.7:** **1.5** DNS cutover · **3.x** хаб · полный **3.11**.
+**Не в v0.7:** **3.x** хаб · полный **3.11** · legacy 301 `fit.romansegalla.online`.
 
 ```mermaid
 flowchart TB
@@ -128,8 +129,8 @@ flowchart TB
 | **2.5** | 0.7 | P2 | i18n кабинета | 1–2 веч | **2.10** |
 | **2.15** | backlog | P3 | Календарь: облачные дни без SQLite | 1 веч | browse |
 | ? | — | — | Кэш browse/calendar (обсуждение, не делать до решения) | — | — |
-| **1.5** | H1 | ⏸ | DNS getsync.me — [1.5-RENAME.md](1.5-RENAME.md) | 1–2 дн | **v0.7** |
-| **2.11** | H2 | ⏸ | Лендинг SEO / скрины | 2–3 веч | **1.5**, **2.10** |
+| **1.5** | H1 | ✅ | Cutover getsync.me — [1.5-RENAME.md](archive/1.5-RENAME.md) | — | — |
+| **2.11** | H2 | ⏸ | Лендинг SEO / скрины | 2–3 веч | **2.10** |
 | **2.4** | H2 | ⏸ | Telegram-алерты | 1–2 веч | **2.14** |
 | **2.6** | H2 | ⏸ | Email verify — [2.1e-EMAIL.md](2.1e-EMAIL.md) | 2–4 веч | публичный register |
 | **2.7** | H2 | ⏸ | Connections/rules в БД | 1–2 нед | **3.1** |
@@ -142,7 +143,7 @@ flowchart TB
 | **3.9** | H3 | 🔵 | Модульность | 1–2 нед | **2.8** |
 | **3.1** | H3 | 🔵 | Rule engine | ~1 нед | **3.9** |
 | **3.3** | H3 | 🔵 | S3 — [STORAGE.md](STORAGE.md) | 3–5 дн | local ✅ |
-| **3.4** | H3 | 🔵 | OAuth login — [3.4-OAUTH-LOGIN.md](3.4-OAUTH-LOGIN.md) | 2–3 веч | **1.5**, **2.6** |
+| **3.4** | H3 | 🔵 | OAuth login — [3.4-OAUTH-LOGIN.md](3.4-OAUTH-LOGIN.md) | 2–3 веч | **2.6** |
 | **3.5** | H3 | 🔵 | Полный хаб (Strava, …) | 2–3 нед | **3.1**, **3.3** |
 | **3.2** | H3 | 🔵 | Маршруты / courses | 1–2 нед | **3.1** |
 | **3.6** | H3 | 🔵 | Языки fr/… | по запросу | **2.5** |
@@ -158,7 +159,7 @@ flowchart TB
 ```mermaid
 flowchart LR
   V07["v0.7\n2.10·2.12·2.13"]
-  H1["H1\n1.5"]
+  H1["H1\n1.5 ✅"]
   H3["H3\n3.11·3.9·3.1"]
   V07 --> H1 --> H3
 ```
@@ -166,7 +167,7 @@ flowchart LR
 | Горизонт | Содержание |
 | -------- | ---------- |
 | **v0.7** | Кабинет: дизайн, Garmin login UI, тесты, **2.14** |
-| **H1** | **1.5** getsync.me |
+| **H1** | ~~**1.5** getsync.me~~ ✅ |
 | **H2** | **2.11** · **2.4** · **2.6** |
 | **H3** | **2.8** → **3.11.*** → **3.9** → **3.1** ∥ **3.3** → **3.5** |
 
@@ -215,15 +216,20 @@ flowchart LR
 
 ## Детали: H1 — запуск
 
-### 1.5 — Cutover getsync.me
+### 1.5 — Cutover getsync.me ✅
+
+Закрыто **2026-05-27:** DNS, certbot, nginx, Hammerhead webhook/OAuth, prod URLs работают.
 
 | Шаг | Статус |
 | --- | ------ |
-| Код rename, `deploy/nginx/getsync.conf` | ✅ |
-| DNS, certbot, HH OAuth redirect | 📋 |
-| Smoke всех экранов `/app` | 📋 |
+| Код rename A+B, `deploy/nginx/getsync.conf` | ✅ |
+| DNS, certbot | ✅ |
+| Hammerhead webhook + OAuth | ✅ |
+| Браузер: getsync.me, app login | ✅ |
+| E2E ride → sync | отложено |
+| 301 `fit.romansegalla.online` → app | backlog |
 
-[1.5-RENAME.md](1.5-RENAME.md) — исторический чеклист rename.
+[1.5-RENAME.md](archive/1.5-RENAME.md) — полный чеклист и backlog.
 
 ---
 
@@ -268,7 +274,7 @@ flowchart LR
 | Garmin download (**3.11.1**) | spike до реализации |
 | Manual activity без FIT | `no_file`, не error (**3.11.2**) |
 | Регрессия **2.10** | **2.13** после вёрстки |
-| Cutover до v0.7 | **1.5** после чеклиста кабинета |
+| Legacy host 301 | `fit.romansegalla.online` → `app.getsync.me` — ops backlog |
 
 ---
 
@@ -277,6 +283,7 @@ flowchart LR
 | Документ | Назначение |
 | -------- | ---------- |
 | [CHANGELOG.md](../CHANGELOG.md) | Версии релизов |
-| [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md) | История фаз 0–5 |
+| [DOC-CONVENTION.md](DOC-CONVENTION.md) | Метаданные документов |
+| [PLAN-ARCHIVE.md](archive/PLAN-ARCHIVE.md) | История фаз 0–5 |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Потоки, tenants |
 | [APP-UI.md](APP-UI.md) | UI `/app` |

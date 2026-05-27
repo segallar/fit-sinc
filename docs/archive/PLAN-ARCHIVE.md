@@ -1,6 +1,8 @@
 # Roadmap GetSync — архив (до рефакторинга 2026-05-26)
 
-> **Не использовать как актуальный roadmap.** Открытые задачи и приоритеты — в [PLAN.md](PLAN.md).  
+> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-26 · **Версия:** 0.6.0  
+> **Статус:** архив — не обновлять под новые задачи; актуально [PLAN.md](../PLAN.md).  
+> **Не использовать как актуальный roadmap.** Открытые задачи и приоритеты — в [PLAN.md](../PLAN.md).  
 > Этот файл сохранён для истории фаз 0–5, 5b и детальных чеклистов «что сделано».
 
 ---
@@ -10,8 +12,8 @@
 > **Статус (2026-05-26):** MVP (фазы 0–5) в production на sirocco. **Горизонт 1:** почти закрыт (**1.5 C** 🔄). **Горизонт 2:** **2.1–2.2** ✅ · **2.3** почти ✅ (остался UX sync log) · **2.5** / **2.10** / **2.11** 🔄 · **2.12** 📋. Сводка — [легенда](#легенда-статусов), [реестр](#реестр-задач), [снимок кабинета](#снимок-кабинета-app-2026-05).  
 > Продукт: **GetSync** / CLI `**getsync`** · i18n EN default (RU/DE) · **~117** тестов · подвал version/commit/deploy/UTC.
 
-**Текущее состояние:** [README](../README.md) · [ARCHITECTURE.md](ARCHITECTURE.md) · [docs/README.md](README.md)  
-**Операции:** [CI-CD.md](CI-CD.md) · [API Hammerhead](API_HAMMERHEAD.md) · [API Garmin](API_GARMIN.md)
+**Текущее состояние:** [README](../../README.md) · [ARCHITECTURE.md](../ARCHITECTURE.md) · [docs/README.md](../README.md)  
+**Операции:** [CI-CD.md](../CI-CD.md) · [API Hammerhead](../API_HAMMERHEAD.md) · [API Garmin](../API_GARMIN.md)
 
 **Репозиторий:** [https://github.com/segallar/getsync](https://github.com/segallar/getsync)
 
@@ -63,7 +65,7 @@
 | 6.1 Алерты (Telegram / email)                                       | 📋 **2.4**                                                                                          |
 | 6.2 Локализация (i18n)                                              | 🔄 **2.5** (nav/settings/auth/register ✅ · dashboard/activities/admin 📋)                           |
 | — Ops: README + тесты CI                                            | ✅ **~117** тестов · `[build_info.py](../getsync/build_info.py)` · legacy cookie · deploy health retry |
-| — Каталог + FIT layout                                              | 🔄 local `StorageBackend` ✅ ([STORAGE.md](STORAGE.md)) · S3 📋 **3.3**                              |
+| — Каталог + FIT layout                                              | 🔄 local `StorageBackend` ✅ ([STORAGE.md](../STORAGE.md)) · S3 📋 **3.3**                              |
 | 7 Хаб активностей: сбор, хранение, анализ, sync → сервисы           | 📋 · **2.8–2.9** · **3.1**, **3.5**                                                                 |
 | **Modularity** Модули и интерфейсы между ними                       | 📋 · **3.9**                                                                                        |
 | 8 Маршруты (routes)                                                 | 📋 · **3.2**                                                                                        |
@@ -105,7 +107,7 @@
 | **1.6**  | Docs       | ARCHITECTURE: `data/users/{id}/`                           | ✅                                               |
 | **1.7**  | Ops        | Даты в UI по `users.timezone`                              | ✅                                               |
 | **1.8**  | 6 мин      | Баннер HH + Garmin на дашборде                             | ✅                                               |
-| **2.1**  | 5b.3       | `/register` + `REGISTRATION_OPEN`, rate limit              | ✅ · **2.1e** [2.1e-EMAIL.md](2.1e-EMAIL.md) 📋  |
+| **2.1**  | 5b.3       | `/register` + `REGISTRATION_OPEN`, rate limit              | ✅ · **2.1e** [2.1e-EMAIL.md](../2.1e-EMAIL.md) 📋  |
 | **2.2**  | 5b.6       | Тесты register / settings / admin                          | ✅                                               |
 | **2.3**  | 6          | Календарь, поиск, failed, sync log                         | 🔄 · activities/calendar ✅ · sync log UX 📋     |
 | **2.4**  | 6.1        | Telegram-алерты                                            | 📋                                              |
@@ -116,7 +118,7 @@
 | **2.9**  | 7.3        | Manual FIT upload                                          | 📋                                              |
 | **2.10** | Design     | Дизайн-система, UX, визуал кабинета                        | 🔄                                              |
 | **2.11** | Site       | Лендинг romansegalla.online                                | 🔄                                              |
-| **2.12** | Ops        | Первичный Garmin login в UI                                | 🔄 вместе с **2.10.2** — [APP-UI.md](APP-UI.md) |
+| **2.12** | Ops        | Первичный Garmin login в UI                                | 🔄 вместе с **2.10.2** — [APP-UI.md](../APP-UI.md) |
 | **3.1**  | 7.1–7.2    | Rule engine, реестр в БД                                   | 📋                                              |
 | **3.2**  | 7.4, 8     | Маршруты, Garmin courses spike                             | 📋                                              |
 | **3.3**  | 11         | S3 / StorageBackend                                        | 📋                                              |
@@ -142,7 +144,7 @@
 | Legacy `/app/log` → dashboard `#sync-log`                | ✅ redirect                                                               |
 | Garmin session monitor в **Settings** `#garmin-session`    | ✅ · `/app/session` → redirect                                            |
 | Nav: Activities, Dashboard, Settings (без log/session)     | ✅ `[cabinet.py](../getsync/web/cabinet.py)`                               |
-| Connections HH/Garmin в Settings                         | ✅ [CONNECTIONS.md](CONNECTIONS.md) · legacy banner dashboard снят |
+| Connections HH/Garmin в Settings                         | ✅ [CONNECTIONS.md](../CONNECTIONS.md) · legacy banner dashboard снят |
 | UX sync log (duplicate vs error, фильтры в UI)           | 📋                                                                        |
 | Календарь v6.1: дни «только в облаке» (не в SQLite)      | 📋 опционально, кнопка «обновить месяц»                                 |
 
@@ -165,7 +167,7 @@
 
 | ID       | Готово                                                                               | Осталось                                          |
 | -------- | ------------------------------------------------------------------------------------ | ------------------------------------------------- |
-| **2.10** | `[tokens.css](../getsync/web/static/tokens.css)`, `.getsync-app`, [design/](design/) | **2.10.2–2.10.3**: визуал экранов, admin, a11y    |
+| **2.10** | `[tokens.css](../getsync/web/static/tokens.css)`, `.getsync-app`, [design/](../design/) | **2.10.2–2.10.3**: визуал экранов, admin, a11y    |
 | **2.11** | **2.11.0–2.11.2**: hero, benefits, FAQ, CTA, EN/RU/DE, `layouts/site.html`           | **2.11.3** SEO/OG · **2.11.4** скриншоты кабинета |
 
 
@@ -182,7 +184,7 @@
 
 ### Снимок кабинета /app (2026-05)
 
-> Зафиксированная IA после волны **2.3** (unified activities + calendar). Спека экранов — [APP-UI.md](APP-UI.md).
+> Зафиксированная IA после волны **2.3** (unified activities + calendar). Спека экранов — [APP-UI.md](../APP-UI.md).
 
 | Экран | URL | Назначение |
 | ----- | --- | ---------- |
@@ -201,7 +203,7 @@ Calendar ◄── aggregate по activity_date в TZ пользователя (
 Sync ──► ActivityStorage.put_fit() + storage_key (local; S3 — 3.3)
 ```
 
-**Документация:** [CONNECTIONS.md](CONNECTIONS.md) · [STORAGE.md](STORAGE.md) · [ARCHITECTURE.md](ARCHITECTURE.md).
+**Документация:** [CONNECTIONS.md](../CONNECTIONS.md) · [STORAGE.md](../STORAGE.md) · [ARCHITECTURE.md](../ARCHITECTURE.md).
 
 
 ### 🔴 Горизонт 1 — срочно, важно, небольшие
@@ -344,7 +346,7 @@ flowchart TB
 - ~~nginx Basic Auth~~ — снят (**1.4** ✅)
 - ~~`/app/settings`~~ — есть (**1.2** ✅): профиль, пароль, Hammerhead OAuth; Garmin status/refresh/disconnect; **первичный** Garmin — CLI (`garmin login`)
 - ~~Settings в nav, TZ в UI, баннер HH/Garmin~~ — **1.3**, **1.7**, **1.8** ✅
-- ~~Нет `/register~~` — **2.1** ✅ ([2.1-REGISTER.md](2.1-REGISTER.md))
+- ~~Нет `/register~~` — **2.1** ✅ ([2.1-REGISTER.md](../2.1-REGISTER.md))
 - Публичный **getsync.me** на prod — **1.5 C** 🔄 (код и **A+B** ✅)
 
 **Уже сделано в 5b.1:** один логин; админка `/app/admin/`* по `users.is_admin`; legacy `/admin/`* → 301; `ADMIN_PASSWORD` убран.
@@ -360,7 +362,6 @@ flowchart TB
 | **Публичный UI**          | `/login`, `/register`    | Гость                  | —                            |
 | **Кабинет**               | `/app/`*                 | Владелец аккаунта      | Сессия (email + password)    |
 | **Админ внутри кабинета** | `/app/admin/`*           | `users.is_admin = 1`   | та же сессия + проверка роли |
-
 
 > **Устарело:** отдельный `/admin/login` и nginx `auth_basic` на `/` — убираем в 5b.
 
@@ -469,7 +470,7 @@ getsync --user roman sync --since 2025-01-01
 - `GET/POST /register` — саморегистрация (`REGISTRATION_OPEN`) ✅ **2.1**
 - **Activities** (list + calendar, unified sources), dashboard (summary + sync log), settings (profile + connections + Garmin session) ✅
 - Legacy `/app/log`, `/app/session` — redirect ✅
-- `/app/settings` — профиль, locale, пароль, connections ✅ **1.2** · [CONNECTIONS.md](CONNECTIONS.md)
+- `/app/settings` — профиль, locale, пароль, connections ✅ **1.2** · [CONNECTIONS.md](../CONNECTIONS.md)
 
 Позже (6.1): Telegram bot для алертов (`/start` → `chat_id`).
 
@@ -509,7 +510,7 @@ getsync --user roman sync --since 2025-01-01
 | i18n кабинета                              | 🔄 **[2.5](#фаза-62-локализация-i18nl10n)** |
 
 
-**Документация:** [UI.md](UI.md) · коммит `feat(web): мигрировать UI на Jinja2 и Tailwind`.
+**Документация:** [UI.md](../UI.md) · коммит `feat(web): мигрировать UI на Jinja2 и Tailwind`.
 
 ---
 
@@ -519,7 +520,7 @@ getsync --user roman sync --since 2025-01-01
 
 **Зачем:** единый визуальный язык, понятные сценарии (login → settings → sync), доверие к продукту; подготовка к **1.5** (бренд) и публичному **2.1**.
 
-**Сейчас:** Jinja2 + Bootstrap 5; общие tokens (`[tokens.css](../getsync/web/static/tokens.css)`); кабинет — shell `.getsync-app` (`[design/README.md](design/README.md)`); визуальный редизайн экранов — 📋 **2.10.2**.
+**Сейчас:** Jinja2 + Bootstrap 5; общие tokens (`[tokens.css](../getsync/web/static/tokens.css)`); кабинет — shell `.getsync-app` (`[design/README.md](../design/README.md)`); визуальный редизайн экранов — 📋 **2.10.2**.
 
 **Целевые артефакты:**
 
@@ -539,7 +540,7 @@ getsync --user roman sync --since 2025-01-01
 
 | ID         | Содержание                                    | Оценка                                                              |
 | ---------- | --------------------------------------------- | ------------------------------------------------------------------- |
-| **2.10.0** | Аудит + user flows                            | 🔄 `[docs/design/SCREENS.md](design/SCREENS.md)`                    |
+| **2.10.0** | Аудит + user flows                            | 🔄 `[docs/design/SCREENS.md](../design/SCREENS.md)`                    |
 | **2.10.1** | Design tokens + app shell + компоненты        | 🔄 `[tokens.css](../getsync/web/static/tokens.css)`, `.getsync-app` |
 | **2.10.2** | Редизайн dashboard, activities, settings, log | 📋                                                                  |
 | **2.10.3** | Admin, mobile, полировка состояний            | 📋                                                                  |
@@ -549,7 +550,7 @@ getsync --user roman sync --since 2025-01-01
 
 **Не в scope v1:** нативное приложение; полный rebrand без **1.5**; иллюстрации/3D.
 
-**Документация:** [APP-UI.md](APP-UI.md) — единая спецификация страниц `/app`; [UI.md](UI.md) — стек; [design/](design/) — индекс файлов.
+**Документация:** [APP-UI.md](../APP-UI.md) — единая спецификация страниц `/app`; [UI.md](../UI.md) — стек; [design/](../design/) — индекс файлов.
 
 Лендинг корневого домена — отдельно: **[2.11](#главная-romansegallaonline-211)**.
 
@@ -605,7 +606,7 @@ fit.romansegalla.online → app: /app/*, /webhooks/*, /health (как сейча
 | **2.11.0** | Контент и IA: тексты, блоки, CTA; согласовать с **1.5** / **2.10**                    | ✅          |
 | **2.11.1** | Макет лендинга (Figma или HTML-prototype); mobile-first                               | ✅ (в коде) |
 | **2.11.2** | Вёрстка: `layouts/site.html`, `home.html`, EN/RU, отделить от `auth.html`             | ✅          |
-| **2.11.3** | SEO, OG-image, favicon; тесты `GET /`; smoke в [CI-CD.md](CI-CD.md)                   | 📋         |
+| **2.11.3** | SEO, OG-image, favicon; тесты `GET /`; smoke в [CI-CD.md](../CI-CD.md)                   | 📋         |
 | **2.11.4** | Блок **Product preview**: скриншоты кабинета (dashboard, activities, sync log), EN/RU | 📋         |
 
 
@@ -718,7 +719,6 @@ flowchart TB
 | ------------------------------------------ | ------ |
 | Пункт **Settings** в nav → `/app/settings` | ✅      |
 
-
 > User bar, формы, Jinja layout, Tailwind — перенесены в раздел **[UI: Новый интерфейс приложения](#ui-новый-интерфейс-приложения)** ✅.
 
 #### Garmin Connect — сессия на каждого пользователя (уже в коде)
@@ -797,9 +797,9 @@ flowchart TB
 
 **Не переписывать:** `user_id` в store/sync, `data/users/{id}/`, webhook routing, per-user JWT refresh (HTTP → Playwright fallback).
 
-**Документация:** детали upload/JWT — [API_GARMIN.md](API_GARMIN.md); runtime — [ARCHITECTURE.md](ARCHITECTURE.md) (обновить схему `data/users/{id}/` при **1.2** / **1.6**).
+**Документация:** детали upload/JWT — [API_GARMIN.md](../API_GARMIN.md); runtime — [ARCHITECTURE.md](../ARCHITECTURE.md) (обновить схему `data/users/{id}/` при **1.2** / **1.6**).
 
-См. **[UI: Новый интерфейс приложения](#ui-новый-интерфейс-приложения)** и [UI.md](UI.md).
+См. **[UI: Новый интерфейс приложения](#ui-новый-интерфейс-приложения)** и [UI.md](../UI.md).
 
 ---
 
@@ -840,7 +840,7 @@ flowchart TB
 | Элемент | Статус |
 | ------- | ------ |
 | Баннер HH + Garmin на dashboard | ✅ **1.8** |
-| Connections (sources/destinations) в Settings | ✅ · [CONNECTIONS.md](CONNECTIONS.md) |
+| Connections (sources/destinations) в Settings | ✅ · [CONNECTIONS.md](../CONNECTIONS.md) |
 | Re-sync / bulk retry | ✅ |
 | Понятный sync log (фильтры, типы событий) | 📋 |
 | Admin: подменю Users / Statistics / Logs | 📋 |
@@ -1288,7 +1288,7 @@ class StorageBackend(Protocol):
 | **10.3** → **3.4** | Тесты + Security (CSRF `state`, nonce)      | ½ вечера |
 
 
-**Зависимости:** **2.6** (регистрация), **1.4** (prod HTTPS), финальный домен после **1.5**. Задача **3.4**. Детальный план: **[3.4-OAUTH-LOGIN.md](3.4-OAUTH-LOGIN.md)**.
+**Зависимости:** **2.6** (регистрация), **1.4** (prod HTTPS), финальный домен после **1.5**. Задача **3.4**. Детальный план: **[3.4-OAUTH-LOGIN.md](../3.4-OAUTH-LOGIN.md)**.
 
 **Вне scope v1:** SAML enterprise, LDAP.
 
@@ -1300,7 +1300,7 @@ class StorageBackend(Protocol):
 
 **Цель:** надёжное хранение сырых и производных артефактов (FIT, GPX, превью polyline) вне локального `data/users/{id}/fits/` — с возможностью **S3-совместимого** бэкенда (MinIO, AWS S3, Yandex Object Storage).
 
-**Сейчас (🔄):** `StorageBackend` + `storage_key` в SQLite; FIT per-user `data/users/{id}/activities/{source}/…` — см. [STORAGE.md](STORAGE.md). S3 adapter — 📋 **3.3**.
+**Сейчас (🔄):** `StorageBackend` + `storage_key` в SQLite; FIT per-user `data/users/{id}/activities/{source}/…` — см. [STORAGE.md](../STORAGE.md). S3 adapter — 📋 **3.3**.
 
 **Целевая модель:**
 
@@ -1325,7 +1325,7 @@ StorageBackend          — LocalFS | S3 (boto3)
 
 | Подфаза            | Содержание                                         | Оценка  |
 | ------------------ | -------------------------------------------------- | ------- |
-| **11.0** → **3.3** | `StorageBackend` local ✅; `STORAGE_BACKEND=local \| s3` · S3 adapter 📋 ([STORAGE.md](STORAGE.md)) |
+| **11.0** → **3.3** | `StorageBackend` local ✅; `STORAGE_BACKEND=local \| s3` · S3 adapter 📋 ([STORAGE.md](../STORAGE.md)) |
 | **11.1** → **3.3** | S3 adapter; upload после ingest                    | 1–2 дня |
 | **11.2** → **3.3** | Миграция FIT → S3; CLI `storage migrate`           | 1 вечер |
 | **11.3** → **3.3** | UI: signed URL «скачать»                           | 1 вечер |
@@ -1394,11 +1394,11 @@ StorageBackend          — LocalFS | S3 (boto3)
 - Webhook → background sync
 - Backfill CLI
 - UI: лог, активности, скачивание .fit
-- Документация деплоя → [CI-CD.md](CI-CD.md)
+- Документация деплоя → [CI-CD.md](../CI-CD.md)
 - Garmin upload: web JWT, refresh, browser/HTTP/garth chain
 - Проверить на sirocco: `garmin status` → `upload_ready`, sync работает (2026-05-25)
 - CI: GitHub Actions `[test.yml](../.github/workflows/test.yml)` (test + deploy), smoke tests
-- **UI:** новый интерфейс приложения (Jinja2 + Tailwind, `/app` + `/app/admin`) — [UI.md](UI.md)
+- **UI:** новый интерфейс приложения (Jinja2 + Tailwind, `/app` + `/app/admin`) — [UI.md](../UI.md)
 - **5b.2 (часть):** user bar, форма пользователя, IANA timezone select, тесты auth/admin form → см. **UI** выше
 - Secret `SSH_PRIVATE_KEY` в GitHub
 - README GitHub + разделение docs (ARCHITECTURE / PLAN)
@@ -1426,31 +1426,31 @@ StorageBackend          — LocalFS | S3 (boto3)
 
 ### 🟡 Горизонт 2 — средний срок (TODO)
 
-- **2.1** 5b.3 — `/register` + `REGISTRATION_OPEN` — [2.1-REGISTER.md](2.1-REGISTER.md) · email verify → **2.1e**
+- **2.1** 5b.3 — `/register` + `REGISTRATION_OPEN` — [2.1-REGISTER.md](../2.1-REGISTER.md) · email verify → **2.1e**
 - **2.2** register — `tests/test_register.py` · settings — `tests/test_settings.py` · admin — `test_security_auth` / `test_app_auth`
 - **2.3** 🔄 — list/calendar, unified catalog, re-sync, dashboard log, connections в settings ✅
 - **2.3** — UX sync log (duplicate vs error, фильтры); опционально календарь v6.1 (облако без SQLite)
 - **2.4** 6.1 — Telegram-алерты
 - **2.5** 🔄 — `users.locale`, nav, settings, flash, login/register, лендинг EN/RU/DE
 - **2.5** — dashboard, activities (list+calendar), sync log, connections; lang в шапке app
-- **2.1e** / **2.6** — email confirm, invite, captcha — [2.1e-EMAIL.md](2.1e-EMAIL.md)
+- **2.1e** / **2.6** — email confirm, invite, captcha — [2.1e-EMAIL.md](../2.1e-EMAIL.md)
 - **2.7** 5b.4+ — settings: источники / правила / приёмники
 - **2.8** 7.0 — ActivityRecord, Source/Sink spike
 - **2.9** 7.3 — manual FIT upload
-- **2.10.0** 🔄 — [SCREENS.md](design/SCREENS.md) (карта экранов, flows)
-- **2.10.1** 🔄 — `[tokens.css](../getsync/web/static/tokens.css)`, `.getsync-app`, [design/README.md](design/README.md)
+- **2.10.0** 🔄 — [SCREENS.md](../design/SCREENS.md) (карта экранов, flows)
+- **2.10.1** 🔄 — `[tokens.css](../getsync/web/static/tokens.css)`, `.getsync-app`, [design/README.md](../design/README.md)
 - **2.10.2** — редизайн dashboard, activities, settings, log
 - **2.10.3** — admin, mobile, a11y
 - **2.11** 🔄 — **2.11.0–2.11.2** hero, benefits, FAQ, CTA, i18n, `site.html`
 - **2.11** — **2.11.3** SEO/OG · **2.11.4** скриншоты кабинета
-- **2.12** — Garmin login в Settings → Connections (в волне **2.10.2**, см. [APP-UI.md](APP-UI.md))
+- **2.12** — Garmin login в Settings → Connections (в волне **2.10.2**, см. [APP-UI.md](../APP-UI.md))
 
 ### 🔵 Горизонт 3 — далёкое будущее (TODO)
 
 - **3.1** 7.1–7.2 — rule engine, реестр в БД
 - **3.2** 7.4 + 8 — маршруты, Garmin courses spike
-- **3.3** 11 — S3 adapter поверх `StorageBackend` (local ✅ — [STORAGE.md](STORAGE.md))
-- **3.4** 10 — OAuth/OIDC (Google, Apple) — [3.4-OAUTH-LOGIN.md](3.4-OAUTH-LOGIN.md)
+- **3.3** 11 — S3 adapter поверх `StorageBackend` (local ✅ — [STORAGE.md](../STORAGE.md))
+- **3.4** 10 — OAuth/OIDC (Google, Apple) — [3.4-OAUTH-LOGIN.md](../3.4-OAUTH-LOGIN.md)
 - **3.5** 7 — полный хаб (Strava, архив, …)
 - **3.6** 🔄 — `de` на лендинге и в `app_i18n` (кабинет частично)
 - **3.6** — `fr`/…; перевод docs/CLI
@@ -1469,6 +1469,6 @@ StorageBackend          — LocalFS | S3 (boto3)
 
 - Фаза 5: tenants, `/app`, admin CRUD, webhook → user, `data/users/{id}/`
 - **5b.0–5b.1:** `is_admin`, bootstrap, единый логин — [5b-DECISIONS.md](5b-DECISIONS.md)
-- **UI:** Jinja2 + Tailwind — [UI.md](UI.md)
+- **UI:** Jinja2 + Tailwind — [UI.md](../UI.md)
 - Ops: smoke (webhook, tenant, /app login, sync skip)
 

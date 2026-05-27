@@ -1,5 +1,6 @@
 # Документация GetSync
 
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-26 · **Версия:** 0.7.0  
 > **Продукт:** [GetSync](https://getsync.me) — синхронизация тренировок **Hammerhead Karoo → Garmin Connect**.  
 > **Код:** пакет `getsync`, CLI `getsync`.  
 > **Быстрый старт:** [README](../README.md).
@@ -14,6 +15,8 @@
 | [API_HAMMERHEAD.md](API_HAMMERHEAD.md) | Интеграции | OAuth, REST, webhook HMAC, Developer Portal |
 | [API_GARMIN.md](API_GARMIN.md) | Интеграции | Web JWT, Playwright upload, garth-ng, refresh |
 | [CI-CD.md](CI-CD.md) | Ops | VPS, nginx, certbot, rsync, GitHub Actions |
+| [TESTING.md](TESTING.md) | QA / Dev | Стратегия тестов, каталог `tests/`, скрипты `scripts/` |
+| [DOC-CONVENTION.md](DOC-CONVENTION.md) | Все | Соглашение: даты, версия продукта, шапка документов |
 | [UI.md](UI.md) | Frontend | Jinja2, Bootstrap 5, tokens + `app.css` |
 | **[APP-UI.md](APP-UI.md)** | Frontend | **Единая спецификация** всех страниц `/app` и admin |
 | [design/SCREENS.md](design/SCREENS.md) | Frontend | Карта URL, user flows, wireframes |
@@ -24,9 +27,7 @@
 | [DATABASE.md](DATABASE.md) | Backend | SQLite: таблицы, индексы, tenant, журналы |
 | [PLAN.md](PLAN.md) | Roadmap | v0.6 / v0.7, реестр задач, горизонты |
 | [CHANGELOG.md](../CHANGELOG.md) | Releases | Версии и release notes |
-| [PLAN-ARCHIVE.md](PLAN-ARCHIVE.md) | Roadmap | История фаз 0–5 / выполненное (до 2026-05-26) |
-| [1.5-RENAME.md](1.5-RENAME.md) | Cutover | Бренд GetSync, DNS, cookie, SQLite |
-| [5b-DECISIONS.md](5b-DECISIONS.md) | Auth | Регистрация, bootstrap admin |
+| [archive/](archive/) | Архив | [PLAN-ARCHIVE](archive/PLAN-ARCHIVE.md), [1.5](archive/1.5-RENAME.md), [5b](archive/5b-DECISIONS.md) |
 | [2.1-REGISTER.md](2.1-REGISTER.md) | Auth | Саморегистрация `/register`, план email verify (**2.1e**) |
 | [2.1e-EMAIL.md](2.1e-EMAIL.md) | Auth / Ops | Отправка email: SMTP/API, verify, алерты (**2.1e**, **2.6**) |
 | [3.4-OAUTH-LOGIN.md](3.4-OAUTH-LOGIN.md) | Auth | Вход через Google / Apple (OIDC), **3.4** / фаза 10 |
@@ -36,13 +37,15 @@
 
 ## Соглашения в документах
 
+Каждый файл в `docs/` начинается с метаданных: **Создано** · **Обновлено** · **Версия** (продукта). Правила — [DOC-CONVENTION.md](DOC-CONVENTION.md).
+
 | Термин | Значение |
 |--------|----------|
 | **GetSync** | Публичное имя продукта |
 | **getsync** | Python-пакет и основная CLI-команда |
-| **История rename** | fit_sinc → GetSync — [1.5-RENAME.md](1.5-RENAME.md) (миграции в коде сняты) |
+| **История rename** | fit_sinc → GetSync — [archive/1.5-RENAME.md](archive/1.5-RENAME.md) (миграции в коде сняты) |
 | **tenant** | Пользователь сервиса (`users.id`, каталог `data/users/{id}/`) |
-| **Production app** | `https://app.getsync.me` (целевой); legacy `fit.romansegalla.online` до DNS cutover |
+| **Production app** | `https://app.getsync.me` · legacy `fit.romansegalla.online` (301 → новый host — backlog) |
 
 ---
 
@@ -87,4 +90,4 @@ python -m unittest discover -s tests -p "test_*.py" -v
 getsync serve   # http://127.0.0.1:8080
 ```
 
-См. также [UI.md](UI.md) (Bootstrap) и [CI-CD.md](CI-CD.md) (проверки как в CI).
+См. также [TESTING.md](TESTING.md) (стратегия и скрипты), [UI.md](UI.md) (Bootstrap) и [CI-CD.md](CI-CD.md) (деплой).

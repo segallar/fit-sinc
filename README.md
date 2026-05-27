@@ -8,6 +8,8 @@
   <a href="https://getsync.me">getsync.me</a> — синхронизация тренировок <strong>Hammerhead Karoo</strong> → <strong>Garmin Connect</strong>
 </p>
 
+<p align="center"><small>Документация: <strong>v0.7.0</strong> · обновлено 2026-05-26 · <a href="docs/DOC-CONVENTION.md">соглашение о документах</a></small></p>
+
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
   <a href="https://github.com/segallar/getsync/actions/workflows/test.yml"><img src="https://github.com/segallar/getsync/actions/workflows/test.yml/badge.svg" alt="CI"></a>
@@ -178,9 +180,7 @@ getsync serve                  # http://127.0.0.1:8080 — webhook + UI
 |----------|------------|
 | [docs/README.md](docs/README.md) | Индекс документации, соглашения, URL production |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архитектура v1, tenants, компоненты, фазы |
-| [docs/PLAN.md](docs/PLAN.md) | Roadmap (открытые задачи) · [PLAN-ARCHIVE.md](docs/PLAN-ARCHIVE.md) — история |
-| [docs/1.5-RENAME.md](docs/1.5-RENAME.md) | Переименование GetSync (1.5) |
-| [docs/5b-DECISIONS.md](docs/5b-DECISIONS.md) | Фаза 5b.0: регистрация, bootstrap admin |
+| [docs/PLAN.md](docs/PLAN.md) | Roadmap (открытые задачи) · [архив](docs/archive/) — история |
 | [docs/CI-CD.md](docs/CI-CD.md) | Сервер, nginx, certbot, deploy |
 | [docs/API_HAMMERHEAD.md](docs/API_HAMMERHEAD.md) | OAuth, webhook, REST |
 | [docs/API_GARMIN.md](docs/API_GARMIN.md) | Web JWT, upload, garth-ng |
