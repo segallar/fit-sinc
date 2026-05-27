@@ -91,6 +91,9 @@ def serve(host: str = "127.0.0.1", port: int = 8080) -> None:
     """Run webhook/UI server."""
     import uvicorn
 
+    from getsync.logging_setup import configure_logging
+
+    configure_logging()
     _bootstrap_store()
     uvicorn.run("getsync.web.app:app", host=host, port=port)
 

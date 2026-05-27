@@ -276,6 +276,30 @@ journalctl -u getsync -f
 
 Приложение слушает **только** `127.0.0.1:8080`.
 
+### Логи приложения
+
+| Назначение | Куда |
+| ---------- | ---- |
+| Отладка, webhook, ошибки | **journald** (`journalctl -u getsync`) |
+| Файл (ротация 5×5 MB) | **`{data_dir}/logs/getsync.log`** (prod: `/opt/getsync/data/logs/getsync.log`) |
+| События синка (UI) | SQLite `sync_events` → Admin → Sync log |
+| Audit-дубль sync/session | та же строка в файле/journald: `getsync.audit` |
+
+Переменные `.env` (опционально):
+
+| Переменная | По умолчанию |
+| ---------- | ------------ |
+| `GETSYNC_LOG_TO_FILE` | `true` |
+| `GETSYNC_LOG_FILE` | `data/logs/getsync.log` (относительно `data_dir`) |
+| `GETSYNC_LOG_LEVEL` | `INFO` |
+
+Отключить файл, оставить только journald: `GETSYNC_LOG_TO_FILE=false`.
+
+```bash
+tail -f /opt/getsync/data/logs/getsync.log
+grep garmin_duplicate /opt/getsync/data/logs/getsync.log
+```
+
 ---
 
 ## Rollback

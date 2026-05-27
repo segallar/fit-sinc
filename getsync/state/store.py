@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 import sqlite3
 from contextlib import contextmanager
@@ -13,6 +14,8 @@ from getsync.users.locale import DEFAULT_LOCALE, normalize_locale
 from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{1,62}$")
+
+_audit_log = logging.getLogger("getsync.audit")
 
 
 def _utcnow() -> str:
@@ -680,6 +683,13 @@ class Store:
                 """,
                 (user_id, activity_id, event_type, message[:2000] or None, _utcnow()),
             )
+        _audit_log.info(
+            "sync user=%s activity=%s event=%s msg=%s",
+            user_id or "—",
+            activity_id or "—",
+            event_type,
+            (message or "")[:500],
+        )
 
     def count_activities_by_status(
         self,
@@ -937,6 +947,13 @@ class Store:
                 """,
                 (user_id, trigger, event_type, message[:2000] or None, _utcnow()),
             )
+        _audit_log.info(
+            "session user=%s trigger=%s event=%s msg=%s",
+            user_id or "—",
+            trigger,
+            event_type,
+            (message or "")[:500],
+        )
 
     def list_session_refresh_events(
         self,

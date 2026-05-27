@@ -98,6 +98,9 @@ SERVICE_UNIT="${SERVICE_UNIT}"
 DEPS_MARKER="${DEPS_MARKER}"
 PLAYWRIGHT_MARKER="${PLAYWRIGHT_MARKER}"
 
+mkdir -p "\${DEPLOY_PATH}/data/logs"
+chown "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/data/logs" 2>/dev/null || true
+
 # Права только на код (не data/, .venv/, .env) — fallback если rsync без --chown (macOS openrsync)
 while IFS= read -r -d '' item; do
   chown -R "\${SERVICE_USER}:\${SERVICE_USER}" "\$item"

@@ -11,6 +11,9 @@ from fastapi.staticfiles import StaticFiles
 from getsync import __version__
 from getsync.build_info import deploy_number, deployed_at_iso, git_commit_short
 from getsync.config import get_settings
+from getsync.logging_setup import configure_logging
+
+configure_logging()
 from getsync.garmin.web_refresh import refresh_web_session
 from getsync.hammerhead.oauth import verify_webhook_signature
 from getsync.state.store import Store

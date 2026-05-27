@@ -10,6 +10,8 @@ WorkingDirectory=/opt/getsync
 EnvironmentFile=-/opt/getsync/.env
 Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/getsync/.cache/ms-playwright
 Environment=HOME=/opt/getsync
+# App log file (also in journald): /opt/getsync/data/logs/getsync.log
+# Disable file log: GETSYNC_LOG_TO_FILE=false in .env
 ExecStart=/opt/getsync/.venv/bin/uvicorn getsync.web.app:app --host 127.0.0.1 --port 8080
 Restart=on-failure
 RestartSec=5

@@ -47,6 +47,22 @@ class Settings(BaseSettings):
     mail_reply_to: str = ""
     app_public_url: str = "http://127.0.0.1:8765"
 
+    # Logging: stderr always; file under data/logs/ when log_to_file=true
+    log_to_file: bool = True
+    log_file: Path | None = None
+    log_level: str = "INFO"
+    log_max_bytes: int = 5_000_000
+    log_backup_count: int = 5
+
+    @property
+    def resolved_log_file(self) -> Path | None:
+        if not self.log_to_file:
+            return None
+        if self.log_file is not None and str(self.log_file).strip():
+            path = Path(self.log_file)
+            return path if path.is_absolute() else self.data_dir / path
+        return self.data_dir / "logs" / "getsync.log"
+
     @property
     def hammerhead_tokens_path(self) -> Path:
         """Legacy v1 path; prefer UserContext.hammerhead_tokens_path."""
