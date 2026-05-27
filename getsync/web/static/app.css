@@ -493,37 +493,30 @@ button.getsync-filter-link:focus-visible {
   min-width: 0;
 }
 
-.getsync-settings-nav-icon {
+.getsync-settings-nav-icon,
+.getsync-settings-nav-img {
   flex-shrink: 0;
   margin-left: 0.25rem;
+}
+
+.getsync-settings-nav-img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.getsync-settings-nav-img--mono {
+  filter: none;
 }
 
 .getsync-settings-nav-icon--profile {
   color: var(--getsync-primary-600);
 }
 
-.getsync-settings-nav-icon--password {
-  color: #5c6b5c;
-}
-
 .getsync-settings-nav-icon--connection {
   color: var(--getsync-primary-700);
-}
-
-.getsync-settings-nav-icon--hammerhead {
-  color: #d35400;
-}
-
-.getsync-settings-nav-icon--garmin {
-  color: #007dc3;
-}
-
-.getsync-settings-nav-icon--strava {
-  color: #fc4c02;
-}
-
-.getsync-settings-nav-icon--wahoo {
-  color: #0099d8;
 }
 
 .getsync-settings-nav-list .nav-link {
