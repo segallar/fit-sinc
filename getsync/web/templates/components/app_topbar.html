@@ -25,9 +25,21 @@
         </div>
         <span class="small fw-semibold d-sm-none text-truncate getsync-topbar-user-text"
               title="{{ current_user.display_name }}">{{ current_user.display_name }}</span>
-        {% if current_user.is_admin %}
-        <span class="badge getsync-badge--synced d-none d-md-inline">{{ t.badge_admin }}</span>
+        {% if show_admin_nav %}
+        <a href="{{ admin_prefix }}/"
+           class="badge rounded-pill getsync-topbar-admin-pill text-decoration-none {% if active_nav.startswith(admin_prefix) %}getsync-topbar-admin-pill--active{% endif %}"
+           title="{{ t.nav_admin }}">{{ t.nav_admin }}</a>
         {% endif %}
+        {% set settings_active = active_nav.startswith(prefix + '/settings') %}
+        <a href="{{ settings_href }}"
+           class="btn btn-link btn-sm getsync-topbar-icon-btn p-1 {% if settings_active %}getsync-topbar-icon-btn--active{% endif %}"
+           aria-label="{{ t.nav_settings }}"
+           title="{{ t.nav_settings }}">
+          <svg class="getsync-topbar-icon" width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492ZM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0Z"/>
+            <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a1.873 1.873 0 0 1-1.255 1.385l-.319.094a1.873 1.873 0 0 1-1.385 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a1.873 1.873 0 0 1 1.385 1.255l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a1.873 1.873 0 0 1 1.255-1.385l.319-.094a1.873 1.873 0 0 1 1.385-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a1.873 1.873 0 0 1-1.255-1.385l-.094-.319Zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 1.255 1.385l.319.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.255 1.385l-.094.319c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-1.255-1.385l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094a1.873 1.873 0 0 0 1.255-1.385l.094-.319Z"/>
+          </svg>
+        </a>
         <a href="{{ prefix }}/logout" class="btn btn-outline-primary btn-sm">{{ t.logout }}</a>
       </div>
       {% endif %}
@@ -54,6 +66,20 @@
       <a href="{{ href }}"
          class="nav-link rounded-2 {% if is_active %}active{% endif %}">{{ label }}</a>
       {% endfor %}
+      <a href="{{ settings_href }}"
+         class="nav-link rounded-2 d-flex align-items-center justify-content-between {% if active_nav.startswith(prefix + '/settings') %}active{% endif %}">
+        <span>{{ t.nav_settings }}</span>
+        <svg class="getsync-topbar-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492ZM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0Z"/>
+          <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a1.873 1.873 0 0 1-1.255 1.385l-.319.094a1.873 1.873 0 0 1-1.385 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a1.873 1.873 0 0 1 1.385 1.255l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a1.873 1.873 0 0 1 1.255-1.385l.319-.094a1.873 1.873 0 0 1 1.385-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a1.873 1.873 0 0 1-1.255-1.385l-.094-.319Zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 1.255 1.385l.319.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.255 1.385l-.094.319c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-1.255-1.385l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094a1.873 1.873 0 0 0 1.255-1.385l.094-.319Z"/>
+        </svg>
+      </a>
+      {% if show_admin_nav %}
+      <a href="{{ admin_prefix }}/"
+         class="nav-link rounded-2 getsync-topbar-admin-pill-link {% if active_nav.startswith(admin_prefix) %}active{% endif %}">
+        {{ t.nav_admin }}
+      </a>
+      {% endif %}
     </nav>
   </div>
 </aside>

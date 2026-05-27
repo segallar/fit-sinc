@@ -83,7 +83,7 @@ def _activities_query_params(
     page: int = 1,
     per_page: int = 50,
     filters: ActivityFilters | None = None,
-    view: str = "list",
+    view: str = "calendar",
     year: int | None = None,
     month: int | None = None,
     extra: dict[str, str] | None = None,
@@ -120,7 +120,7 @@ def _activities_return_url(
     page: int = 1,
     per_page: int = 50,
     filters: ActivityFilters | None = None,
-    view: str = "list",
+    view: str = "calendar",
     year: int | None = None,
     month: int | None = None,
     extra: dict[str, str] | None = None,
@@ -490,7 +490,7 @@ async def app_home() -> RedirectResponse:
 @router.get("/activities", response_class=HTMLResponse, include_in_schema=False)
 async def activities_browser(
     request: Request,
-    view: str = Query("list", pattern="^(list|calendar)$"),
+    view: str = Query("calendar", pattern="^(list|calendar)$"),
     source: str = Query("", pattern="^(|hammerhead|garmin)$"),
     queued: str = Query(""),
     page: int = Query(1, ge=1),

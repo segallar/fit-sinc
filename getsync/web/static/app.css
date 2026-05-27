@@ -474,9 +474,26 @@ button.getsync-filter-link:focus-visible {
   padding: 0.35rem;
   margin: 0;
   list-style: none;
-  background: var(--getsync-surface-muted);
-  border: 1px solid var(--getsync-border);
+  background: var(--getsync-surface);
+  border: 1px solid var(--getsync-primary-100);
   border-radius: var(--getsync-radius-md);
+  box-shadow: var(--getsync-shadow-sm);
+}
+
+.getsync-settings-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.getsync-settings-nav-icon {
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+
+.getsync-settings-nav-list .nav-link.active .getsync-settings-nav-icon {
+  opacity: 0.95;
 }
 
 .getsync-settings-nav-list .nav-link {
@@ -562,7 +579,52 @@ button.getsync-filter-link:focus-visible {
   padding: 0 0 0.25rem 0.35rem;
   margin: 0 0 0 0.5rem;
   list-style: none;
-  border-left: 2px solid var(--getsync-primary-100);
+  border-left: 2px solid var(--getsync-primary-200, var(--getsync-primary-100));
+}
+
+.getsync-topbar-admin-pill {
+  background: var(--getsync-status-synced);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35em 0.7em;
+  line-height: 1.2;
+  border: 0;
+}
+
+.getsync-topbar-admin-pill:hover,
+.getsync-topbar-admin-pill:focus {
+  color: #fff;
+  background: #157347;
+}
+
+.getsync-topbar-admin-pill--active {
+  box-shadow: 0 0 0 2px var(--getsync-primary-100);
+}
+
+.getsync-topbar-icon-btn {
+  color: var(--getsync-text-muted);
+  line-height: 1;
+}
+
+.getsync-topbar-icon-btn:hover,
+.getsync-topbar-icon-btn:focus {
+  color: var(--getsync-primary-700);
+}
+
+.getsync-topbar-icon-btn--active {
+  color: var(--getsync-primary-600);
+}
+
+.getsync-topbar-icon {
+  display: block;
+}
+
+.getsync-topbar-admin-pill-link {
+  align-self: flex-start;
+  width: fit-content;
+  background: var(--getsync-status-synced) !important;
+  color: #fff !important;
 }
 
 .getsync-settings-nav-sublist .nav-link {

@@ -1,6 +1,6 @@
 # GetSync — UI приложения (единая спецификация)
 
-> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-28 · **Версия:** 0.7.0  
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-28 (topbar, calendar default) · **Версия:** 0.7.0  
 > **Назначение:** один документ для всех страниц `/app` и `/app/admin` — layout, компоненты, плотность, поведение.  
 > **Roadmap:** [PLAN.md](PLAN.md) **2.10** · **Стек:** [UI.md](UI.md) · **Карта URL / flows:** [design/SCREENS.md](design/SCREENS.md)
 
@@ -23,7 +23,8 @@
 
 | Тема | Решение |
 |------|---------|
-| **Sidebar** | Пункты nav + внизу **блок user** (display/email, slug, Logout). Пункт **Admin** в nav только если `is_admin` |
+| **Topbar** | Nav: только **Activities**. **Settings** — иконка шестерёнки между user и Logout. **Admin** — зелёный pill справа (только `is_admin`), не в nav |
+| **Activities default** | **`view=calendar`** при открытии `/app/activities` без query; вкладки: Calendar \| List |
 | **HH / Garmin** | **Только Settings** → `?section=hammerhead|garmin` (+ `#garmin-session` на Garmin) — **нет** banner на Activities |
 | **Activities** | **Главный экран**; List \| Calendar; unified HH+Garmin; внизу **sync summary** + retry errors (без таблицы лога) |
 | **Sync log** | **Только admin** → `/app/admin/sync-log` (все tenants, колонка User); legacy `/app/log` → redirect |
@@ -46,13 +47,13 @@
 
 ```text
 ┌──────────────────────────────────────────────────────────────────┐
-│ [ico] GetSync   Activities  Settings   [Admin]  user              │
+│ [ico] GetSync   Activities          user  [Admin]  ⚙  Logout      │
 ├──────────────────────────────────────────────────────────────────┤
 │  page_header · main content (full width, left-aligned)              │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-**Сейчас в коде** ([`cabinet.py`](../getsync/web/cabinet.py)): nav-pills + topbar · **Activities** → **Settings** · Admin в topbar если `is_admin`. **Main:** full width, left edge (см. §1 «Ширина кабинета»).
+**Сейчас в коде** ([`app_topbar.html`](../getsync/web/templates/components/app_topbar.html), [`cabinet.py`](../getsync/web/cabinet.py)): topbar · nav **только Activities** · Settings (`settings_href`) — **иконка** ⚙ · Admin — **pill** `.getsync-topbar-admin-pill` (зелёный). **Main:** full width, left edge (см. §1 «Ширина кабинета»).
 
 | URL legacy | Куда |
 |------------|------|
@@ -158,7 +159,8 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 | **Garmin session** | `components/garmin_session_section.html` | Settings `#garmin-session` (внутри Connections) |
 | **Status badge** | `status_badge` macro | Только macro для sync status |
 | **Connections** | секция в Settings | HH OAuth + Garmin status/login |
-| **Settings subnav** | `components/settings_subnav.html` | Profile · **Connections** (вложенный список: Hammerhead, Garmin, …) · Password |
+| **Settings subnav** | `components/settings_subnav.html` | Белая карточка (`surface` + shadow); справа у пункта — `settings_nav_icon.html` |
+| **Topbar actions** | `app_topbar.html` | Admin pill · Settings gear · Logout |
 | **Settings form row** | `components/settings_form_macros.html` → `settings_field` | Label и control **в одну строку** (`col-sm-4` / `col-sm-8`, `form-control-sm`) |
 | **Re-sync** | `resync_form.html` | POST + confirm для force |
 | **Pager** | `pager.html` | Log, activities |
@@ -209,7 +211,7 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 | Блок | Содержание |
 |------|------------|
 | Header | Sub-header: title, date/type dropdowns, view toggle List \| Calendar \| Map |
-| **Tabs** | **List** (default) \| **Calendar** — `activities_tabs.html` |
+| **Tabs** | **Calendar** (default) \| **List** — `activities_tabs.html`; без `view` → `calendar` |
 | Filters | List: source, `q`, status, type, date_from/to, per_page · Calendar: **source** only |
 | **Calendar view** | `?view=calendar&year=&month=` — сетка месяца, worst status, счётчик; ‹ › Today |
 | **List view** | `?view=list` — meta, table, pager |
@@ -223,7 +225,7 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 
 | Параметр | List | Calendar |
 |----------|------|----------|
-| `view` | `list` (default) | `calendar` |
+| `view` | `list` | `calendar` (default) |
 | `source` | all / hammerhead / garmin | то же |
 | `q`, `status`, `activity_type`, `date_from`, `date_to`, `page`, `per_page` | ✅ | скрыты (кроме source) |
 | `year`, `month` | — | текущий или из URL |
@@ -259,7 +261,8 @@ python3 -m uvicorn getsync.web.app:app --reload --port 8080
 
 | Класс / token | Значение |
 |---------------|----------|
-| Subnav link | `font-size: 0.9rem` — `.getsync-settings-nav-list .nav-link` |
+| Subnav link | `font-size: 0.9rem` — `.getsync-settings-nav-list .nav-link`; фон **белый** + border primary-100 + shadow (не сливаться с `bg-light`) |
+| Subnav icon | справа — `.getsync-settings-nav-icon` 16×16 |
 | Панель + поля | `0.9rem` — `.getsync-settings-panel`, `.getsync-settings-label`, controls |
 | Заголовок секции | `.getsync-settings-heading` — тот же размер, `font-weight: 500`, primary-700 |
 
@@ -440,3 +443,4 @@ Legends: `h6 text-primary` — как в settings.
 | 2026-05-26 | Q&A блок 2: sidebar+user, connections только Settings, calendar+activities, settings anchors, Garmin UI v1 |
 | 2026-05-26 | Dashboard снят; sync log → admin; Activities sync summary; List/Calendar; connections+garmin-session |
 | 2026-05-27 | Settings: subnav 0.9rem, подменю по интеграциям (`section=hammerhead|garmin|…`), горизонтальные form rows |
+| 2026-05-28 | Activities default Calendar; topbar Admin pill + Settings gear; settings subnav контраст + иконки |

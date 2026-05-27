@@ -15,16 +15,12 @@ ADMIN_PREFIX = "/app/admin"
 
 _NAV_KEYS = (
     ("nav_activities", f"{APP_PREFIX}/activities"),
-    ("nav_settings", f"{APP_PREFIX}/settings"),
 )
 
 
 def nav_items_for(user, lang: str) -> list[tuple[str, str]]:
     t = cabinet_strings(lang)
-    items = [(href, t[key]) for key, href in _NAV_KEYS]
-    if user and user.is_admin:
-        items.append((f"{ADMIN_PREFIX}/", t["nav_admin"]))
-    return items
+    return [(href, t[key]) for key, href in _NAV_KEYS]
 
 
 def _normalize_active(active: str, prefix: str) -> str:
@@ -56,6 +52,8 @@ def cabinet_context(
         "t": t,
         "prefix": APP_PREFIX,
         "admin_prefix": ADMIN_PREFIX,
+        "settings_href": f"{APP_PREFIX}/settings",
+        "show_admin_nav": bool(user and user.is_admin),
         "wide": wide,
         "app_main_class": app_main_class.strip(),
     }

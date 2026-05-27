@@ -51,6 +51,10 @@ class TestSettings(unittest.TestCase):
                 home = client.get("/app/", follow_redirects=True)
                 self.assertIn("Activities", home.text)
 
+                activities = client.get("/app/activities")
+                self.assertEqual(activities.status_code, 200)
+                self.assertIn("getsync-cal-", activities.text)
+
                 r = client.post(
                     "/app/settings/profile",
                     data={

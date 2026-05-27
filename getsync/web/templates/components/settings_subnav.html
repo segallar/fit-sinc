@@ -1,10 +1,11 @@
 <nav class="getsync-settings-subnav" aria-label="Settings sections">
   <ul class="nav flex-column getsync-settings-nav-list">
     <li class="nav-item">
-      <a class="nav-link {% if settings_section == 'profile' %}active{% endif %}"
+      <a class="nav-link getsync-settings-nav-link {% if settings_section == 'profile' %}active{% endif %}"
          href="{{ prefix }}/settings?section=profile"
          {% if settings_section == 'profile' %}aria-current="page"{% endif %}>
-        {{ t.profile_h3 }}
+        <span>{{ t.profile_h3 }}</span>
+        {% with name='profile' %}{% include "components/settings_nav_icon.html" %}{% endwith %}
       </a>
     </li>
     <li class="nav-item getsync-settings-nav-group">
@@ -12,20 +13,22 @@
       <ul class="nav flex-column getsync-settings-nav-sublist">
         {% for item in settings_nav_connections %}
         <li class="nav-item">
-          <a class="nav-link {% if settings_section == item.id %}active{% endif %}{% if not item.available %} getsync-settings-nav-link--muted{% endif %}"
+          <a class="nav-link getsync-settings-nav-link {% if settings_section == item.id %}active{% endif %}{% if not item.available %} getsync-settings-nav-link--muted{% endif %}"
              href="{{ prefix }}/settings?section={{ item.id }}"
              {% if settings_section == item.id %}aria-current="page"{% endif %}>
-            {{ item.name }}
+            <span>{{ item.name }}</span>
+            {% with name=item.id %}{% include "components/settings_nav_icon.html" %}{% endwith %}
           </a>
         </li>
         {% endfor %}
       </ul>
     </li>
     <li class="nav-item">
-      <a class="nav-link {% if settings_section == 'password' %}active{% endif %}"
+      <a class="nav-link getsync-settings-nav-link {% if settings_section == 'password' %}active{% endif %}"
          href="{{ prefix }}/settings?section=password"
          {% if settings_section == 'password' %}aria-current="page"{% endif %}>
-        {{ t.password_h3 }}
+        <span>{{ t.password_h3 }}</span>
+        {% with name='password' %}{% include "components/settings_nav_icon.html" %}{% endwith %}
       </a>
     </li>
   </ul>
