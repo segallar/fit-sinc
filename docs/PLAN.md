@@ -1,7 +1,7 @@
 # Roadmap GetSync
 
 
-> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  > **Prod:** [v0.6.0](#v060--зафиксировано-2026-05-26) · **В разработке:** **v0.7.0** (кабинет / дизайн)  
+> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0 · **2.17** tenant UUID — отложено (H2)  > **Prod:** [v0.6.0](#v060--зафиксировано-2026-05-26) · **В разработке:** **v0.7.0** (кабинет / дизайн)  
 > **Выполненное до v0.6** (фазы 0–5, 5b) — [PLAN-ARCHIVE.md](archive/PLAN-ARCHIVE.md) · **~112** тестов (CI `unittest discover`) · HH→Garmin на sirocco.
 
 **Стратегия:** [VISION.md](VISION.md) (product vision, 3 горизонта) · **Domain v0:** [DOMAIN-MODEL.md](DOMAIN-MODEL.md)
@@ -152,6 +152,7 @@ flowchart TB
 | **2.11** | H2 | ⏸ | Лендинг SEO / скрины | 2–3 веч | **2.10** |
 | **2.4** | H2 | ⏸ | Telegram-алерты | 1–2 веч | **2.14** |
 | **2.6** | H2 | ⏸ | Email verify — [2.1e-EMAIL.md](2.1e-EMAIL.md) | 2–4 веч | публичный register |
+| **2.17** | H2 | ⏸ | Tenant `id` = UUID, `slug` отдельно — [§2.17](#217--tenant-id-uuid) | 2–3 веч | multi-tenant |
 | **2.7** | H2 | ⏸ | Connections/rules в БД | 1–2 нед | **2.16**, **3.1** |
 | **2.8** | H3 | 🔵 | Spike Source/Sink models | 2–3 веч | — |
 | **2.9** | H3 | 🔵 | Manual FIT upload | 1–2 веч | storage ✅ |
@@ -191,7 +192,7 @@ flowchart LR
 | **Стратегия** | Три горизонта, vision, non-goals — [VISION.md](VISION.md) |
 | **v0.7** | Кабинет: дизайн (**2.10**), Garmin login UI (**2.12**), тесты (**2.13**), **2.14**; backend credentials (**2.16**) ✅ |
 | **H1** | ~~**1.5** getsync.me~~ ✅ |
-| **H2** | **2.11** · **2.4** · **2.6** |
+| **H2** | **2.11** · **2.4** · **2.6** · **2.17** |
 | **H3** | **2.8** → **3.11.*** → **3.9** → **3.1** ∥ **3.3** → **3.5** |
 
 **Порядок H3 (Garmin + хаб):**
@@ -257,6 +258,35 @@ flowchart LR
 | 301 `fit.romansegalla.online` → app | ✅ 2026-05-27 |
 
 [1.5-RENAME.md](archive/1.5-RENAME.md) — полный чеклист и backlog.
+
+---
+
+## Детали: H2 — multi-tenant и платформа
+
+### 2.17 — Tenant `id` = UUID
+
+**Статус:** отложено (не v0.7). Сейчас `users.id` часто совпадает со `slug` (`default`, …); для одного tenant на prod это нормально.
+
+**Цель:** внутренний ключ tenant — непредсказуемый **UUID** (или ULID); **slug** — отдельное уникальное имя для людей, CLI и Admin (без смены ключа при переименовании slug в будущем).
+
+| Сейчас | Целевое |
+| ------ | ------- |
+| `id = user_id or slug` при создании | `id = uuid4()` всегда |
+| `data/users/{id}/` | тот же путь, но `{uuid}` |
+| Admin: колонки id + slug | **slug** + email; id — monospace при необходимости |
+| `DEFAULT_USER_ID=default` | миграция default → uuid, `slug='default'` |
+
+**Объём работ:**
+
+1. `Store.create_user` — генерировать UUID; slug валидировать отдельно.
+2. Миграция prod/dev: `UPDATE users`, `UPDATE` FK в `activities` / `sync_events` / …; `mv data/users/default → data/users/{uuid}`.
+3. Register / CLI / Admin edit URL — оставить lookup по slug **или** id (как сейчас `_find_user`).
+4. Документация: [DOMAIN-MODEL.md](DOMAIN-MODEL.md) (Athlete / User).
+5. Тесты + чеклист на staging перед prod.
+
+**Когда делать:** перед массовой регистрацией и **3.12** Public API; не блокирует **2.10** / smoke HH→Garmin.
+
+**Не делать сейчас:** только упростить Admin (скрыть дублирующую колонку id, если `id == slug`) — без миграции.
 
 ---
 

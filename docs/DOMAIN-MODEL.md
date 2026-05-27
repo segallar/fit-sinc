@@ -1,6 +1,6 @@
 # Domain Model (v0)
 
-> **Создано:** 2026-05-27 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
+> **Создано:** 2026-05-27 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0 · **2.17** UUID tenant id — [PLAN.md](PLAN.md#217--tenant-id-uuid)  
 > **Стратегия:** [VISION.md](VISION.md) · **Tactical:** [PLAN.md](PLAN.md) · **SQLite сегодня:** [DATABASE.md](DATABASE.md) · **FIT:** [STORAGE.md](STORAGE.md)
 
 Черновик **canonical domain model** для GetSync. Описывает целевые сущности и mapping на текущую реализацию. Не дублирует полную SQL-схему — см. [DATABASE.md](DATABASE.md).
@@ -27,7 +27,8 @@
 
 | Поле (concept) | Сейчас | Примечание |
 | -------------- | ------ | ---------- |
-| id | `users.id` | PK, slug-based |
+| id | `users.id` | PK; сейчас часто = `slug` (`default`); **roadmap:** UUID (**2.17**) |
+| slug | `users.slug` | UNIQUE, human-readable; не меняется после создания |
 | email, profile | ✅ | |
 | timezone, locale | ✅ | |
 | hammerhead_user_id | ✅ | webhook routing |
