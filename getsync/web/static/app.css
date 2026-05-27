@@ -482,18 +482,48 @@ button.getsync-filter-link:focus-visible {
 
 .getsync-settings-nav-link {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
 }
 
-.getsync-settings-nav-icon {
-  flex-shrink: 0;
-  opacity: 0.55;
+.getsync-settings-nav-text {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.getsync-settings-nav-list .nav-link.active .getsync-settings-nav-icon {
-  opacity: 0.95;
+.getsync-settings-nav-icon {
+  flex-shrink: 0;
+  margin-left: 0.25rem;
+}
+
+.getsync-settings-nav-icon--profile {
+  color: var(--getsync-primary-600);
+}
+
+.getsync-settings-nav-icon--password {
+  color: #5c6b5c;
+}
+
+.getsync-settings-nav-icon--connection {
+  color: var(--getsync-primary-700);
+}
+
+.getsync-settings-nav-icon--hammerhead {
+  color: #d35400;
+}
+
+.getsync-settings-nav-icon--garmin {
+  color: #007dc3;
+}
+
+.getsync-settings-nav-icon--strava {
+  color: #fc4c02;
+}
+
+.getsync-settings-nav-icon--wahoo {
+  color: #0099d8;
 }
 
 .getsync-settings-nav-list .nav-link {
@@ -504,13 +534,19 @@ button.getsync-filter-link:focus-visible {
 }
 
 .getsync-settings-nav-list .nav-link:hover {
-  background: var(--getsync-surface);
+  background: var(--getsync-primary-50);
+  color: var(--getsync-text);
 }
 
 .getsync-settings-nav-list .nav-link.active {
-  background: var(--getsync-primary);
-  color: #fff;
-  font-weight: 500;
+  background: var(--getsync-primary-50);
+  color: var(--getsync-primary-900);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--getsync-primary-600);
+}
+
+.getsync-settings-nav-list .nav-link.active .getsync-settings-nav-text {
+  color: var(--getsync-primary-900);
 }
 
 .getsync-settings-section {
@@ -564,22 +600,64 @@ button.getsync-filter-link:focus-visible {
   margin-top: 0.125rem;
 }
 
-.getsync-settings-nav-group-label {
-  display: block;
-  font-size: 0.75rem;
+.getsync-settings-nav-details {
+  margin: 0;
+}
+
+.getsync-settings-nav-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--getsync-text);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--getsync-radius-sm);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.getsync-settings-nav-summary::-webkit-details-marker {
+  display: none;
+}
+
+.getsync-settings-nav-summary::marker {
+  content: "";
+}
+
+.getsync-settings-nav-summary:hover {
+  background: var(--getsync-primary-50);
+}
+
+.getsync-settings-nav-details[open] > .getsync-settings-nav-summary {
+  color: var(--getsync-primary-900);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+}
+
+.getsync-settings-nav-summary-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.getsync-settings-nav-chevron {
   color: var(--getsync-text-muted);
-  padding: 0.35rem 0.75rem 0.2rem;
+  transition: transform 0.15s ease;
+}
+
+.getsync-settings-nav-details[open] .getsync-settings-nav-chevron {
+  transform: rotate(180deg);
 }
 
 .getsync-settings-nav-sublist {
   gap: 0.0625rem;
-  padding: 0 0 0.25rem 0.35rem;
+  padding: 0.15rem 0 0.25rem 0.35rem;
   margin: 0 0 0 0.5rem;
   list-style: none;
-  border-left: 2px solid var(--getsync-primary-200, var(--getsync-primary-100));
+  border-left: 2px solid var(--getsync-primary-100);
 }
 
 .getsync-topbar-admin-pill {
@@ -613,7 +691,11 @@ button.getsync-filter-link:focus-visible {
 }
 
 .getsync-topbar-icon-btn--active {
-  color: var(--getsync-primary-600);
+  color: var(--getsync-primary-700);
+}
+
+.getsync-topbar-icon-btn .getsync-topbar-icon {
+  stroke-width: 2;
 }
 
 .getsync-topbar-icon {

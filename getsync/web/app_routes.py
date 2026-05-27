@@ -438,6 +438,7 @@ async def ui_preview_page(request: Request, page_name: str) -> str:
     if page_name == "settings":
         from getsync.web.settings_routes import (
             _active_connection,
+            _settings_connections_open,
             _settings_nav_connections,
             _settings_section,
         )
@@ -450,6 +451,7 @@ async def ui_preview_page(request: Request, page_name: str) -> str:
         groups = list_connections(ctx, user)
         section = _settings_section(request)
         extra["settings_section"] = section
+        extra["settings_connections_open"] = _settings_connections_open(section)
         extra["settings_nav_connections"] = _settings_nav_connections(groups)
         extra["active_connection"] = _active_connection(groups, section)
     return _render_ui_preview(request, template, active=active, **extra)

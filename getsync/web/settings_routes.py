@@ -64,6 +64,10 @@ def _settings_nav_connections(groups) -> list[dict[str, object]]:
     ]
 
 
+def _settings_connections_open(section: str) -> bool:
+    return section in SETTINGS_CONNECTION_SECTIONS
+
+
 def _active_connection(groups, section: str):
     if section not in SETTINGS_CONNECTION_SECTIONS:
         return None
@@ -157,6 +161,7 @@ async def settings_page(request: Request) -> str:
         conn=connection_settings_view(ctx, user),
         connection_groups=connection_groups,
         settings_section=section,
+        settings_connections_open=_settings_connections_open(section),
         settings_nav_connections=_settings_nav_connections(connection_groups),
         active_connection=_active_connection(connection_groups, section),
         **garmin_session_context(ctx),
