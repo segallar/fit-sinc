@@ -69,6 +69,18 @@ class SessionRefreshEventRow:
     created_at: str
 
 
+@dataclass(frozen=True)
+class AdminLogRow:
+    """Unified admin log entry (sync pipeline + Garmin JWT refresh)."""
+
+    created_at: str
+    user_id: str | None
+    log_kind: str  # sync | garmin
+    event_type: str
+    subject: str | None
+    message: str | None
+
+
 class Store:
     def __init__(self, db_path: Path) -> None:
         self.db_path = db_path
@@ -864,6 +876,60 @@ class Store:
                 (user_id, user_id),
             ).fetchone()
         return int(row["n"]) if row else 0
+
+    def count_admin_log(self, user_id: str | None = None) -> int:
+        with self._conn() as conn:
+            row = conn.execute(
+                """
+                SELECT
+                  (SELECT COUNT(*) FROM sync_events
+                   WHERE (? IS NULL OR user_id = ?))
+                + (SELECT COUNT(*) FROM session_refresh_events
+                   WHERE (? IS NULL OR user_id = ?))
+                AS n
+                """,
+                (user_id, user_id, user_id, user_id),
+            ).fetchone()
+        return int(row["n"]) if row else 0
+
+    def list_admin_log(
+        self,
+        limit: int = 50,
+        offset: int = 0,
+        *,
+        user_id: str | None = None,
+    ) -> list[AdminLogRow]:
+        with self._conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT created_at, user_id, log_kind, event_type, subject, message
+                FROM (
+                    SELECT created_at, user_id, 'sync' AS log_kind, event_type,
+                           activity_id AS subject, message
+                    FROM sync_events
+                    WHERE (? IS NULL OR user_id = ?)
+                    UNION ALL
+                    SELECT created_at, user_id, 'garmin' AS log_kind, event_type,
+                           trigger AS subject, message
+                    FROM session_refresh_events
+                    WHERE (? IS NULL OR user_id = ?)
+                )
+                ORDER BY created_at DESC, log_kind DESC
+                LIMIT ? OFFSET ?
+                """,
+                (user_id, user_id, user_id, user_id, limit, offset),
+            ).fetchall()
+        return [
+            AdminLogRow(
+                created_at=r["created_at"],
+                user_id=r["user_id"],
+                log_kind=r["log_kind"],
+                event_type=r["event_type"],
+                subject=r["subject"],
+                message=r["message"],
+            )
+            for r in rows
+        ]
 
     @staticmethod
     def _garmin_id_from_result(raw: str | None) -> int | None:

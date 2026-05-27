@@ -11,34 +11,34 @@
 
   <div class="card shadow-sm getsync-settings-card mb-0">
     <div class="table-responsive">
-      <table class="table table-hover table-sm mb-0">
+      <table class="table table-hover table-sm mb-0 getsync-admin-table">
         <thead class="table-light">
           <tr>
-            <th>id</th>
-            <th>slug</th>
+            <th class="getsync-admin-col-mono-clip">id</th>
+            <th class="getsync-admin-col-mono-clip">slug</th>
             <th>Name</th>
-            <th>Email</th>
+            <th class="getsync-admin-col-email">Email</th>
             <th>Telegram</th>
-            <th>TZ</th>
-            <th>HH user</th>
-            <th>admin</th>
-            <th>off</th>
-            <th></th>
+            <th class="getsync-admin-col-tz">TZ</th>
+            <th class="getsync-admin-col-mono-clip">HH user</th>
+            <th class="getsync-admin-col-flag">admin</th>
+            <th class="getsync-admin-col-flag">off</th>
+            <th class="getsync-admin-col-actions"></th>
           </tr>
         </thead>
         <tbody>
           {% for u in users %}
           <tr>
-            <td class="font-monospace small">{{ u.id }}</td>
-            <td>{{ u.slug }}</td>
+            <td class="getsync-admin-col-mono-clip" title="{{ u.id }}">{{ u.id }}</td>
+            <td class="getsync-admin-col-mono-clip" title="{{ u.slug }}">{{ u.slug }}</td>
             <td>{{ u.display_name }}</td>
-            <td>{{ u.email }}</td>
+            <td class="getsync-admin-col-email" title="{{ u.email }}">{{ u.email }}</td>
             <td>{{ u.telegram or '—' }}</td>
-            <td>{{ u.timezone }}</td>
-            <td class="font-monospace small">{{ u.hammerhead_user_id or '—' }}</td>
-            <td>{{ 'yes' if u.is_admin else '' }}</td>
-            <td>{{ 'yes' if u.disabled else '' }}</td>
-            <td>
+            <td class="getsync-admin-col-tz">{{ u.timezone }}</td>
+            <td class="getsync-admin-col-mono-clip" title="{{ u.hammerhead_user_id or '' }}">{{ u.hammerhead_user_id or '—' }}</td>
+            <td class="getsync-admin-col-flag">{{ 'yes' if u.is_admin else '' }}</td>
+            <td class="getsync-admin-col-flag">{{ 'yes' if u.disabled else '' }}</td>
+            <td class="getsync-admin-col-actions">
               <a href="{{ admin_prefix }}/users/{{ u.id }}/edit" class="btn btn-outline-secondary btn-sm">Edit</a>
             </td>
           </tr>

@@ -1,8 +1,8 @@
-{# name: users | sync-log | garmin-log #}
+{# name: users | health | log #}
 {% if name == 'users' %}
 <i class="bi bi-people getsync-settings-nav-icon getsync-settings-nav-icon--profile" aria-hidden="true"></i>
-{% elif name == 'sync-log' %}
+{% elif name == 'health' %}
+<i class="bi bi-heart-pulse getsync-settings-nav-icon getsync-settings-nav-icon--profile" aria-hidden="true"></i>
+{% elif name == 'log' %}
 <i class="bi bi-journal-text getsync-settings-nav-icon getsync-settings-nav-icon--connection" aria-hidden="true"></i>
-{% elif name == 'garmin-log' %}
-<i class="bi bi-key getsync-settings-nav-icon getsync-settings-nav-icon--password" aria-hidden="true"></i>
 {% endif %}

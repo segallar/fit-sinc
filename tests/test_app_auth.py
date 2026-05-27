@@ -121,13 +121,19 @@ class TestAdminAccess(unittest.TestCase):
                 self.assertIn("getsync-app-topbar", users.text)
                 self.assertIn("admin@test.local", users.text)
 
-                sync_log = client.get("/app/admin/sync-log")
-                self.assertEqual(sync_log.status_code, 200)
-                self.assertIn("Sync log", sync_log.text)
+                admin_log = client.get("/app/admin/log")
+                self.assertEqual(admin_log.status_code, 200)
+                self.assertIn("Sync pipeline", admin_log.text)
+                self.assertIn("JWT_WEB", admin_log.text)
 
-                garmin_log = client.get("/app/admin/log")
-                self.assertEqual(garmin_log.status_code, 200)
-                self.assertIn("Garmin JWT refresh log", garmin_log.text)
+                legacy = client.get("/app/admin/sync-log", follow_redirects=False)
+                self.assertEqual(legacy.status_code, 303)
+                self.assertIn("/app/admin/log", legacy.headers.get("location", ""))
+
+                health = client.get("/app/admin/health")
+                self.assertEqual(health.status_code, 200)
+                self.assertIn("App Health", health.text)
+                self.assertIn("FIT storage", health.text)
 
                 settings = client.get("/app/settings")
                 self.assertEqual(settings.status_code, 200)

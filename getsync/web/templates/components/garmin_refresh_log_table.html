@@ -1,27 +1,27 @@
 <div class="card shadow-sm getsync-settings-card mb-0">
   <div class="table-responsive">
-    <table class="table table-hover table-sm mb-0">
+    <table class="table table-hover table-sm mb-0 getsync-admin-table">
       <thead class="table-light">
         <tr>
-          <th>Time</th>
+          <th class="getsync-admin-col-time">Time</th>
           {% if show_user_column %}
-          <th>User</th>
+          <th class="getsync-admin-col-user">User</th>
           {% endif %}
-          <th>Trigger</th>
-          <th>Event</th>
-          <th>Message</th>
+          <th class="getsync-admin-col-trigger">Trigger</th>
+          <th class="getsync-admin-col-event">Event</th>
+          <th class="getsync-admin-col-message">Message</th>
         </tr>
       </thead>
       <tbody>
         {% for e in garmin_session_events %}
         <tr>
-          <td class="font-monospace small">{{ fmt_date(e.created_at) }}</td>
+          <td class="getsync-admin-col-time getsync-admin-col-mono">{{ fmt_date(e.created_at) }}</td>
           {% if show_user_column %}
-          <td class="font-monospace small">{{ e.user_label }}</td>
+          <td class="getsync-admin-col-user getsync-admin-col-mono">{{ e.user_label }}</td>
           {% endif %}
-          <td>{{ e.trigger }}</td>
-          <td class="fw-medium {% if e.status_class == 'ok' %}text-success{% elif e.status_class == 'failed' %}text-danger{% endif %}">{{ e.event_type }}</td>
-          <td>{{ e.message }}</td>
+          <td class="getsync-admin-col-trigger">{{ e.trigger }}</td>
+          <td class="getsync-admin-col-event fw-medium {% if e.status_class == 'ok' %}text-success{% elif e.status_class == 'failed' %}text-danger{% endif %}">{{ e.event_type }}</td>
+          <td class="getsync-admin-col-message">{{ e.message }}</td>
         </tr>
         {% else %}
         <tr>

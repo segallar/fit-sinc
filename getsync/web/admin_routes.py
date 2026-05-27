@@ -11,8 +11,8 @@ from getsync.config import get_settings
 from getsync.state.store import Store
 from getsync.web.auth import APP_ADMIN_PREFIX
 from getsync.web.cabinet import render_cabinet
-from getsync.web.connections import garmin_refresh_log_context
-from getsync.web.sync_log import sync_log_context
+from getsync.web.admin_health import admin_health_context
+from getsync.web.admin_log import admin_log_context
 
 router = APIRouter(prefix=APP_ADMIN_PREFIX, tags=["admin"])
 A = APP_ADMIN_PREFIX
@@ -44,37 +44,42 @@ class UserFormData:
         return "leave empty to keep" if self.edit else "min. 8 characters"
 
 
-@router.get("/sync-log", response_class=HTMLResponse, include_in_schema=False)
-async def admin_sync_log(
+@router.get("/health", response_class=HTMLResponse, include_in_schema=False)
+async def admin_app_health(request: Request) -> str:
+    settings = get_settings()
+    store = _store()
+    return render_cabinet(
+        request,
+        "pages/admin/health.html",
+        active=f"{A}/health",
+        admin_section="health",
+        **admin_health_context(settings, store),
+    )
+
+
+@router.get("/log", response_class=HTMLResponse, include_in_schema=False)
+async def admin_log(
     request: Request,
     log_page: int = Query(1, ge=1),
 ) -> str:
     store = _store()
     return render_cabinet(
         request,
-        "pages/admin/sync_log.html",
-        active=f"{A}/sync-log",
-        admin_section="sync-log",
-        **sync_log_context(
+        "pages/admin/log.html",
+        active=f"{A}/log",
+        admin_section="log",
+        **admin_log_context(
             store,
             user_id=None,
             log_page=log_page,
-            pager_path=f"{A}/sync-log",
+            pager_path=f"{A}/log",
         ),
     )
 
 
-@router.get("/log", response_class=HTMLResponse, include_in_schema=False)
-async def admin_refresh_log(request: Request) -> str:
-    store = _store()
-    return render_cabinet(
-        request,
-        "pages/admin/log.html",
-        active=f"{A}/log",
-        admin_section="garmin-log",
-        show_user_column=True,
-        **garmin_refresh_log_context(store),
-    )
+@router.get("/sync-log", include_in_schema=False)
+async def admin_sync_log_redirect(log_page: int = Query(1, ge=1)) -> RedirectResponse:
+    return RedirectResponse(f"{A}/log?log_page={log_page}#admin-log", status_code=303)
 
 
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)

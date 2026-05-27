@@ -4,10 +4,10 @@
 
 {% block admin_content %}
 <section class="getsync-settings-section">
-  <h3 class="getsync-settings-heading mb-2">Garmin JWT refresh log</h3>
+  <h3 class="getsync-settings-heading mb-2">Log</h3>
   <p class="text-muted small mb-3">
-    Background and manual <code>JWT_WEB</code> refresh events for all accounts.
+    Sync pipeline (Hammerhead webhook, FIT, Garmin upload) and Garmin <code>JWT_WEB</code> refresh — newest first.
   </p>
-  {% include "components/garmin_refresh_log_table.html" %}
+  {% include "components/admin_log_table.html" %}
 </section>
 {% endblock %}

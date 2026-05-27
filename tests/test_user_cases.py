@@ -115,7 +115,7 @@ class TestUserUseCases(unittest.TestCase):
                 assert_redirect_prefix(
                     client,
                     "/app/log",
-                    location_prefix="/app/admin/sync-log",
+                    location_prefix="/app/admin/log",
                 )
                 assert_redirect_prefix(
                     client,
@@ -189,13 +189,9 @@ class TestAdminUseCases(unittest.TestCase):
                 self.assertEqual(users.status_code, 200)
                 self.assertIn("default", users.text)
 
-                sync_log = client.get("/app/admin/sync-log")
-                self.assertEqual(sync_log.status_code, 200)
-                self.assertIn("Sync log", sync_log.text)
-
-                garmin_log = client.get("/app/admin/log")
-                self.assertEqual(garmin_log.status_code, 200)
-                self.assertIn("Garmin JWT refresh log", garmin_log.text)
+                admin_log = client.get("/app/admin/log")
+                self.assertEqual(admin_log.status_code, 200)
+                self.assertIn("Sync pipeline", admin_log.text)
 
     def test_uc_a02_non_admin_forbidden_on_admin(self) -> None:
         """UC-A02: Regular user gets 403 on /app/admin/."""

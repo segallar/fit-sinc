@@ -9,19 +9,19 @@
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link getsync-settings-nav-link{% if admin_section == 'sync-log' %} active{% endif %}"
-         href="{{ admin_prefix }}/sync-log"
-         {% if admin_section == 'sync-log' %}aria-current="page"{% endif %}>
-        <span class="getsync-settings-nav-text">Sync log</span>
-        {% with name='sync-log' %}{% include "components/admin_nav_icon.html" %}{% endwith %}
+      <a class="nav-link getsync-settings-nav-link{% if admin_section == 'health' %} active{% endif %}"
+         href="{{ admin_prefix }}/health"
+         {% if admin_section == 'health' %}aria-current="page"{% endif %}>
+        <span class="getsync-settings-nav-text">App Health</span>
+        {% with name='health' %}{% include "components/admin_nav_icon.html" %}{% endwith %}
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link getsync-settings-nav-link{% if admin_section == 'garmin-log' %} active{% endif %}"
+      <a class="nav-link getsync-settings-nav-link{% if admin_section == 'log' %} active{% endif %}"
          href="{{ admin_prefix }}/log"
-         {% if admin_section == 'garmin-log' %}aria-current="page"{% endif %}>
-        <span class="getsync-settings-nav-text">Garmin log</span>
-        {% with name='garmin-log' %}{% include "components/admin_nav_icon.html" %}{% endwith %}
+         {% if admin_section == 'log' %}aria-current="page"{% endif %}>
+        <span class="getsync-settings-nav-text">Log</span>
+        {% with name='log' %}{% include "components/admin_nav_icon.html" %}{% endwith %}
       </a>
     </li>
   </ul>

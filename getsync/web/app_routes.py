@@ -793,10 +793,10 @@ async def sync_log_redirect(request: Request, page: int = Query(1, ge=1)) -> Red
     _ctx(request)
     from getsync.web.auth import APP_ADMIN_PREFIX
 
-    dest = f"{APP_ADMIN_PREFIX}/sync-log"
+    dest = f"{APP_ADMIN_PREFIX}/log"
     if page > 1:
         dest = f"{dest}?{H.query_string({'log_page': page})}"
-    return RedirectResponse(f"{dest}#sync-log", status_code=303)
+    return RedirectResponse(f"{dest}#admin-log", status_code=303)
 
 
 @router.get("/session", include_in_schema=False)

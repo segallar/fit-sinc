@@ -616,6 +616,99 @@ button.getsync-filter-link:focus-visible {
   color: var(--getsync-text-muted);
 }
 
+/* Admin: compact log/user tables (Settings panel) */
+.getsync-settings-panel .getsync-admin-table {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  margin-bottom: 0;
+}
+
+.getsync-settings-panel .getsync-admin-table th,
+.getsync-settings-panel .getsync-admin-table td {
+  font-size: inherit;
+  vertical-align: middle;
+  padding: 0.35rem 0.5rem;
+}
+
+.getsync-settings-panel .getsync-admin-table thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--getsync-text-muted);
+  white-space: nowrap;
+}
+
+.getsync-settings-panel .getsync-admin-table .getsync-admin-col-time {
+  white-space: nowrap;
+  min-width: 10.25rem;
+  width: 10.25rem;
+}
+
+.getsync-settings-panel .getsync-admin-table .getsync-admin-col-trigger,
+.getsync-settings-panel .getsync-admin-table .getsync-admin-col-event,
+.getsync-settings-panel .getsync-admin-table .getsync-admin-col-flag {
+  white-space: nowrap;
+}
+
+.getsync-settings-panel .getsync-admin-table .getsync-admin-col-user {
+  white-space: nowrap;
+  max-width: 5.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.getsync-settings-panel .getsync-admin-table .getsync-admin-col-activity {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.75rem;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.getsync-settings-panel .getsync-admin-table .getsync-admin-col-message {
+  min-width: 8rem;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.getsync-settings-panel .getsync-admin-table .getsync-admin-col-mono {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.getsync-settings-panel .getsync-admin-table .getsync-admin-col-mono-clip {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.75rem;
+  max-width: 6.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.getsync-settings-panel .getsync-admin-table .getsync-admin-col-email {
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.getsync-settings-panel .getsync-admin-table .getsync-admin-col-tz {
+  white-space: nowrap;
+  font-size: 0.75rem;
+}
+
+.getsync-settings-panel .getsync-admin-table .getsync-admin-col-actions {
+  white-space: nowrap;
+  width: 1%;
+}
+
+.getsync-settings-panel .getsync-admin-table .btn {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+}
+
 .getsync-settings-nav-group {
   margin-top: 0.125rem;
 }
