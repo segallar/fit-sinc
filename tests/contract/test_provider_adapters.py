@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from getsync.contracts.activities import (
     ActivitySink,
     ActivitySource,
