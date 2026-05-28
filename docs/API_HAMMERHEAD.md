@@ -166,8 +166,6 @@ Hammerhead **POST** на URL из Developer Portal:
 https://app.getsync.me/webhooks/hammerhead
 ```
 
-(legacy до cutover: `https://fit.romansegalla.online/webhooks/hammerhead`)
-
 ### Тело запроса
 
 ```json

@@ -98,14 +98,48 @@ SERVICE_UNIT="${SERVICE_UNIT}"
 DEPS_MARKER="${DEPS_MARKER}"
 PLAYWRIGHT_MARKER="${PLAYWRIGHT_MARKER}"
 
-mkdir -p "\${DEPLOY_PATH}/data/logs"
+mkdir -p "\${DEPLOY_PATH}/data/logs" "\${DEPLOY_PATH}/.cache"
 chown "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/data/logs" 2>/dev/null || true
 
-# Права только на код (не data/, .venv/, .env) — fallback если rsync без --chown (macOS openrsync)
+# macOS openrsync: no --chown; top-level dir often stays Mac UID (501) — getsync cannot create egg-info
+chown "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}"
+find "\${DEPLOY_PATH}" -maxdepth 1 -name '.*' ! -name '.' ! -name '..' -exec chown "\${SERVICE_USER}:\${SERVICE_USER}" {} + 2>/dev/null || true
 while IFS= read -r -d '' item; do
   chown -R "\${SERVICE_USER}:\${SERVICE_USER}" "\$item"
 done < <(find "\${DEPLOY_PATH}" -mindepth 1 -maxdepth 1 \
   ! -name data ! -name .venv ! -name .env ! -name '.*' -print0 2>/dev/null)
+chown -R "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/.cache" 2>/dev/null || true
+rm -rf "\${DEPLOY_PATH}/get_sync.egg-info"
+
+if ! sudo -u \${SERVICE_USER} test -w "\${DEPLOY_PATH}"; then
+  echo "ERROR: \${DEPLOY_PATH} not writable by \${SERVICE_USER} (fix chown after rsync)" >&2
+  exit 1
+fi
+
+# Python >= 3.11 (pyproject requires-python); Ubuntu 22.04 default is 3.10
+PY_FOR_VENV=""
+for candidate in python3.12 python3.11 python3; do
+  if command -v "\$candidate" >/dev/null 2>&1 \
+     && "\$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then
+    PY_FOR_VENV="\$candidate"
+    break
+  fi
+done
+if [[ -z "\$PY_FOR_VENV" ]]; then
+  echo "ERROR: Python >= 3.11 required. On Ubuntu 22.04: apt install -y python3.11 python3.11-venv" >&2
+  exit 1
+fi
+venv_py=""
+if [[ -x "\${DEPLOY_PATH}/.venv/bin/python" ]]; then
+  venv_py="\$(\"\${DEPLOY_PATH}/.venv/bin/python\" -c 'import sys; print(\".\".join(map(str, sys.version_info[:3])))')"
+fi
+if [[ ! -x "\${DEPLOY_PATH}/.venv/bin/python" ]] \
+   || ! "\${DEPLOY_PATH}/.venv/bin/python" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then
+  echo "Recreating .venv with \${PY_FOR_VENV} (was: \${venv_py:-none})"
+  rm -rf "\${DEPLOY_PATH}/.venv"
+  sudo -u \${SERVICE_USER} "\$PY_FOR_VENV" -m venv "\${DEPLOY_PATH}/.venv"
+  chown -R "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/.venv"
+fi
 
 new_hash=\$(sha256sum "\${DEPLOY_PATH}/pyproject.toml" | awk '{print \$1}')
 old_hash=\$(cat "\${DEPLOY_PATH}/\${DEPS_MARKER}" 2>/dev/null || true)

@@ -1,6 +1,6 @@
 # CI/CD и деплой GetSync
 
-> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
+> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-28 · **Версия:** 0.7.0  
 > Личный сервис на одном VPS. **CI/CD:** [GitHub Actions](#github-actions) — основной путь; репозиторий [github.com/segallar/getsync](https://github.com/segallar/getsync). Альтернатива: [GitLab CI](#gitlab-ci).  
 > Индекс документации: [docs/README.md](README.md).
 
@@ -33,7 +33,7 @@ flowchart LR
 | Сервер | `sirocco.romansegalla.online` (`134.209.133.187`) |
 | SSH | `ssh -i ~/.ssh/id_ed25519 root@sirocco.romansegalla.online` |
 | **App (целевой)** | `getsync.me`, `app.getsync.me` |
-| App (legacy DNS) | `fit.romansegalla.online` — 301 → `app.getsync.me` ✅ ([`fit.conf`](../deploy/nginx/fit.conf)) |
+| Тест (staging) | `breeze.romansegalla.online` — Hetzner, см. [миграция](#тестовый-сервер-breeze) |
 | Лендинг (личный) | `romansegalla.online` — proxy на `:8080` |
 | Каталог приложения | `/opt/getsync` |
 | Пользователь сервиса | `getsync:getsync` |
@@ -106,12 +106,27 @@ curl -sk -o /dev/null -w "%{http_code}\n" https://app.getsync.me/app/login
 - [ ] `/health` на обоих хостах
 - [ ] Hammerhead webhook URL обновлён
 
+### Тестовый сервер breeze
+
+| Роль | Значение |
+|------|----------|
+| Хост | Hetzner **breeze** — `188.245.89.95` |
+| DNS (romansegalla) | `breeze.romansegalla.online` → A `188.245.89.95` |
+| Deploy | `GETSYNC_SSH_HOST=breeze.romansegalla.online ./scripts/ci/deploy.sh` |
+| Prod cutover | позже: GoDaddy `@` и `app` → тот же IP; `GETSYNC_SSH_HOST` в GitHub Actions |
+
+Legacy `fit.romansegalla.online` на breeze **не** поднимается (снят 2026-05-28).
+
+nginx: [`deploy/nginx/breeze.conf`](../deploy/nginx/breeze.conf) → `/etc/nginx/conf.d/breeze.conf`, затем `certbot --nginx -d breeze.romansegalla.online`.
+
 ---
 
 ## Первичная настройка сервера (один раз)
 
 ```bash
-apt install -y python3.12-venv nginx certbot python3-certbot-nginx
+apt install -y python3-venv nginx certbot python3-certbot-nginx
+# Ubuntu 22.04: default python3 is 3.10 — нужен >=3.11:
+# apt install -y python3.11 python3.11-venv
 
 useradd -r -d /opt/getsync -s /usr/sbin/nologin getsync
 mkdir -p /opt/getsync/data/users/default/fits
@@ -244,17 +259,9 @@ ssh root@sirocco \
 | `/health` | нет | Healthcheck |
 | `/`, `/static/*`, `/app/*` | сессия приложения | UI |
 
-Конфиг: [`deploy/nginx/getsync.conf`](../deploy/nginx/getsync.conf) (целевой), legacy redirect: [`deploy/nginx/fit.conf`](../deploy/nginx/fit.conf) (`fit.romansegalla.online` → `https://app.getsync.me$request_uri`).
+Конфиг: [`deploy/nginx/getsync.conf`](../deploy/nginx/getsync.conf).
 
-Legacy redirect (уже на sirocco с 2026-05-27):
-
-```bash
-scp -i ~/.ssh/id_ed25519 deploy/nginx/fit.conf \
-  root@sirocco.romansegalla.online:/etc/nginx/conf.d/fit.conf
-ssh -i ~/.ssh/id_ed25519 root@sirocco.romansegalla.online \
-  'nginx -t && systemctl reload nginx'
-curl -sI https://fit.romansegalla.online/health | grep -i location
-```
+Legacy-хост `fit.romansegalla.online` снят (2026-05-28): DNS A удалён, `fit.conf` и certbot-сертификат на sirocco удалены.
 
 **Production `.env`:**
 

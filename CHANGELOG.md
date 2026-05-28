@@ -1,6 +1,6 @@
 # Changelog
 
-> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-28 · **Версия:** 0.7.0  
 > Релизы продукта; версии в шапках `docs/` должны соответствовать актуальному содержанию.  
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/). Версии — [SemVer](https://semver.org/).
@@ -12,9 +12,13 @@
 - **2.16** — CredentialStore (Fernet), per-user `connections/garmin/`, auto re-login Garmin (`ensure_garmin_session`)
 - Mail module: `getsync/mail`, backends `null` / `console` / `resend`, CLI `getsync mail test`
 - CI: GitHub Actions `checkout@v6`, `setup-python@v6` (Node 24 runtime)
-- Ops: nginx 301 `fit.romansegalla.online` → `app.getsync.me` ([`deploy/nginx/fit.conf`](deploy/nginx/fit.conf)); prod без глобальных `GARMIN_EMAIL` / `GARMIN_PASSWORD`
+- Ops: prod без глобальных `GARMIN_EMAIL` / `GARMIN_PASSWORD`
 - **2.12** — Garmin login в Settings: email/password, сохранение credentials (`POST /app/settings/garmin/login`)
 - **2.13** (часть) — `tests/flows.py`, `test_user_cases.py` (guest/user/admin journeys)
+
+### Removed
+
+- Legacy DNS/host `fit.romansegalla.online` (nginx `fit.conf`, A-запись в зоне romansegalla)
 
 ### Планируется
 

@@ -48,7 +48,7 @@
 | **getsync** | Python-пакет и основная CLI-команда |
 | **История rename** | fit_sinc → GetSync — [archive/1.5-RENAME.md](archive/1.5-RENAME.md) (миграции в коде сняты) |
 | **tenant** | Пользователь сервиса (`users.id`, каталог `data/users/{id}/`) |
-| **Production app** | `https://app.getsync.me` · legacy `fit.romansegalla.online` (301 → `app.getsync.me`) |
+| **Production app** | `https://app.getsync.me` |
 | **Стратегия** | Vision + domain — [VISION.md](VISION.md) · [DOMAIN-MODEL.md](DOMAIN-MODEL.md); тактика — [PLAN.md](PLAN.md) |
 | **Mail** | Infra ✅ (`getsync/mail`, Resend); verify при register — **2.6** / **2.1e** 📋 |
 

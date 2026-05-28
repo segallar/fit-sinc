@@ -255,7 +255,7 @@ flowchart LR
 | Hammerhead webhook + OAuth | ✅ |
 | Браузер: getsync.me, app login | ✅ |
 | E2E ride → sync | отложено |
-| 301 `fit.romansegalla.online` → app | ✅ 2026-05-27 |
+| Legacy `fit.romansegalla.online` | снят 2026-05-28 (только `app.getsync.me`) |
 
 [1.5-RENAME.md](archive/1.5-RENAME.md) — полный чеклист и backlog.
 
@@ -333,7 +333,7 @@ flowchart LR
 | Manual activity без FIT | `no_file`, не error (**3.11.2**) |
 | Регрессия **2.10** | **2.13** после вёрстки |
 
-Закрыто (2026-05-27): legacy 301 `fit.romansegalla.online` → `app.getsync.me` — [`deploy/nginx/fit.conf`](../deploy/nginx/fit.conf), smoke в [CI-CD.md](CI-CD.md#nginx).
+Закрыто (2026-05-28): legacy `fit.romansegalla.online` снят — только `app.getsync.me`; см. [CI-CD.md](CI-CD.md#nginx).
 
 ---
 
