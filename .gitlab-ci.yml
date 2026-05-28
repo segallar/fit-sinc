@@ -1,9 +1,9 @@
-# GetSync — test on MR/push, deploy on main/master/hotfix/* (GitHub Actions: sirocco + breeze matrix)
+# GetSync — test on MR/push, deploy to breeze on main/master/hotfix/*
 # Primary CI: GitHub Actions (.github/workflows/test.yml)
 # Variables (Settings → CI/CD → Variables):
-#   SSH_PRIVATE_KEY (File, masked) — private key for root@sirocco
+#   SSH_PRIVATE_KEY (File, masked) — private key for root@breeze
 # Optional:
-#   GETSYNC_SSH_HOST (default: sirocco.romansegalla.online)
+#   GETSYNC_SSH_HOST (default: breeze.romansegalla.online)
 #   GETSYNC_SSH_USER   (default: root)
 #   GETSYNC_DEPLOY_PATH (default: /opt/getsync)
 

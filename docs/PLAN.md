@@ -255,7 +255,8 @@ flowchart LR
 | Hammerhead webhook + OAuth | ✅ |
 | Браузер: getsync.me, app login | ✅ |
 | E2E ride → sync | отложено |
-| Legacy `fit.romansegalla.online` | снят 2026-05-28 (только `app.getsync.me`) |
+| Legacy `fit.romansegalla.online` | снят 2026-05-28 |
+| Prod DNS / VPS | `getsync.me` + `app` → **breeze** `188.245.89.95` (2026-05-28) |
 
 [1.5-RENAME.md](archive/1.5-RENAME.md) — полный чеклист и backlog.
 
@@ -318,8 +319,8 @@ flowchart LR
 | Задача | Примечание |
 | ------ | ---------- |
 | CI GitHub Actions | ✅ `checkout@v6`, `setup-python@v6` |
-| Staging **breeze** | ✅ `breeze.romansegalla.online`, CI matrix sirocco+breeze — [CI-CD.md](CI-CD.md#тестовый-сервер-breeze) |
-| `upload_ready` на sirocco | мониторинг (сейчас `true` вручную) |
+| Prod **breeze** + CI | ✅ только breeze; sirocco снят 2026-05-28 — [CI-CD.md](CI-CD.md) |
+| `upload_ready` на prod | мониторинг (сейчас `true` вручную) |
 | Убрать `GARMIN_EMAIL` из `.env` prod | ✅ 2026-05-27 (per-user session) |
 | Admin Statistics | H2 |
 

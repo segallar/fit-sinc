@@ -1,4 +1,4 @@
-# GetSync — test on push/PR; deploy to sirocco + breeze on push to main/master/hotfix/*
+# GetSync — test on push/PR; deploy to breeze (prod) on push to main/master/hotfix/*
 
 name: CI
 
@@ -45,12 +45,6 @@ jobs:
        github.ref == 'refs/heads/master' ||
        startsWith(github.ref, 'refs/heads/hotfix/'))
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        host:
-          - sirocco.romansegalla.online
-          - breeze.romansegalla.online
     # If deploy fails with exit 1, check Actions log: health poll or pip import smoke test.
     environment: production
     permissions:
@@ -58,11 +52,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Deploy to ${{ matrix.host }}
+      - name: Deploy to breeze
         env:
           GETSYNC_DEPLOY_NUMBER: ${{ github.run_number }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          GETSYNC_SSH_HOST: ${{ matrix.host }}
+          GETSYNC_SSH_HOST: breeze.romansegalla.online
           GETSYNC_SSH_USER: ${{ vars.GETSYNC_SSH_USER }}
           GETSYNC_DEPLOY_PATH: ${{ vars.GETSYNC_DEPLOY_PATH }}
         run: |

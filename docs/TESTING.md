@@ -186,7 +186,7 @@ with tempfile.TemporaryDirectory() as tmp:
 | Скрипт | Тип | Назначение |
 | ------ | --- | ---------- |
 | [`deploy.sh`](../scripts/ci/deploy.sh) | bash | Rsync на VPS (`GETSYNC_SSH_HOST`), venv/pip, Playwright, systemd, health poll |
-| [`deploy-all.sh`](../scripts/ci/deploy-all.sh) | bash | Последовательный deploy на sirocco + breeze |
+| [`deploy-all.sh`](../scripts/ci/deploy-all.sh) | bash | Deploy на `GETSYNC_SSH_HOSTS` (по умолчанию breeze) |
 | [`verify-hosts.sh`](../scripts/ci/verify-hosts.sh) | bash | `curl` /health prod + staging |
 | [`bootstrap-host.sh`](../scripts/ci/bootstrap-host.sh) | bash | One-time apt, python3.11, user `getsync`, systemd unit |
 | [`sync-from-prod.sh`](../scripts/ci/sync-from-prod.sh) | bash | `.env` + `data/` sirocco → breeze через `/tmp` |

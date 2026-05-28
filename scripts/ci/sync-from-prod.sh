@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-# Copy .env and data/ from prod VPS to staging (via local temp — rsync cannot remote→remote).
+# Copy .env and data/ between VPS via local temp (rsync cannot remote→remote).
+# Legacy: used for sirocco → breeze migration (sirocco decommissioned 2026-05-28).
 #
-#   KEY=~/.ssh/id_ed25519
-#   GETSYNC_SOURCE_HOST=sirocco.romansegalla.online \
-#   GETSYNC_TARGET_HOST=breeze.romansegalla.online \
-#   ./scripts/ci/sync-from-prod.sh
+#   KEY=~/.ssh/id_ed25519 ./scripts/ci/sync-from-prod.sh
 
 set -euo pipefail
 

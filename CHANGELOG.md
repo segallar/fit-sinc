@@ -7,6 +7,10 @@
 
 ## [0.7.0] — в разработке
 
+### Changed
+
+- Prod cutover на **breeze** (`188.245.89.95`); CI deploy только breeze; **sirocco** снят (service disabled)
+
 ### Added
 
 - Staging на Hetzner **breeze** (`breeze.romansegalla.online`): nginx, TLS, CI matrix deploy вместе с sirocco

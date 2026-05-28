@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Deploy GetSync to a VPS via rsync + systemd restart (sirocco prod, breeze staging).
-# CI: SSH_PRIVATE_KEY + GETSYNC_SSH_HOST (matrix: sirocco + breeze). Multi-host: deploy-all.sh.
+# Deploy GetSync to breeze (prod) via rsync + systemd restart.
+# CI: SSH_PRIVATE_KEY + GETSYNC_SSH_HOST=breeze.romansegalla.online
 # Speed: rsync --chown (no chown -R), skip pip when pyproject.toml unchanged (editable install),
 # health poll from 0s (1s between retries).
 
 set -euo pipefail
 
-: "${GETSYNC_SSH_HOST:=sirocco.romansegalla.online}"
+: "${GETSYNC_SSH_HOST:=breeze.romansegalla.online}"
 : "${GETSYNC_SSH_USER:=root}"
 : "${GETSYNC_DEPLOY_PATH:=/opt/getsync}"
 HOST="$GETSYNC_SSH_HOST"

@@ -2,13 +2,12 @@
 # Deploy to several VPS (comma-separated GETSYNC_SSH_HOSTS).
 # Example:
 #   SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519)" \
-#   GETSYNC_SSH_HOSTS=sirocco.romansegalla.online,breeze.romansegalla.online \
-#   ./scripts/ci/deploy-all.sh
+#   GETSYNC_SSH_HOSTS=breeze.romansegalla.online ./scripts/ci/deploy-all.sh
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-: "${GETSYNC_SSH_HOSTS:=sirocco.romansegalla.online,breeze.romansegalla.online}"
+: "${GETSYNC_SSH_HOSTS:=breeze.romansegalla.online}"
 
 IFS=',' read -r -a _hosts <<< "${GETSYNC_SSH_HOSTS}"
 if [[ "${#_hosts[@]}" -eq 0 ]]; then

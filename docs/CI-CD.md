@@ -20,7 +20,7 @@
 
 ```mermaid
 flowchart LR
-    Dev[Mac / GitHub Actions] -->|rsync + ssh| VPS[sirocco /opt/getsync]
+    Dev[Mac / GitHub Actions] -->|rsync + ssh| VPS[breeze /opt/getsync]
     VPS --> Systemd[getsync.service]
     Systemd --> App[uvicorn :8080]
     Nginx[nginx TLS] --> App
@@ -30,10 +30,10 @@ flowchart LR
 
 | Компонент | Значение |
 |-----------|----------|
-| Сервер | `sirocco.romansegalla.online` (`134.209.133.187`) |
-| SSH | `ssh -i ~/.ssh/id_ed25519 root@sirocco.romansegalla.online` |
-| **App (целевой)** | `getsync.me`, `app.getsync.me` |
-| Тест (staging) | `breeze.romansegalla.online` — Hetzner, см. [миграция](#тестовый-сервер-breeze) |
+| **Prod (app)** | Hetzner **breeze** — `188.245.89.95` · `getsync.me`, `app.getsync.me` |
+| SSH prod | `ssh -i ~/.ssh/id_ed25519 root@breeze.romansegalla.online` |
+| Legacy VPS | `sirocco.romansegalla.online` — **снят** 2026-05-28 (`getsync` stopped/disabled, nginx `getsync.conf` off) |
+| Staging URL | `breeze.romansegalla.online` (тот же хост, отдельный vhost) |
 | Лендинг (личный) | `romansegalla.online` — proxy на `:8080` |
 | Каталог приложения | `/opt/getsync` |
 | Пользователь сервиса | `getsync:getsync` |
@@ -51,16 +51,16 @@ flowchart LR
 |------|----------|
 | **Регистратор** | GoDaddy — `getsync.me` |
 | **DNS** | GoDaddy NS `ns37` / `ns38.domaincontrol.com` |
-| **Приложение** | `app.getsync.me` → A `134.209.133.187` |
-| **Лендинг** | `getsync.me` → A `@` на sirocco |
+| **Приложение** | `app.getsync.me` → A `188.245.89.95` (breeze) |
+| **Лендинг** | `getsync.me` → A `@` `188.245.89.95` (breeze) |
 | **nginx** | [`deploy/nginx/getsync.conf`](../deploy/nginx/getsync.conf) |
 
 #### A-записи
 
 | Type | Name | Value |
 |------|------|-------|
-| A | `@` | `134.209.133.187` |
-| A | `app` | `134.209.133.187` |
+| A | `@` | `188.245.89.95` |
+| A | `app` | `188.245.89.95` |
 
 Проверка:
 
@@ -69,17 +69,18 @@ dig +short getsync.me A
 dig +short app.getsync.me A
 ```
 
-#### nginx + TLS на sirocco
+#### nginx + TLS на breeze (prod)
 
 ```bash
 scp -i ~/.ssh/id_ed25519 deploy/nginx/getsync.conf \
-  root@sirocco.romansegalla.online:/etc/nginx/conf.d/getsync.conf
+  root@breeze.romansegalla.online:/etc/nginx/conf.d/getsync.conf
 
-ssh -i ~/.ssh/id_ed25519 root@sirocco.romansegalla.online \
+ssh -i ~/.ssh/id_ed25519 root@breeze.romansegalla.online \
   'nginx -t && systemctl reload nginx'
 
-ssh -i ~/.ssh/id_ed25519 root@sirocco.romansegalla.online \
-  'certbot --nginx -d getsync.me -d app.getsync.me'
+# при первом выпуске: HTTP-only vhost, затем
+ssh -i ~/.ssh/id_ed25519 root@breeze.romansegalla.online \
+  'certbot --nginx -d getsync.me -d www.getsync.me -d app.getsync.me'
 ```
 
 Smoke:
@@ -99,12 +100,12 @@ curl -sk -o /dev/null -w "%{http_code}\n" https://app.getsync.me/app/login
 
 В `.env` на prod: `HAMMERHEAD_WEB_REDIRECT_URI`, при необходимости обновить webhook secret в Developer Portal.
 
-#### Чеклист DNS (prod на sirocco)
+#### Чеклист DNS (prod на breeze)
 
-- [x] A `@` и `app` → `134.209.133.187` (sirocco)
-- [x] `getsync.conf` + certbot (2026-05-27)
+- [x] A `@` и `app` → `188.245.89.95` (breeze, 2026-05-28)
+- [x] `getsync.conf` + certbot на breeze (2026-05-28)
 - [x] `/health` prod + staging (`verify-hosts.sh`)
-- [ ] Hammerhead webhook URL обновлён (при cutover на breeze — снова)
+- [ ] Hammerhead webhook URL в Developer Portal (если ещё старый хост)
 
 ### Тестовый сервер breeze
 
@@ -114,8 +115,8 @@ curl -sk -o /dev/null -w "%{http_code}\n" https://app.getsync.me/app/login
 | URL | [https://breeze.romansegalla.online](https://breeze.romansegalla.online) |
 | DNS (romansegalla) | `breeze.romansegalla.online` → A `188.245.89.95` |
 | Deploy одного хоста | `GETSYNC_SSH_HOST=breeze.romansegalla.online ./scripts/ci/deploy.sh` |
-| Deploy оба (prod + test) | `GETSYNC_SSH_HOSTS=sirocco.romansegalla.online,breeze.romansegalla.online ./scripts/ci/deploy-all.sh` |
-| **Prod cutover** | **отдельный шаг:** GoDaddy `@` и `app` → `188.245.89.95`, `getsync.conf` + certbot на breeze, Hammerhead webhook → prod |
+| Deploy (default) | `GETSYNC_SSH_HOST=breeze.romansegalla.online ./scripts/ci/deploy.sh` или `deploy-all.sh` |
+| **Prod cutover** | ✅ GoDaddy → breeze (2026-05-28); CI только breeze |
 
 Legacy `fit.romansegalla.online` на breeze **не** поднимается (снят 2026-05-28).
 
@@ -129,7 +130,7 @@ nginx: [`deploy/nginx/breeze.conf`](../deploy/nginx/breeze.conf) → `/etc/nginx
 | DNS A `breeze.romansegalla.online` | ✅ |
 | Bootstrap: `python3.11-venv`, user `getsync`, nginx | ✅ |
 | Копия `.env` + `data/` со sirocco | ✅ [`sync-from-prod.sh`](../scripts/ci/sync-from-prod.sh) |
-| `deploy.sh` / CI matrix (sirocco + breeze) | ✅ |
+| CI deploy только **breeze** | ✅ (sirocco снят 2026-05-28) |
 | `breeze.conf` + certbot TLS | ✅ |
 | `/health`, `/app/login` по HTTPS | ✅ |
 | Playwright Chromium (Ubuntu 22.04) | ✅ |
@@ -183,7 +184,7 @@ sudo -u getsync /opt/getsync/.venv/bin/playwright install chromium
 
 **Репозиторий:** [github.com/segallar/getsync](https://github.com/segallar/getsync) · badge CI в [README](../README.md).
 
-Push или merge в `main` / `master` / `hotfix/*` → workflow [**CI**](../.github/workflows/test.yml) → job `test` → job `deploy` (matrix: **sirocco** + **breeze**) → [`deploy.sh`](../scripts/ci/deploy.sh).
+Push или merge в `main` / `master` / `hotfix/*` → workflow [**CI**](../.github/workflows/test.yml) → job `test` → job `deploy` → **breeze** → [`deploy.sh`](../scripts/ci/deploy.sh).
 
 | Триггер | `test` | `deploy` |
 |---------|--------|----------|
@@ -202,11 +203,9 @@ cd /path/to/getsync
 
 ./scripts/ci/build-frontend-css.sh
 
-rsync -avz --delete --exclude-from=.rsyncignore \
-  -e "ssh -i ~/.ssh/id_ed25519" \
-  ./ root@sirocco.romansegalla.online:/opt/getsync/
-
-# предпочтительно: полный цикл как в CI (оба VPS)
+# полный цикл как в CI
+SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519)" ./scripts/ci/deploy.sh
+# или
 SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519)" ./scripts/ci/deploy-all.sh
 
 # один хост:
@@ -237,15 +236,15 @@ curl -sf http://127.0.0.1:8080/health
 ### Секреты и сессии
 
 ```bash
-scp -i ~/.ssh/id_ed25519 .env root@sirocco:/opt/getsync/
+scp -i ~/.ssh/id_ed25519 .env root@breeze:/opt/getsync/
 
 # per-tenant (пример: default)
 scp -i ~/.ssh/id_ed25519 data/users/default/hammerhead_tokens.json \
-  root@sirocco:/opt/getsync/data/users/default/
+  root@breeze:/opt/getsync/data/users/default/
 scp -i ~/.ssh/id_ed25519 -r data/users/default/garth data/users/default/garmin_web \
-  root@sirocco:/opt/getsync/data/users/default/
+  root@breeze:/opt/getsync/data/users/default/
 
-ssh root@sirocco 'chown -R getsync:getsync /opt/getsync/data && systemctl restart getsync'
+ssh root@breeze 'chown -R getsync:getsync /opt/getsync/data && systemctl restart getsync'
 ```
 
 ### Локальная настройка auth (Mac)
@@ -276,7 +275,7 @@ curl -sk -o /dev/null -w "%{http_code}\n" -X POST \
 curl -sk -o /dev/null -w "%{http_code}\n" https://app.getsync.me/app/login
 # → 200
 
-ssh root@sirocco \
+ssh root@breeze \
   'systemctl status getsync; journalctl -u getsync -n 20 --no-pager'
 ```
 
@@ -292,7 +291,7 @@ ssh root@sirocco \
 
 Конфиг: [`deploy/nginx/getsync.conf`](../deploy/nginx/getsync.conf).
 
-Legacy-хост `fit.romansegalla.online` снят (2026-05-28): DNS A удалён, `fit.conf` и certbot-сертификат на sirocco удалены.
+Legacy: `fit.romansegalla.online` снят; **sirocco** — `getsync` stopped/disabled, `getsync.conf` → `.disabled` (2026-05-28).
 
 **Production `.env`:**
 
@@ -357,7 +356,7 @@ systemctl restart getsync
 
 Workflow: [`.github/workflows/test.yml`](../.github/workflows/test.yml) — один pipeline **CI** (`actions/checkout@v6`, `actions/setup-python@v6`, Node 24 runtime).
 
-**Настройка (один раз):** репозиторий → **Settings → Secrets and variables → Actions** — secret `SSH_PRIVATE_KEY` (приватный ключ `root@sirocco`); variables `GETSYNC_SSH_*` — через [`sync-github-vars.sh`](../scripts/ci/sync-github-vars.sh) или UI.
+**Настройка (один раз):** репозиторий → **Settings → Secrets and variables → Actions** — secret `SSH_PRIVATE_KEY` (ключ `root@breeze`); variables `GETSYNC_SSH_*` — через [`sync-github-vars.sh`](../scripts/ci/sync-github-vars.sh) или UI.
 
 | Job | Когда | Действие |
 |-----|--------|----------|
@@ -391,7 +390,7 @@ Workflow: [`.github/workflows/test.yml`](../.github/workflows/test.yml) — од
 | Имя | Тип | По умолчанию |
 |-----|-----|--------------|
 | `SSH_PRIVATE_KEY` | Secret | — |
-| `GETSYNC_SSH_HOST` | Variable | `sirocco.romansegalla.online` |
+| `GETSYNC_SSH_HOST` | Variable | `breeze.romansegalla.online` |
 | `GETSYNC_SSH_USER` | Variable | `root` |
 | `GETSYNC_DEPLOY_PATH` | Variable | `/opt/getsync` |
 
