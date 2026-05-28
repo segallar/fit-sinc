@@ -1,4 +1,4 @@
-# GetSync — test on MR/push, deploy to sirocco on main/master/hotfix/*
+# GetSync — test on MR/push, deploy on main/master/hotfix/* (GitHub Actions: sirocco + breeze matrix)
 # Primary CI: GitHub Actions (.github/workflows/test.yml)
 # Variables (Settings → CI/CD → Variables):
 #   SSH_PRIVATE_KEY (File, masked) — private key for root@sirocco
@@ -36,9 +36,9 @@ deploy:production:
   needs: [test]
   before_script:
     - apt-get update -qq && apt-get install -y -qq rsync openssh-client
-    - chmod +x scripts/ci/deploy.sh
+    - chmod +x scripts/ci/deploy.sh scripts/ci/deploy-all.sh
   script:
-    - ./scripts/ci/deploy.sh
+    - ./scripts/ci/deploy-all.sh
   variables:
     GETSYNC_DEPLOY_NUMBER: $CI_PIPELINE_IID
   environment:

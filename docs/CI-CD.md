@@ -99,26 +99,53 @@ curl -sk -o /dev/null -w "%{http_code}\n" https://app.getsync.me/app/login
 
 В `.env` на prod: `HAMMERHEAD_WEB_REDIRECT_URI`, при необходимости обновить webhook secret в Developer Portal.
 
-#### Чеклист DNS
+#### Чеклист DNS (prod на sirocco)
 
-- [ ] A `@` и `app` → `134.209.133.187`
+- [x] A `@` и `app` → `134.209.133.187` (sirocco)
 - [x] `getsync.conf` + certbot (2026-05-27)
-- [ ] `/health` на обоих хостах
-- [ ] Hammerhead webhook URL обновлён
+- [x] `/health` prod + staging (`verify-hosts.sh`)
+- [ ] Hammerhead webhook URL обновлён (при cutover на breeze — снова)
 
 ### Тестовый сервер breeze
 
 | Роль | Значение |
 |------|----------|
 | Хост | Hetzner **breeze** — `188.245.89.95` |
+| URL | [https://breeze.romansegalla.online](https://breeze.romansegalla.online) |
 | DNS (romansegalla) | `breeze.romansegalla.online` → A `188.245.89.95` |
 | Deploy одного хоста | `GETSYNC_SSH_HOST=breeze.romansegalla.online ./scripts/ci/deploy.sh` |
 | Deploy оба (prod + test) | `GETSYNC_SSH_HOSTS=sirocco.romansegalla.online,breeze.romansegalla.online ./scripts/ci/deploy-all.sh` |
-| Prod cutover | позже: GoDaddy `@` и `app` → тот же IP; `GETSYNC_SSH_HOST` в GitHub Actions |
+| **Prod cutover** | **отдельный шаг:** GoDaddy `@` и `app` → `188.245.89.95`, `getsync.conf` + certbot на breeze, Hammerhead webhook → prod |
 
 Legacy `fit.romansegalla.online` на breeze **не** поднимается (снят 2026-05-28).
 
 nginx: [`deploy/nginx/breeze.conf`](../deploy/nginx/breeze.conf) → `/etc/nginx/conf.d/breeze.conf`, затем `certbot --nginx -d breeze.romansegalla.online`.
+
+#### Чеклист миграции breeze (staging) — ✅ 2026-05-28
+
+| Шаг | Статус |
+|-----|--------|
+| Hetzner VPS + SSH (`root@breeze`) | ✅ |
+| DNS A `breeze.romansegalla.online` | ✅ |
+| Bootstrap: `python3.11-venv`, user `getsync`, nginx | ✅ |
+| Копия `.env` + `data/` со sirocco | ✅ [`sync-from-prod.sh`](../scripts/ci/sync-from-prod.sh) |
+| `deploy.sh` / CI matrix (sirocco + breeze) | ✅ |
+| `breeze.conf` + certbot TLS | ✅ |
+| `/health`, `/app/login` по HTTPS | ✅ |
+| Playwright Chromium (Ubuntu 22.04) | ✅ |
+| Legacy `fit.romansegalla` не поднимать | ✅ |
+
+Проверка с Mac: `./scripts/ci/verify-hosts.sh`
+
+Повторная настройка после rebuild VPS:
+
+```bash
+GETSYNC_SSH_HOST=breeze.romansegalla.online ./scripts/ci/bootstrap-host.sh
+./scripts/ci/sync-from-prod.sh
+scp deploy/nginx/breeze.conf root@breeze:/etc/nginx/conf.d/breeze.conf
+ssh root@breeze 'nginx -t && systemctl reload nginx && certbot --nginx -d breeze.romansegalla.online'
+SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519)" GETSYNC_SSH_HOST=breeze.romansegalla.online ./scripts/ci/deploy.sh
+```
 
 ---
 

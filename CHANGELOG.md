@@ -9,6 +9,8 @@
 
 ### Added
 
+- Staging на Hetzner **breeze** (`breeze.romansegalla.online`): nginx, TLS, CI matrix deploy вместе с sirocco
+- Ops-скрипты: `bootstrap-host.sh`, `sync-from-prod.sh`, `verify-hosts.sh`, `deploy-all.sh`
 - **2.16** — CredentialStore (Fernet), per-user `connections/garmin/`, auto re-login Garmin (`ensure_garmin_session`)
 - Mail module: `getsync/mail`, backends `null` / `console` / `resend`, CLI `getsync mail test`
 - CI: GitHub Actions `checkout@v6`, `setup-python@v6` (Node 24 runtime)

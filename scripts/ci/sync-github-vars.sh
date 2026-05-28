@@ -20,6 +20,8 @@ del_var() {
   fi
 }
 
+# Deploy hosts are fixed in .github/workflows/test.yml matrix (sirocco + breeze).
+# GETSYNC_SSH_HOST kept for manual deploy.sh / GitLab CI fallback only.
 set_var GETSYNC_SSH_HOST "sirocco.romansegalla.online"
 set_var GETSYNC_SSH_USER "root"
 set_var GETSYNC_DEPLOY_PATH "/opt/getsync"

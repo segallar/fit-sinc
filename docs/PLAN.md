@@ -318,6 +318,7 @@ flowchart LR
 | Задача | Примечание |
 | ------ | ---------- |
 | CI GitHub Actions | ✅ `checkout@v6`, `setup-python@v6` |
+| Staging **breeze** | ✅ `breeze.romansegalla.online`, CI matrix sirocco+breeze — [CI-CD.md](CI-CD.md#тестовый-сервер-breeze) |
 | `upload_ready` на sirocco | мониторинг (сейчас `true` вручную) |
 | Убрать `GARMIN_EMAIL` из `.env` prod | ✅ 2026-05-27 (per-user session) |
 | Admin Statistics | H2 |

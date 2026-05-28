@@ -218,7 +218,7 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 ## Статус
 
-Production на [app.getsync.me](https://app.getsync.me) (фазы 0–5, **1.5** cutover ✅). **v0.7** в работе: дизайн кабинета (**2.10**), Garmin login в UI (**2.12**). Roadmap: [docs/PLAN.md](docs/PLAN.md).
+Production на [app.getsync.me](https://app.getsync.me) (sirocco); staging — [breeze.romansegalla.online](https://breeze.romansegalla.online) (Hetzner). CI деплоит на оба VPS. **v0.7:** дизайн кабинета (**2.10**), Garmin login в UI (**2.12**). Roadmap: [docs/PLAN.md](docs/PLAN.md) · ops: [docs/CI-CD.md](docs/CI-CD.md#тестовый-сервер-breeze).
 
 ---
 

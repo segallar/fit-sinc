@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Deploy GetSync to sirocco via rsync + systemd restart.
-# CI: set SSH_PRIVATE_KEY (file), optional GETSYNC_SSH_HOST / GETSYNC_SSH_USER / GETSYNC_DEPLOY_PATH.
+# Deploy GetSync to a VPS via rsync + systemd restart (sirocco prod, breeze staging).
+# CI: SSH_PRIVATE_KEY + GETSYNC_SSH_HOST (matrix: sirocco + breeze). Multi-host: deploy-all.sh.
 # Speed: rsync --chown (no chown -R), skip pip when pyproject.toml unchanged (editable install),
 # health poll from 0s (1s between retries).
 

@@ -185,7 +185,11 @@ with tempfile.TemporaryDirectory() as tmp:
 
 | Скрипт | Тип | Назначение |
 | ------ | --- | ---------- |
-| [`deploy.sh`](../scripts/ci/deploy.sh) | bash | Rsync на sirocco, venv/pip при смене `pyproject.toml`, Playwright Chromium на сервере, systemd restart, health poll; пишет `getsync/_build_meta.json` |
+| [`deploy.sh`](../scripts/ci/deploy.sh) | bash | Rsync на VPS (`GETSYNC_SSH_HOST`), venv/pip, Playwright, systemd, health poll |
+| [`deploy-all.sh`](../scripts/ci/deploy-all.sh) | bash | Последовательный deploy на sirocco + breeze |
+| [`verify-hosts.sh`](../scripts/ci/verify-hosts.sh) | bash | `curl` /health prod + staging |
+| [`bootstrap-host.sh`](../scripts/ci/bootstrap-host.sh) | bash | One-time apt, python3.11, user `getsync`, systemd unit |
+| [`sync-from-prod.sh`](../scripts/ci/sync-from-prod.sh) | bash | `.env` + `data/` sirocco → breeze через `/tmp` |
 | [`build-frontend-css.sh`](../scripts/ci/build-frontend-css.sh) | bash | Заглушка: CSS в `getsync/web/static/app.css` вручную, Bootstrap с CDN |
 | [`sync-github-vars.sh`](../scripts/ci/sync-github-vars.sh) | bash | `gh variable set` для `GETSYNC_SSH_*`, удаление legacy vars |
 | [`patch-romansegalla-nginx.sh`](../scripts/ci/patch-romansegalla-nginx.sh) | bash | One-off: proxy `/webhooks/` на :8080 в nginx default (sirocco) |
@@ -235,9 +239,10 @@ with tempfile.TemporaryDirectory() as tmp:
 Минимум перед «считаем релиз ок»:
 
 ```bash
+./scripts/ci/verify-hosts.sh
+# или вручную:
 curl -sf https://app.getsync.me/health | jq .
-# или legacy:
-curl -sf https://romansegalla.online/health | jq .
+curl -sf https://breeze.romansegalla.online/health | jq .
 ```
 
 | # | Действие | Ожидание |
