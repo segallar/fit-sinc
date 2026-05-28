@@ -112,7 +112,8 @@ curl -sk -o /dev/null -w "%{http_code}\n" https://app.getsync.me/app/login
 |------|----------|
 | Хост | Hetzner **breeze** — `188.245.89.95` |
 | DNS (romansegalla) | `breeze.romansegalla.online` → A `188.245.89.95` |
-| Deploy | `GETSYNC_SSH_HOST=breeze.romansegalla.online ./scripts/ci/deploy.sh` |
+| Deploy одного хоста | `GETSYNC_SSH_HOST=breeze.romansegalla.online ./scripts/ci/deploy.sh` |
+| Deploy оба (prod + test) | `GETSYNC_SSH_HOSTS=sirocco.romansegalla.online,breeze.romansegalla.online ./scripts/ci/deploy-all.sh` |
 | Prod cutover | позже: GoDaddy `@` и `app` → тот же IP; `GETSYNC_SSH_HOST` в GitHub Actions |
 
 Legacy `fit.romansegalla.online` на breeze **не** поднимается (снят 2026-05-28).
@@ -155,7 +156,7 @@ sudo -u getsync /opt/getsync/.venv/bin/playwright install chromium
 
 **Репозиторий:** [github.com/segallar/getsync](https://github.com/segallar/getsync) · badge CI в [README](../README.md).
 
-Push или merge в `main` / `master` / `hotfix/*` → workflow [**CI**](../.github/workflows/test.yml) → job `test` → job `deploy` → [`deploy.sh`](../scripts/ci/deploy.sh) (rsync + restart на sirocco).
+Push или merge в `main` / `master` / `hotfix/*` → workflow [**CI**](../.github/workflows/test.yml) → job `test` → job `deploy` (matrix: **sirocco** + **breeze**) → [`deploy.sh`](../scripts/ci/deploy.sh).
 
 | Триггер | `test` | `deploy` |
 |---------|--------|----------|
@@ -178,8 +179,11 @@ rsync -avz --delete --exclude-from=.rsyncignore \
   -e "ssh -i ~/.ssh/id_ed25519" \
   ./ root@sirocco.romansegalla.online:/opt/getsync/
 
-# предпочтительно: полный цикл как в CI
-SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519)" ./scripts/ci/deploy.sh
+# предпочтительно: полный цикл как в CI (оба VPS)
+SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519)" ./scripts/ci/deploy-all.sh
+
+# один хост:
+# GETSYNC_SSH_HOST=breeze.romansegalla.online ./scripts/ci/deploy.sh
 ```
 
 **Не синхронизируем** ([`.rsyncignore`](../.rsyncignore)):
