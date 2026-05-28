@@ -1,6 +1,7 @@
 # Хранение FIT-файлов
 
-> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-28 · **Версия:** 0.7.0  
+> **Product model:** [ACTIVITY-HUB.md](ACTIVITY-HUB.md)
 > **Статус:** local filesystem ✅ · S3 — [PLAN.md](PLAN.md) **3.3** · Garmin pull FIT — [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) **3.11.2**.  
 > **SQLite:** `activities.storage_key` — [DATABASE.md](DATABASE.md).
 
@@ -8,12 +9,21 @@
 
 ## Назначение
 
-GetSync сохраняет **оригинальные `.fit`** с Hammerhead после webhook и отдаёт их:
+GetSync хранит **оригинальные `.fit`** в tenant catalog (`storage_key`) и использует их для **delivery** в sinks (Garmin upload, UI download, будущие Strava/S3).
 
-1. **В Garmin Connect** — upload из байтов файла (HTTP / Playwright).
-2. **Пользователю в UI** — скачивание `GET /app/activities/{id}/fit` (только `source=hammerhead`).
+Bootstrap: FIT с Hammerhead после webhook. После **3.11** — также `activities/garmin/` из Garmin pull.
 
-Каталог активностей Garmin в browse — пока **без локального FIT**; после **3.11** файлы появятся под `activities/garmin/`.
+---
+
+## Hub data flow (artifacts)
+
+```text
+ingress (source) → ActivityStorage.put_fit → catalog.storage_key
+egress (sink)    → read bytes → provider upload
+presentation     → GET /app/activities/{id}/fit
+```
+
+### Bootstrap: Hammerhead → disk → Garmin
 
 ---
 
@@ -23,12 +33,12 @@ GetSync сохраняет **оригинальные `.fit`** с Hammerhead п�
 | - | ------- |
 | 1 | **Изоляция tenant** — все артефакты только под `data/users/{user_id}/`. |
 | 2 | **Логический ключ** — в БД поле `storage_key` (относительный путь), не абсолютный путь VPS. |
-| 3 | **Один контракт** — `StorageBackend`; синк и UI не зависят от local vs S3. |
+| 3 | **Один контракт** — `StorageBackend`; delivery и UI не зависят от local vs S3. |
 | 4 | **Имя файла** — `{sanitized_external_id}.fit` в каталоге `activities/{source}/`. |
 
 ---
 
-## Поток данных (Hammerhead → диск → Garmin)
+## Bootstrap sequence (Hammerhead → disk → Garmin)
 
 ```mermaid
 sequenceDiagram

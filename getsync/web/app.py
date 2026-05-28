@@ -37,6 +37,9 @@ logger = logging.getLogger("getsync")
 
 
 def _bootstrap() -> None:
+    from getsync.providers.bootstrap import register_default_providers
+
+    register_default_providers()
     settings = get_settings()
     store = Store(settings.db_path)
     hh_uid = infer_hammerhead_user_id(settings)

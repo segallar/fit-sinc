@@ -144,7 +144,7 @@ ensure_garmin_session(user):
 | -------- | ---- | ------- |
 | `hammerhead` | source | OAuth2 only |
 | `garmin` | sink (+ source в 3.11) | cookies + oauth2 + optional password |
-| `strava` | source | OAuth2 |
+| `strava` | source + sink | OAuth2 (read + write) |
 | `s3` | sink | access_key + secret |
 
 ---

@@ -448,8 +448,7 @@ async def ui_preview_page(request: Request, page_name: str) -> str:
         tz_name = normalize_timezone(user.timezone if user else DEFAULT_TIMEZONE)
         today = datetime.now(zone_info(tz_name)).date()
         extra["calendar"] = build_activity_calendar(
-            store,
-            ctx.user_id,
+            ctx=ctx,
             year=today.year,
             month=today.month,
             display_tz=user.timezone if user else None,
@@ -599,6 +598,12 @@ async def activities_browser(
     if view == "calendar":
         src = filters.source or None
 
+        if refresh.strip() in ("1", "true", "yes"):
+            from getsync.catalog.api import refresh_from_providers
+
+            await refresh_from_providers(ctx)
+            clear_browse_cache(ctx.user_id)
+
         def day_list_href(day_iso: str) -> str:
             day_filters = ActivityFilters(
                 q=filters.q,
@@ -630,8 +635,7 @@ async def activities_browser(
         )
         calendar = attach_calendar_row_views(
             build_activity_calendar(
-                store,
-                ctx.user_id,
+                ctx=ctx,
                 year=cal_year,
                 month=cal_month,
                 display_tz=display_tz,

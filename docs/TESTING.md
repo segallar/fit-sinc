@@ -2,7 +2,7 @@
 
 
 > **Создано:** 2026-05-26 · **Обновлено:** 2026-05-28 · **Версия:** 0.7.0  
-> **Связано:** [CI-CD.md](CI-CD.md) · [PLAN.md](PLAN.md) (**2.13**) · [ARCHITECTURE.md](ARCHITECTURE.md)
+> **Связано:** [CI-CD.md](CI-CD.md) · [PLAN.md](PLAN.md) (**2.13**, **3.9.6**) · [MODULES.md](MODULES.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Документ описывает, **что** и **как** проверяем в репозитории: автотесты в `tests/`, прогон в CI и вспомогательные скрипты в `scripts/`.
 
@@ -44,6 +44,7 @@ flowchart LR
 | **A. unit** | `tests/unit/` | timeutil, timezones, pure filters | SQLite, TestClient, сеть, FS I/O | каждый push/PR |
 | **B. integration** | `tests/integration/` | SQLite, storage, providers (mock), auth, TestClient | Playwright, live network | каждый push/PR |
 | **C. e2e** | `tests/e2e/` | Playwright, staging webhook, browser upload | — | **не** на PR; main, nightly, label `e2e`, release |
+| **D. contract** | `tests/contract/` | Protocol compliance, fakes | — | **3.9.6** |
 | Ручная отладка Garmin | `scripts/debug_*.py` | reverse-engineering UI | — | вне CI |
 | E2E продукта | вне репозитория | поездка Karoo → sync log | — | вручную |
 

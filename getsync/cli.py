@@ -61,6 +61,9 @@ def main(
         help="Tenant id, slug, or email (default from DEFAULT_USER_ID)",
     ),
 ) -> None:
+    from getsync.providers.bootstrap import register_default_providers
+
+    register_default_providers()
     ctx.ensure_object(dict)
     ctx.obj["user_ctx"] = _resolve_user(user)
 

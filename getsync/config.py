@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     hammerhead_web_redirect_uri: str = ""
     hammerhead_scope: str = "activity:read"
 
+    strava_client_id: str = ""
+    strava_client_secret: str = ""
+    strava_redirect_uri: str = "http://127.0.0.1:8765/callback"
+    strava_web_redirect_uri: str = ""
+    strava_scope: str = "read,activity:read,activity:read_all,activity:write"
+
     # Legacy global fallback — prefer per-user store (2.16); avoid on multi-tenant prod
     garmin_email: str = ""
     garmin_password: str = ""

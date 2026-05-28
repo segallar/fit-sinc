@@ -5,10 +5,11 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 from garth.exc import GarthHTTPError
+from getsync.contracts.activities import NormalizedActivity
 from getsync.garmin.upload_errors import (
     garmin_duplicate_log_message,
     is_garmin_duplicate_upload,
@@ -58,28 +59,45 @@ class TestSyncGarminDuplicate(unittest.IsolatedAsyncioTestCase):
                     "duration": 9,
                 }
 
-                with (
-                    patch(
-                        "getsync.sync.service.HammerheadClient",
-                    ) as hh_cls,
-                    patch(
-                        "getsync.sync.service.upload_fit",
-                        side_effect=GarthHTTPError(
-                            msg="Error in request",
-                            error=httpx.HTTPStatusError(
-                                "409",
-                                request=httpx.Request("POST", "https://x"),
-                                response=httpx.Response(
-                                    409, request=httpx.Request("POST", "https://x")
-                                ),
+                mock_hh = MagicMock()
+                mock_hh.fetch_metadata = AsyncMock(
+                    return_value=NormalizedActivity(
+                        user_id="default",
+                        source="hammerhead",
+                        activity_id=activity_id,
+                        name=hh_meta["name"],
+                        activity_date=hh_meta["createdAt"],
+                        distance=hh_meta["distance"],
+                        duration=hh_meta["duration"],
+                        activity_type="cycling",
+                    )
+                )
+                mock_hh.download_fit = AsyncMock(return_value=b"FIT")
+
+                mock_sink = MagicMock()
+                mock_sink.upload_fit = AsyncMock(
+                    side_effect=GarthHTTPError(
+                        msg="Error in request",
+                        error=httpx.HTTPStatusError(
+                            "409",
+                            request=httpx.Request("POST", "https://x"),
+                            response=httpx.Response(
+                                409, request=httpx.Request("POST", "https://x")
                             ),
                         ),
+                    )
+                )
+
+                with (
+                    patch(
+                        "getsync.sync.service._hammerhead_source",
+                        return_value=mock_hh,
+                    ),
+                    patch(
+                        "getsync.sync.service._garmin_sink",
+                        return_value=mock_sink,
                     ),
                 ):
-                    hh = hh_cls.return_value
-                    hh.get_activity = AsyncMock(return_value=hh_meta)
-                    hh.download_fit = AsyncMock(return_value=b"FIT")
-
                     result = await sync_activity(activity_id, user_id="default")
 
                 self.assertEqual(result.status, "synced")

@@ -830,6 +830,28 @@ class Store:
             ).fetchall()
         return [(str(r["activity_date"]), str(r["sync_status"])) for r in rows]
 
+    def list_activity_catalog(
+        self,
+        user_id: str,
+        *,
+        source: str | None = None,
+    ) -> list[ActivityRow]:
+        """All catalog rows for browse (any date)."""
+        with self._conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT user_id, source, activity_id, name, activity_date, distance, duration,
+                       activity_type, sync_status, storage_key, synced_at,
+                       error_message
+                FROM activities
+                WHERE user_id = ?
+                  AND (? IS NULL OR source = ?)
+                ORDER BY activity_date DESC
+                """,
+                (user_id, source, source),
+            ).fetchall()
+        return [self._activity_from_row(r) for r in rows]
+
     def list_activity_catalog_for_calendar(
         self,
         user_id: str,

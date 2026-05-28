@@ -1,7 +1,7 @@
 # Product Vision и стратегия GetSync
 
-> **Создано:** 2026-05-27 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
-> **Тактический roadmap:** [PLAN.md](PLAN.md) · **Domain v0:** [DOMAIN-MODEL.md](DOMAIN-MODEL.md) · **Архитектура:** [ARCHITECTURE.md](ARCHITECTURE.md)
+> **Создано:** 2026-05-27 · **Обновлено:** 2026-05-28 · **Версия:** 0.7.0  
+> **Product model:** [ACTIVITY-HUB.md](ACTIVITY-HUB.md) · **Tactical:** [PLAN.md](PLAN.md) · **Domain v0:** [DOMAIN-MODEL.md](DOMAIN-MODEL.md) · **Runtime:** [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Стратегический документ: *куда* и *зачем* развивается GetSync. Конкретные задачи, оценки и статусы — только в [PLAN.md](PLAN.md).
 
@@ -9,27 +9,30 @@
 
 ## 1. Что такое GetSync
 
-GetSync — платформа для хранения, нормализации, синхронизации и анализа спортивных данных.
+GetSync — **personal activity hub**: единый каталог тренировок и слой доставки в любые подключённые системы по правилам пользователя.
 
-Изначально проект появился как решение конкретной проблемы:
+Платформа для хранения, нормализации, синхронизации и анализа спортивных данных — с **GetSync как source of truth**, а не с одной парой экосистем.
 
-- тренировки и спортивные данные распределены между множеством устройств и сервисов;
-- экосистемы плохо синхронизируются между собой;
-- возникают дубли;
-- данные теряются;
-- пользователь не владеет своей полной спортивной историей.
+**Проблема, с которой начался проект:**
 
-**Текущий production workflow:**
+- тренировки распределены между устройствами и облаками;
+- экосистемы плохо синхронизируются;
+- дубли, потери, lock-in;
+- пользователь не владеет полной историей.
 
-Hammerhead Karoo → Hammerhead Cloud → GetSync → Garmin Connect.
+**Product model (normative):** [ACTIVITY-HUB.md](ACTIVITY-HUB.md)
 
-**Долгосрочная цель:**
-
-GetSync — **unified athlete data platform**: единый слой данных спортсмена между устройствами, сервисами и аналитическими системами.
+```text
+Sources (N)  →  catalog + storage  →  Sinks (M)
+                 workspace (UI)
+                 rules (N → M)
+```
 
 **Positioning (одна строка):**
 
-> GetSync — personal athlete data layer: собирает, нормализует и маршрутизирует спортивные данные между устройствами и облаками. Вы владеете копией истории; внешние платформы — providers/sinks, не source of truth.
+> GetSync — personal athlete data layer: собирает, нормализует и маршрутизирует спортивные данные между устройствами и облаками. Вы владеете копией истории; внешние платформы — providers/sinks, не canonical store.
+
+**Bootstrap-сценарий в production (v0.7):** Hammerhead Karoo → GetSync catalog → Garmin Connect — один implicit rule, не определение продукта. См. [ACTIVITY-HUB.md §6](ACTIVITY-HUB.md#6-bootstrap-recipe-не-product-definition).
 
 ---
 
@@ -57,20 +60,20 @@ GetSync — **unified athlete data platform**: единый слой данны�
 
 GetSync — это:
 
-- единое хранилище спортивных данных;
-- слой нормализации данных;
-- sync/orchestration platform;
+- **activity hub** — unified catalog + delivery по правилам;
+- слой нормализации (`NormalizedActivity`);
+- orchestration platform (ingress / egress);
 - open ecosystem для интеграций и аналитики (долгосрочно).
 
 ### Долгосрочная цель
 
-- unified athlete history;
-- centralized sports data layer;
+- unified athlete history в одном hub;
+- centralized sports data layer (canonical store у пользователя);
 - open platform для AI и внешних приложений.
 
 ### Что важно
 
-GetSync — **не** просто календарь, social network или upload utility. Это инфраструктурная платформа поверх fragmented sports ecosystem.
+GetSync — **не** upload utility «из A в B», не календарь одного провайдера и не social network. Это инфраструктурная платформа поверх fragmented sports ecosystem. Сценарий Karoo→Garmin — **первый рецепт**, не границы продукта.
 
 ---
 
@@ -104,10 +107,11 @@ GetSync — canonical storage layer. Внешние платформы — provi
 
 | Область | Содержание | PLAN / docs |
 | ------- | ---------- | ----------- |
+| **Activity Hub** | Catalog, ingress/egress, source of truth | [ACTIVITY-HUB.md](ACTIVITY-HUB.md), **3.9.3** ✅ |
 | **Data Model** | Activity, Connection, SyncRule, Wellness, … | [DOMAIN-MODEL.md](DOMAIN-MODEL.md), [DATABASE.md](DATABASE.md) |
-| **Athlete Workspace** | Календарь, activities, filters, sync status | **2.3** ✅, **2.10** |
-| **Sync Engine** | import/export, retries, dedup | `sync/service.py`, webhook |
-| **Rule Engine** | routing, filters, priorities | **3.1** |
+| **Athlete Workspace** | Календарь, activities, filters, delivery status | `workspace/`, **2.3** ✅, **2.10** |
+| **Delivery Engine** | rules, retries, dedup, provider adapters | `sync/`, `providers/`, **3.9.3b**, **3.1** |
+| **Rule Engine** | routing, filters, priorities | **3.1**, **3.9.5** |
 | **Visualization** | maps, charts, compare | **3.10** |
 | **Open API** | public API, OAuth apps | **3.12** |
 | **Social & Clubs** | sharing, clubs (не core) | **4.2** |
@@ -154,9 +158,9 @@ GetSync — canonical storage layer. Внешние платформы — provi
 См. также [PLAN.md § Что реализовано](PLAN.md#что-реализовано-сейчас-код--prod).
 
 - production deployment (`app.getsync.me`);
-- Hammerhead OAuth + webhook pipeline;
-- Garmin upload + browse;
-- activity storage + unified catalog + calendar;
+- **activity hub core:** `catalog` + `workspace` (**3.9.3** ✅);
+- provider integrations: Hammerhead (source), Garmin (sink + catalog ingest);
+- bootstrap delivery: HH webhook → FIT → Garmin;
 - admin tools, sync logs;
 - multi-user architecture, tenant isolation;
 - encrypted credentials (**2.16**);
@@ -172,9 +176,10 @@ GetSync — canonical storage layer. Внешние платформы — provi
 | Приоритет | Фокус | PLAN |
 | --------- | ----- | ---- |
 | P0 | Ops UI: sidebar, Garmin login в Settings | **2.10**, **2.12**, **2.13** |
-| P1 | Domain foundation + второй source | [DOMAIN-MODEL.md](DOMAIN-MODEL.md), **2.7**, **3.11.1–3.11.2** |
+| **P0 platform** | Modularity: rules, contracts, boundaries | **3.9.*** — [MODULES.md](MODULES.md) |
+| P1 | Domain foundation + второй source | **3.11.1–3.11.2** (после **3.9.3**) |
 | P1 | Trust для публичного register | **2.6** / **2.1e** |
-| P2 | Rule engine design → impl | **3.1** (после 2+ sources) |
+| P2 | Rule engine product (UI, БД) | **3.1** (после **2.7** + multi-source) |
 | Не сейчас | Social, mobile app, AI, public API GA | **3.12**, **4.x** |
 
 ---
@@ -183,20 +188,20 @@ GetSync — canonical storage layer. Внешние платформы — provi
 
 ### Горизонт 1 — Сейчас
 
-**Цель:** стабилизировать архитектуру и ядро платформы.
+**Цель:** hub foundation + modularity.
 
-- Зафиксировать [DOMAIN-MODEL.md](DOMAIN-MODEL.md) v0, module boundaries (**3.9** design)
-- Reliability sync, dedup, tenant isolation
+- Зафиксировать [ACTIVITY-HUB.md](ACTIVITY-HUB.md), [DOMAIN-MODEL.md](DOMAIN-MODEL.md), [MODULES.md](MODULES.md)
+- **catalog + workspace** ✅; provider registry + adapters (**3.9.3b**, Strava reference)
+- Reliability delivery, dedup, tenant isolation
 - UI — minimum ops surface (**2.10**, **2.12**)
-- Garmin pull spike + pipeline (**3.11**)
-- Open-source — не публиковать всё сразу; сильное ядро
+- Garmin pull (**3.11**) — Garmin как **source** в hub
 
 ### Горизонт 2 — Следующая версия продукта
 
-**Цель:** athlete workspace + multi-source hub.
+**Цель:** full activity hub — multi-source, multi-sink.
 
-- Unified workspace: calendar, activity viewer, routes, planned workouts
-- Rule engine (**3.1**), integrations hub (Strava, … — по priority matrix)
+- Unified workspace: calendar, activity viewer, routes
+- Rule engine product (**3.1**), Strava и др. по priority matrix
 - Wellness (**3.11.3–3.11.4**), visualization (**3.10**)
 - API foundation (**3.12**), постепенный open-source core
 
@@ -226,13 +231,17 @@ GetSync — canonical storage layer. Внешние платформы — provi
 
 | Vision | PLAN ID | Горизонт |
 | ------ | ------- | -------- |
+| **Activity hub model** | [ACTIVITY-HUB.md](ACTIVITY-HUB.md) | H1 |
 | Domain model v0 | [DOMAIN-MODEL.md](DOMAIN-MODEL.md) | H1 |
+| Catalog + workspace | **3.9.3** ✅ | H1 |
+| Provider adapters (HH, Garmin, Strava) | **3.9.3b** | H1 |
 | Connections в БД | **2.7** | H1 |
 | Garmin login UI | **2.12** | H1 / v0.7 |
-| Garmin pull | **3.11.*** | H1 |
-| Modularity | **3.9**, **2.8** | H1→H2 |
-| Rule engine | **3.1** | H2 |
-| Full hub | **3.5** | H2 |
+| Modularity | **3.9.*** — [MODULES.md](MODULES.md) | H1 |
+| Source/Sink contracts | **3.9.2** (closes **2.8**) | H1 |
+| Garmin as hub source | **3.11.*** | H1 |
+| Rule engine product | **3.1** | H2 |
+| Full hub (N→M) | **3.5** | H2 |
 | Public API | **3.12** | H2 |
 | Visualization | **3.10** | H2 |
 | OAuth login | **3.4** | H2 |
@@ -243,8 +252,8 @@ GetSync — canonical storage layer. Внешние платформы — provi
 
 ## 14. Главный вывод
 
-GetSync — не просто сервис синхронизации, а попытка создать unified athlete history и независимый слой спортивных данных между fragmented ecosystems.
+GetSync — **activity hub**: canonical catalog тренировок и rule-driven delivery между fragmented ecosystems. Не «синхронизатор Karoo с Garmin», а платформа, где Karoo→Garmin — первый supported recipe.
 
-**Фокус сейчас:** canonical data model, modularity, reliable sync foundation — при bounded ops UI в v0.7.
+**Фокус сейчас:** hub foundation (`catalog`, `workspace`, `providers`), modularity, reliable delivery — при bounded ops UI в v0.7.
 
-Тактические задачи и реестр: [PLAN.md](PLAN.md).
+Тактические задачи: [PLAN.md](PLAN.md) · модель: [ACTIVITY-HUB.md](ACTIVITY-HUB.md).

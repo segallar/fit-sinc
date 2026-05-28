@@ -5,10 +5,10 @@
 <h1 align="center">GetSync</h1>
 
 <p align="center">
-  <a href="https://getsync.me">getsync.me</a> — синхронизация тренировок <strong>Hammerhead Karoo</strong> → <strong>Garmin Connect</strong>
+  <a href="https://getsync.me">getsync.me</a> — personal <strong>activity hub</strong>: ваш каталог тренировок и доставка в любые подключённые системы
 </p>
 
-<p align="center"><small>Документация: <strong>v0.7.0</strong> · обновлено 2026-05-27 · <a href="docs/DOC-CONVENTION.md">соглашение о документах</a></small></p>
+<p align="center"><small>Документация: <strong>v0.7.0</strong> · обновлено 2026-05-28 · <a href="docs/DOC-CONVENTION.md">соглашение о документах</a></small></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
@@ -17,36 +17,40 @@
 
 ---
 
-После поездки Karoo загружает активность в Hammerhead Cloud. **GetSync** получает webhook, скачивает оригинальный `.fit` через официальный Hammerhead API и загружает его в Garmin Connect — без правок трека (GPS, мощность, пульс, каденс остаются как на Karoo).
+**GetSync** — **activity hub**: собирает тренировки из подключённых источников в единый каталог и доставляет их в выбранные системы по правилам. Вы владеете копией истории; внешние платформы — providers, не canonical store.
 
-Hammerhead и Garmin не синхронизируют активности между собой. Если история и аналитика ведутся в Garmin Connect, каждую поездку с Karoo приходилось переносить вручную — этот сервис делает это в фоне.
+Product model: [docs/ACTIVITY-HUB.md](docs/ACTIVITY-HUB.md) · Vision: [docs/VISION.md](docs/VISION.md)
 
-## Architecture
+## Bootstrap-сценарий (production v0.7)
 
-Webhook-сервис на FastAPI: Hammerhead шлёт событие → скачиваем `.fit` → загружаем в Garmin → фиксируем в SQLite.
+Первый supported recipe — **Hammerhead Karoo → Garmin Connect** (implicit rule до UI rules **3.1**):
+
+После поездки Karoo → Hammerhead Cloud → GetSync webhook → download `.fit` → catalog → upload Garmin. Трек без правок (GPS, мощность, пульс, каденс как на Karoo).
+
+## Architecture (hub)
 
 ```mermaid
-sequenceDiagram
-    participant Karoo as Karoo
-    participant HH as Hammerhead Cloud
-    participant GS as GetSync
-    participant GC as Garmin Connect
-
-    Karoo->>HH: sync activity
-    HH->>GS: POST webhook (HMAC)
-    GS->>GS: verify signature
-    GS->>HH: GET activity .fit
-    HH-->>GS: FIT binary
-    GS->>GS: save data/users/.../fits, SQLite
-    GS->>GC: upload (browser → HTTP → garth)
-    GS->>GS: mark synced
+flowchart LR
+  subgraph sources [Sources]
+    HH[Hammerhead]
+    GM[Garmin]
+  end
+  subgraph hub [GetSync]
+    CAT[catalog]
+    WS[workspace]
+  end
+  subgraph sinks [Sinks]
+    GC[Garmin Connect]
+  end
+  HH --> CAT
+  GM --> CAT
+  CAT --> WS
+  CAT --> GC
 ```
 
-1. Тренировка завершена → Karoo синхронизируется с Hammerhead Cloud  
-2. Hammerhead шлёт webhook на `/webhooks/hammerhead`  
-3. Сервис скачивает `.fit` (retry 5 / 15 / 30 с)  
-4. FIT загружается в Garmin Connect (web JWT → Playwright → HTTP → garth-ng)  
-5. ID активности в SQLite — повтор не создаёт дубликат  
+FastAPI monolith: **catalog** (SQLite + FIT) · **workspace** (UI) · **providers** (adapters) · **delivery** (`sync/`).
+
+Подробнее: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/ACTIVITY-HUB.md](docs/ACTIVITY-HUB.md).
 
 ### Stack
 
@@ -65,26 +69,23 @@ sequenceDiagram
 
 | Модуль | Назначение |
 |--------|------------|
-| `hammerhead/` | OAuth, API client, скачивание FIT |
-| `garmin/` | Web-сессия, upload (browser / HTTP / garth) |
-| `credentials/` | Encrypted per-user secrets (**2.16**) |
-| `mail/` | Исходящая почта: null / console / Resend (infra) |
-| `sync/service.py` | id → FIT → upload → state, backfill |
-| `web/app.py` | Webhook + веб-UI |
-| `state/store.py` | SQLite: activities, sync_events |
-| `data/` | tokens, FIT-кэш, garth session |
-
-Подробнее: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+| `catalog/` | Activity catalog (SQLite owner), provider ingest |
+| `workspace/` | List/calendar UI (read catalog) |
+| `providers/` | Source/sink registry and adapters |
+| `hammerhead/`, `garmin/` | Provider integrations (→ adapters) |
+| `sync/` | Delivery orchestrator (bootstrap HH→Garmin) |
+| `storage/` | FIT artifacts, `storage_key` |
+| `web/` | FastAPI, webhook, cabinet |
 
 ## Возможности
 
-- Webhook от Hammerhead + ручной backfill (`getsync sync`); routing по `userId` → tenant
+- **Activity hub:** unified catalog + calendar/list; refresh ingests from connected sources
+- Bootstrap delivery: Hammerhead webhook → FIT → Garmin Connect
 - Multi-tenant: несколько пользователей на одном инстансе, admin CRUD
-- Загрузка в Garmin Connect (неофициальный web API + [garth-ng](https://pypi.org/project/garth-ng/))
-- Кабинет: activities (календарь/список), settings, admin sync log + JWT log; скачивание `.fit`
-- Саморегистрация `/register` при `REGISTRATION_OPEN`
-- CLI: OAuth Hammerhead, сессия Garmin (`--save-credentials`), sync, `serve`, `mail test`
-- Дедупликация и история в SQLite
+- Connections UI: sources (HH, Strava planned) and sinks (Garmin)
+- Кабинет: activities, settings, admin logs; скачивание `.fit`
+- CLI: OAuth, Garmin session, sync/backfill, `serve`
+- Дедупликация и журнал delivery в SQLite
 
 ## Требования
 

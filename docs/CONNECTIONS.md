@@ -1,24 +1,27 @@
 # Connections (источники и приёмники)
 
-> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-26 · **Версия:** 0.7.0  
-> Статус: **модель зафиксирована** · в UI список растёт · в БД пока файлы + поля `users` (реестр — фаза **7.1** / **2.7**).
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-28 · **Версия:** 0.7.0  
+> **Product model:** [ACTIVITY-HUB.md](ACTIVITY-HUB.md) · Статус: **модель зафиксирована** · реестр connections — **2.7**
 
 ## Идея
 
-У пользователя **много соединений**, не ровно два:
+GetSync — **activity hub**: у пользователя **много connections** (sources и sinks), не одна пара экосистем.
 
 | Роль | Назначение | Примеры |
 |------|------------|---------|
-| **source** | Откуда читаем активности | Hammerhead, Strava, Wahoo, ручной upload |
-| **sink** | Куда доставляем | Garmin Connect, S3, Hammerhead routes |
+| **source** | Ingress → catalog | Hammerhead, Garmin pull, Strava, Wahoo, manual FIT |
+| **sink** | Egress из catalog/FIT | Garmin Connect, Strava, S3, archive |
 
-В каталоге `/app/activities` поле **`source`** совпадает с id источника (`hammerhead`, `garmin`, …).
+В каталоге `/app/activities` поле **`source`** = id провайдера-источника в hub (`hammerhead`, `garmin`, `strava`, …).
 
-Сейчас в production:
+### Bootstrap vs hub (production v0.7)
 
-- **1 источник:** Hammerhead (OAuth + webhook)
-- **1 приёмник:** Garmin Connect (web session / garth)
-- **Garmin как source (metadata):** список активностей в browse — без локального FIT и wellness; полный pull — roadmap [**3.11**](3.11-GARMIN-PULL.md) · [PLAN.md](PLAN.md)
+| | Роль в hub |
+|---|------------|
+| **Hammerhead** | source (webhook + refresh) |
+| **Garmin Connect** | sink (upload) + source metadata (refresh); full pull — **3.11** |
+| **Strava** | source + sink — **3.9.3c** ([API_STRAVA.md](API_STRAVA.md)) |
+| **Implicit rule** | `hammerhead → garmin` до **3.1** — см. [ACTIVITY-HUB.md](ACTIVITY-HUB.md) |
 
 В Settings показываются **все слоты** (включая planned), чтобы UI не ломался при добавлении провайдера.
 
@@ -79,8 +82,9 @@ connections (
 | Слой | Связь |
 |------|--------|
 | `activities.source` | id провайдера-источника |
-| Sync HH→Garmin | правило по умолчанию: source=hammerhead → sink=garmin |
-| Garmin pull (**3.11**) | source=garmin: FIT + `daily_steps` / `daily_sleep` |
+| Sync HH→Garmin | **bootstrap implicit rule** (до **3.1**); target: arbitrary N→M |
+| Garmin pull (**3.11**) | Garmin как **source** в hub: FIT + wellness |
+| Strava (**3.9.3c**) | source + sink — [API_STRAVA.md](API_STRAVA.md) |
 | Будущее | N sources → M sinks по правилам пользователя |
 
 См. [PLAN.md](PLAN.md) фазы **2.7**, **7**, [APP-UI.md](APP-UI.md) §6.3.

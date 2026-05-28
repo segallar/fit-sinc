@@ -1,10 +1,11 @@
 # Roadmap GetSync
 
 
-> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0 · **2.17** tenant UUID — отложено (H2)  > **Prod:** [v0.6.0](#v060--зафиксировано-2026-05-26) · **В разработке:** **v0.7.0** (кабинет / дизайн)  
-> **Выполненное до v0.6** (фазы 0–5, 5b) — [PLAN-ARCHIVE.md](archive/PLAN-ARCHIVE.md) · **~112** тестов (CI `unittest discover`) · HH→Garmin на sirocco.
+> **Создано:** 2026-05-25 · **Обновлено:** 2026-05-28 · **Версия:** 0.7.0 · **2.17** tenant UUID — отложено (H2)  
+> **Prod:** [v0.6.0](#v060--зафиксировано-2026-05-26) · **В разработке:** **v0.7.0** (кабинет / дизайн)  
+> **Выполненное до v0.6** — [PLAN-ARCHIVE.md](archive/PLAN-ARCHIVE.md) · **~166** тестов · bootstrap HH→Garmin на prod.
 
-**Стратегия:** [VISION.md](VISION.md) (product vision, 3 горизонта) · **Domain v0:** [DOMAIN-MODEL.md](DOMAIN-MODEL.md)
+**Product model:** [ACTIVITY-HUB.md](ACTIVITY-HUB.md) · **Vision:** [VISION.md](VISION.md) · **Domain:** [DOMAIN-MODEL.md](DOMAIN-MODEL.md)
 
 **Документы:** [APP-UI.md](APP-UI.md) · [SCREENS.md](design/SCREENS.md) · [CONNECTIONS.md](CONNECTIONS.md) · [CREDENTIALS.md](CREDENTIALS.md) · [STORAGE.md](STORAGE.md) · [DATABASE.md](DATABASE.md) · [2.1e-EMAIL.md](2.1e-EMAIL.md) · [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) · [CHANGELOG.md](../CHANGELOG.md)
 
@@ -49,7 +50,7 @@
 
 | Область | Содержание |
 | ------- | ---------- |
-| Sync | Webhook HH → FIT → Garmin; re-sync; Playwright на VPS |
+| Sync | Bootstrap delivery: HH webhook → FIT → Garmin; re-sync; Playwright на VPS |
 | Кабинет | **Activities** (list \| calendar, фильтры); sync summary; **Admin** sync log + Garmin JWT log |
 | IA | Нет Dashboard; `/app/` → activities; legacy runtime снят |
 | Данные | `getsync.db`, `storage_key`, [STORAGE.md](STORAGE.md), [DATABASE.md](DATABASE.md) |
@@ -61,9 +62,10 @@
 
 | Область | Состояние |
 | ------- | --------- |
-| Pipeline | **Hammerhead → Garmin** (Garmin — приёмник) |
+| **Product model** | **Activity hub** — [ACTIVITY-HUB.md](ACTIVITY-HUB.md); catalog + workspace (**3.9.3** ✅) |
+| Bootstrap recipe | Hammerhead → Garmin (implicit rule; код в `sync/service.py`) |
 | Кабинет | Activities · Settings · Admin (users, logs) |
-| Garmin в UI | Upload ✅ · list в browse ✅ · pull FIT/wellness — **3.11** 📋 |
+| Garmin в hub | Sink (upload) ✅ · source metadata in catalog ✅ · pull FIT/wellness — **3.11** 📋 |
 | Tenants | `user_id`, `data/users/{id}/`, session `getsync_session` |
 | Регистрация | `/register` при `REGISTRATION_OPEN` — без email verify (**2.6**) |
 | Домен | **`getsync.me`** / **`app.getsync.me`** ✅ — [1.5-RENAME.md](archive/1.5-RENAME.md) |
@@ -73,12 +75,13 @@
 | Блок | Состояние |
 | ---- | --------- |
 | **Prod** | TLS, nginx, Hammerhead webhook + OAuth на `app.getsync.me` ✅ |
-| **Sync** | Webhook HH → FIT → Garmin; routing по `hammerhead_user_id`; Playwright на VPS |
-| **Кабинет** | Activities (list \| calendar), Settings (HH OAuth, Garmin monitor), Admin (users, sync-log, JWT log) |
+| **Hub** | `catalog` + `workspace`; UI read-only from catalog; refresh = ingest |
+| **Bootstrap delivery** | HH webhook → FIT → Garmin; routing по `hammerhead_user_id` |
+| **Кабинет** | Activities (list \| calendar), Settings (HH OAuth, Garmin monitor), Admin |
 | **Auth** | `/register` при `REGISTRATION_OPEN`; session `getsync_session`; bootstrap admin |
 | **2.16 ✅** | Encrypted Garmin credentials per user; CLI `--save-credentials`; `ensure_garmin_session` — [CREDENTIALS.md](CREDENTIALS.md) |
 | **Mail (infra)** | `getsync/mail` + Resend; `getsync mail test`; verify/register в UI — **2.6** / **2.1e** 📋 |
-| **Не сделано** | **2.10** sidebar · **2.6** email verify · **3.11** pull |
+| **Не сделано** | **2.10** sidebar · **2.6** email verify · **3.9.3b** provider adapters · **3.11** pull · **3.1** rules UI |
 
 ### Снимок кабинета `/app`
 
@@ -97,7 +100,9 @@
 
 **Цель:** согласованный дизайн и стабильное поведение `/app` + **Garmin login в UI** (**2.12** — UX-блокер; backend credentials **2.16** ✅).
 
-**Не в v0.7:** **3.x** хаб · полный **3.11**.
+**Не в v0.7:** полный multi-source hub (**3.5**) · product rules UI (**3.1**) · полный **3.11**.
+
+Hub foundation (**catalog** + **workspace**, **3.9.3** ✅) и product model ([ACTIVITY-HUB.md](ACTIVITY-HUB.md)) — **в scope** platform work параллельно **2.10**.
 
 ```mermaid
 flowchart TB
@@ -154,13 +159,13 @@ flowchart TB
 | **2.6** | H2 | ⏸ | Email verify — [2.1e-EMAIL.md](2.1e-EMAIL.md) | 2–4 веч | публичный register |
 | **2.17** | H2 | ⏸ | Tenant `id` = UUID, `slug` отдельно — [§2.17](#217--tenant-id-uuid) | 2–3 веч | multi-tenant |
 | **2.7** | H2 | ⏸ | Connections/rules в БД | 1–2 нед | **2.16**, **3.1** |
-| **2.8** | H3 | 🔵 | Spike Source/Sink models | 2–3 веч | — |
+| **2.8** | H3 | ✅ | Source/Sink → **3.9.2** `getsync/contracts/` | — | **3.9.2** |
 | **2.9** | H3 | 🔵 | Manual FIT upload | 1–2 веч | storage ✅ |
 | **3.11.1** | H3 | 🔵 | Spike Garmin download FIT | ½–1 веч | **2.12** |
 | **3.11.2** | H3 | 🔵 | Garmin FIT pull — [3.11-GARMIN-PULL.md](3.11-GARMIN-PULL.md) | 2–3 веч | **3.11.1** |
 | **3.11.3** | H3 | 🔵 | Garmin wellness (steps, sleep) | 1–2 веч | **3.11.1** |
 | **3.11.4** | H3 | 🔵 | UI wellness widget | 1–2 веч | **3.11.3**, **2.5** |
-| **3.9** | H3 | 🔵 | Модульность | 1–2 нед | **2.8** |
+| **3.9** | H3 | ▶ | Модульность — [MODULES.md](MODULES.md) | 2–3 нед | tier CI ✅ |
 | **3.1** | H3 | 🔵 | Rule engine | ~1 нед | **3.9** |
 | **3.3** | H3 | 🔵 | S3 — [STORAGE.md](STORAGE.md) | 3–5 дн | local ✅ |
 | **3.4** | H3 | 🔵 | OAuth login — [3.4-OAUTH-LOGIN.md](3.4-OAUTH-LOGIN.md) | 2–3 веч | **2.6** |
@@ -183,7 +188,7 @@ flowchart TB
 flowchart LR
   V07["v0.7\n2.10·2.12·2.13"]
   H1["H1\n1.5 ✅"]
-  H3["H3\n3.11·3.9·3.1"]
+  H3["H3\n3.9·3.11·3.1"]
   V07 --> H1 --> H3
 ```
 
@@ -193,13 +198,16 @@ flowchart LR
 | **v0.7** | Кабинет: дизайн (**2.10**), Garmin login UI (**2.12**), тесты (**2.13**), **2.14**; backend credentials (**2.16**) ✅ |
 | **H1** | ~~**1.5** getsync.me~~ ✅ |
 | **H2** | **2.11** · **2.4** · **2.6** · **2.17** |
-| **H3** | **2.8** → **3.11.*** → **3.9** → **3.1** ∥ **3.3** → **3.5** |
+| **H3** | **3.9.*** → **3.11.*** → **3.1** product ∥ **3.3** → **3.5** |
 
-**Порядок H3 (Garmin + хаб):**
+**Порядок H3 (platform + хаб):**
 
 ```text
-2.8 → 3.11.1 → 3.11.2 ∥ 3.11.3 → 3.11.4 → 3.9 ∥ 3.3 → 3.1 → 3.5 → 3.4
+3.9.1 → 3.9.2 → 3.9.3 → 3.9.3b → 3.9.3c → 3.9.4 → 3.9.5 → 3.9.6 → (3.9.7)
+→ 3.11.1 → 3.11.2 ∥ 3.11.3 → 3.11.4 → 3.1 → 3.5 → 3.4
 ```
+
+**2.8** поглощён **3.9.2** (`NormalizedActivity`, `ActivitySource`/`Sink`).
 
 ---
 
@@ -308,7 +316,22 @@ flowchart LR
 
 ### 3.9 — Модульность
 
-3.9.0 граф · 3.9.1 MODULES.md · 3.9.2 protocols · 3.9.3 refactor · 3.9.4 contract tests
+> Normative rules: [MODULES.md](MODULES.md) · modular monolith, один deploy.
+
+| ID | Содержание | Статус |
+| -- | ---------- | ------ |
+| **3.9.0** | Dependency graph, import matrix | ✅ в MODULES.md |
+| **3.9.1** | MODULES.md + reconciliation PLAN/VISION/DOMAIN | ✅ |
+| **3.9.2** | `getsync/contracts/`, registry; closes **2.8** | ✅ |
+| **3.9.3** | catalog + workspace; sync/web via ports; activities shim | ✅ |
+| **3.9.3b** | provider adapters (HH, Garmin, Strava stub) + registry bootstrap | ✅ |
+| **3.9.3c** | Strava OAuth + source/sink — [API_STRAVA.md](API_STRAVA.md) | 📋 |
+| **3.9.4** | `getsync/events/` EventBus; decouple web | 📋 |
+| **3.9.5** | `getsync/rules/` infra (≠ product **3.1**) | 📋 |
+| **3.9.6** | import-linter + `tests/contract/` | 📋 |
+| **3.9.7** | physical layout + Store split (опц.) | 📋 |
+
+**Параллельно v0.7:** **2.10** / **2.14** (UI) не блокируют 3.9 core.
 
 ### 3.1 / 3.3 / 3.4 / 3.5
 

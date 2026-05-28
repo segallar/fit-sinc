@@ -1,9 +1,8 @@
 # Документация GetSync
 
-> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
-> **Продукт:** [GetSync](https://getsync.me) — синхронизация тренировок **Hammerhead Karoo → Garmin Connect**.  
-> **Код:** пакет `getsync`, CLI `getsync`.  
-> **Быстрый старт:** [README](../README.md).
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-28 · **Версия:** 0.7.0  
+> **Продукт:** [GetSync](https://getsync.me) — personal **activity hub** (каталог + delivery по правилам).  
+> **Product model:** [ACTIVITY-HUB.md](ACTIVITY-HUB.md) · **Код:** пакет `getsync`, CLI `getsync` · **Быстрый старт:** [README](../README.md)
 
 ---
 
@@ -11,8 +10,11 @@
 
 | Документ | Для кого | Содержание |
 |----------|----------|------------|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Разработчик, ops | Поток данных, tenants, модули, безопасность, ограничения |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Разработчик, ops | Hub runtime, tenants, bootstrap recipe, безопасность |
+| **[ACTIVITY-HUB.md](ACTIVITY-HUB.md)** | Product / backend | **Product model:** hub, ingress/egress, providers |
+| **[MODULES.md](MODULES.md)** | Backend | **Modularity rules**, contracts, ownership (**3.9**) |
 | [API_HAMMERHEAD.md](API_HAMMERHEAD.md) | Интеграции | OAuth, REST, webhook HMAC, Developer Portal |
+| [API_STRAVA.md](API_STRAVA.md) | Интеграции | OAuth, activities list, FIT upload (**3.9.3c**) |
 | [API_GARMIN.md](API_GARMIN.md) | Интеграции | Web JWT, Playwright upload, garth-ng, refresh |
 | [CI-CD.md](CI-CD.md) | Ops | VPS, nginx, certbot, rsync, GitHub Actions |
 | [TESTING.md](TESTING.md) | QA / Dev | Стратегия тестов, каталог `tests/`, скрипты `scripts/` |
@@ -27,7 +29,7 @@
 | [STORAGE.md](STORAGE.md) | Backend | FIT: пути, `storage_key`, миграция, download |
 | [DATABASE.md](DATABASE.md) | Backend | SQLite: таблицы, индексы, tenant, журналы |
 | [PLAN.md](PLAN.md) | Roadmap | v0.6 / v0.7, реестр задач, горизонты |
-| **[VISION.md](VISION.md)** | Product | Vision, стратегия, 3 горизонта, non-goals |
+| **[VISION.md](VISION.md)** | Product | Vision, activity hub, 3 горизонта, non-goals |
 | **[DOMAIN-MODEL.md](DOMAIN-MODEL.md)** | Backend | Canonical entities v0, mapping на SQLite |
 | [CHANGELOG.md](../CHANGELOG.md) | Releases | Версии и release notes |
 | [archive/](archive/) | Архив | [PLAN-ARCHIVE](archive/PLAN-ARCHIVE.md), [1.5](archive/1.5-RENAME.md), [5b](archive/5b-DECISIONS.md) |
@@ -49,7 +51,7 @@
 | **История rename** | fit_sinc → GetSync — [archive/1.5-RENAME.md](archive/1.5-RENAME.md) (миграции в коде сняты) |
 | **tenant** | Пользователь сервиса (`users.id`, каталог `data/users/{id}/`) |
 | **Production app** | `https://app.getsync.me` |
-| **Стратегия** | Vision + domain — [VISION.md](VISION.md) · [DOMAIN-MODEL.md](DOMAIN-MODEL.md); тактика — [PLAN.md](PLAN.md) |
+| **Стратегия** | [ACTIVITY-HUB.md](ACTIVITY-HUB.md) · [VISION.md](VISION.md) · [DOMAIN-MODEL.md](DOMAIN-MODEL.md); тактика — [PLAN.md](PLAN.md) |
 | **Mail** | Infra ✅ (`getsync/mail`, Resend); verify при register — **2.6** / **2.1e** 📋 |
 
 ---

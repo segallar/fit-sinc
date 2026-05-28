@@ -4,14 +4,26 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from getsync.activities.browse import catalog_row_to_browse_row
+from getsync.activities.browse import (
+    ActivityBrowseRow,
+    ActivityFilters,
+    _dedupe_linked_rows,
+    _matches_filters,
+    _sort_rows_by_date,
+    catalog_row_to_browse_row,
+    resolve_activity_filters,
+)
 from getsync.activities.calendar import (
     aggregate_days_by_local_date,
     attach_calendar_row_views,
     build_activity_calendar,
     format_activity_chip_name,
 )
+from getsync.catalog.infra.store_catalog import StoreCatalog
+from getsync.contracts.activities import NormalizedActivity
 from getsync.state.store import Store
+from getsync.users.context import UserContext
+from getsync.config import get_settings
 
 
 class TestActivityCalendar(unittest.TestCase):
@@ -71,8 +83,8 @@ class TestActivityCalendar(unittest.TestCase):
             )
 
             view = build_activity_calendar(
-                store,
-                user.id,
+                ctx=UserContext(user.id, get_settings()),
+                catalog=StoreCatalog(store),
                 year=2026,
                 month=5,
                 display_tz="UTC",
@@ -174,7 +186,19 @@ class TestActivityCalendar(unittest.TestCase):
             row = store.get_activity(user.id, "hh-1", source="hammerhead")
             assert row is not None
             index = store.build_sync_index(user.id)
-            browse = catalog_row_to_browse_row(row, index, {})
+            normalized = NormalizedActivity(
+                user_id=user.id,
+                source=row.source,
+                activity_id=row.activity_id,
+                name=row.name,
+                activity_date=row.activity_date,
+                distance=row.distance,
+                duration=row.duration,
+                activity_type=row.activity_type,
+                sync_status=row.sync_status,
+                storage_key=row.storage_key,
+            )
+            browse = catalog_row_to_browse_row(normalized, index, {})
             self.assertTrue(browse.fit_available)
             self.assertEqual(browse.hammerhead_id, "hh-1")
 

@@ -1,8 +1,7 @@
 # База данных SQLite
 
-> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
-> **Код:** [`getsync/state/store.py`](../getsync/state/store.py) — схема, миграции, CRUD.  
-> **Domain model:** [DOMAIN-MODEL.md](DOMAIN-MODEL.md) · **FIT:** [STORAGE.md](STORAGE.md) · **Архитектура:** [ARCHITECTURE.md](ARCHITECTURE.md)
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-28 · **Версия:** 0.7.0  
+> **Product model:** [ACTIVITY-HUB.md](ACTIVITY-HUB.md) · **Owner module:** `catalog` ([MODULES.md](MODULES.md))
 
 ---
 
@@ -65,7 +64,7 @@ erDiagram
 | ------- | ---------- |
 | `users` | Tenants: учётные записи, профиль, флаги admin/disabled |
 | `activities` | Каталог активностей (метаданные + статус sync) по `(user_id, source, activity_id)` |
-| `sync_events` | Журнал pipeline HH→Garmin (admin UI: все tenants) |
+| `sync_events` | Журнал delivery pipeline (admin UI; bootstrap HH→Garmin) |
 | `session_refresh_events` | Журнал обновления Garmin JWT (admin UI: Garmin log) |
 
 **Не в SQLite:** OAuth-токены Hammerhead, сессия Garmin, garth — JSON под `data/users/{user_id}/`.  
@@ -99,7 +98,7 @@ erDiagram
 
 ## `activities`
 
-Единый каталог для UI (list/calendar) и статуса синхронизации HH→Garmin.  
+Единый **activity catalog** hub: metadata для UI (list/calendar) и delivery status (transitional: bootstrap → Garmin).  
 Первичный ключ: **`(user_id, source, activity_id)`**.
 
 | Колонка | Тип | Описание |
@@ -115,7 +114,7 @@ erDiagram
 | `sync_status` | TEXT NOT NULL | См. [статусы](#sync_status-activities) |
 | `storage_key` | TEXT | Логический ключ FIT в `StorageBackend` |
 | `fit_path` | TEXT | **Не используется** (остаётся в старых БД после миграций схемы); канон — `storage_key` |
-| `garmin_result` | TEXT | JSON ответа upload Garmin (id, status, …) |
+| `garmin_result` | TEXT | JSON ответа sink upload (bootstrap: Garmin); target: generic delivery log |
 | `synced_at` | TEXT | ISO UTC успешного sync |
 | `error_message` | TEXT | Текст ошибки (до ~2000 символов в upsert) |
 | `created_at` | TEXT | ISO UTC |
@@ -125,17 +124,18 @@ erDiagram
 
 | `source` | Кто пишет | Содержимое строки |
 | -------- | --------- | ----------------- |
-| `hammerhead` | Webhook + `sync_activity`, browse | Полный цикл: FIT, upload Garmin, `garmin_result` |
-| `garmin` | `persist_browse_rows` после browse API | В основном **metadata** для списка; FIT локально — [**3.11**](3.11-GARMIN-PULL.md) |
+| `hammerhead` | catalog ingest + bootstrap delivery | FIT, upload Garmin, `garmin_result` |
+| `garmin` | catalog ingest (refresh) | Metadata; FIT locally — [**3.11**](3.11-GARMIN-PULL.md) |
+| `strava`, … | planned | per provider adapter |
 
-`build_sync_index(user_id)` читает только `source='hammerhead'` — индекс для сопоставления HH-активностей с Garmin при browse.
+`build_sync_index(user_id)` — transitional HH↔Garmin link index for UI; target: generic delivery index (**3.1**).
 
 ### `sync_status` (activities)
 
 | Значение | Смысл |
 | -------- | ----- |
 | `pending` | Ожидает или идёт sync |
-| `synced` | FIT загружен и отправлен в Garmin (HH pipeline) |
+| `synced` | Delivery success (bootstrap: uploaded to Garmin) |
 | `error` | Ошибка download/upload; см. `error_message` |
 | `not synced` | В каталоге, но не синхронизировалось (browse) |
 | `skipped` | Дедуп / уже synced (логика sync) |
@@ -153,7 +153,7 @@ erDiagram
 
 ## `sync_events`
 
-Аудит pipeline синхронизации (таблица в **Admin → Sync log**).  
+Аудит delivery pipeline (таблица в **Admin → Sync log**).  
 `user_id=NULL` в старых строках после миграции заполнено `default`.
 
 | Колонка | Тип | Описание |
