@@ -129,13 +129,17 @@ if [[ -z "\$PY_FOR_VENV" ]]; then
   echo "ERROR: Python >= 3.11 required. On Ubuntu 22.04: apt install -y python3.11 python3.11-venv" >&2
   exit 1
 fi
-venv_py=""
-if [[ -x "\${DEPLOY_PATH}/.venv/bin/python" ]]; then
-  venv_py="\$(\"\${DEPLOY_PATH}/.venv/bin/python\" -c 'import sys; print(\".\".join(map(str, sys.version_info[:3])))')"
+recreate_venv=0
+venv_py="none"
+_venv_bin="\${DEPLOY_PATH}/.venv/bin/python"
+if [[ -x "\$_venv_bin" ]] \
+   && "\$_venv_bin" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; then
+  venv_py="\$(\"\$_venv_bin\" -c 'import sys; print(\".\".join(map(str, sys.version_info[:3])))')"
+else
+  recreate_venv=1
 fi
-if [[ ! -x "\${DEPLOY_PATH}/.venv/bin/python" ]] \
-   || ! "\${DEPLOY_PATH}/.venv/bin/python" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then
-  echo "Recreating .venv with \${PY_FOR_VENV} (was: \${venv_py:-none})"
+if [[ "\$recreate_venv" == "1" ]]; then
+  echo "Recreating .venv with \${PY_FOR_VENV} (was: \${venv_py})"
   rm -rf "\${DEPLOY_PATH}/.venv"
   sudo -u \${SERVICE_USER} "\$PY_FOR_VENV" -m venv "\${DEPLOY_PATH}/.venv"
   chown -R "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/.venv"
@@ -144,8 +148,8 @@ fi
 new_hash=\$(sha256sum "\${DEPLOY_PATH}/pyproject.toml" | awk '{print \$1}')
 old_hash=\$(cat "\${DEPLOY_PATH}/\${DEPS_MARKER}" 2>/dev/null || true)
 pip_changed=0
-if [[ "\$new_hash" != "\$old_hash" ]]; then
-  echo "pyproject.toml changed — pip install -e ."
+if [[ "\$new_hash" != "\$old_hash" ]] || [[ "\$recreate_venv" == "1" ]]; then
+  echo "pip install -e . (pyproject_changed=\$([[ "\$new_hash" != "\$old_hash" ]] && echo 1 || echo 0) venv_recreated=\${recreate_venv})"
   sudo -u \${SERVICE_USER} bash -c "cd \${DEPLOY_PATH} && .venv/bin/pip install -e ."
   echo "\$new_hash" > "\${DEPLOY_PATH}/\${DEPS_MARKER}"
   pip_changed=1
