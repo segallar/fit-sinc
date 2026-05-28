@@ -7,7 +7,6 @@ import unittest
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-
 from getsync.web.site_i18n import DEFAULT_LANG, LANG_COOKIE
 from helpers import isolated_env
 

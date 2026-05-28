@@ -42,7 +42,6 @@ class TestTemplates(unittest.TestCase):
         from pathlib import Path
 
         from fastapi.testclient import TestClient
-
         from getsync.config import get_settings
         from getsync.state.store import Store
         from getsync.web.app import app

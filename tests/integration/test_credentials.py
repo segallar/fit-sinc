@@ -7,8 +7,6 @@ import unittest
 from pathlib import Path
 
 from cryptography.fernet import Fernet
-
-from helpers import isolated_env
 from getsync.credentials.garmin import (
     clear_garmin_credentials,
     garmin_auto_login_configured,
@@ -17,6 +15,7 @@ from getsync.credentials.garmin import (
 )
 from getsync.credentials.store import CredentialStore, CredentialStoreError
 from getsync.users.context import resolve_user_context
+from helpers import isolated_env
 
 
 class TestCredentialStore(unittest.TestCase):

@@ -6,7 +6,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-
 from helpers import isolated_env
 
 

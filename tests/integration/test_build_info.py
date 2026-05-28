@@ -30,21 +30,24 @@ class TestBuildInfo(unittest.TestCase):
 
         import getsync.build_info as bi
 
-        prev = os.environ.get("GETSYNC_GIT_COMMIT")
-        os.environ["GETSYNC_GIT_COMMIT"] = "abc123def456"
         with tempfile.TemporaryDirectory() as tmp:
-            missing_meta = Path(tmp) / "_build_meta.json"
-            with patch.object(bi, "_BUILD_META_FILE", missing_meta):
+            missing = Path(tmp) / "missing"
+            with (
+                patch.object(bi, "_BUILD_META_FILE", missing),
+                patch.object(bi, "_COMMIT_FILE", missing),
+                patch.dict(os.environ, {"GETSYNC_GIT_COMMIT": "abc123def456"}, clear=False),
+                patch.object(
+                    bi.subprocess,
+                    "run",
+                    side_effect=OSError("no git in test"),
+                ),
+            ):
                 clear_build_info_cache()
                 try:
                     self.assertEqual(git_commit_short(), "abc123def456")
                     self.assertIn("abc123def456", build_footer_text())
                 finally:
                     clear_build_info_cache()
-                    if prev is None:
-                        os.environ.pop("GETSYNC_GIT_COMMIT", None)
-                    else:
-                        os.environ["GETSYNC_GIT_COMMIT"] = prev
 
     def test_deploy_meta_from_file(self) -> None:
         import getsync.build_info as bi
@@ -72,7 +75,6 @@ class TestBuildInfo(unittest.TestCase):
 
     def test_health_includes_deploy_fields(self) -> None:
         from fastapi.testclient import TestClient
-
         from getsync.web.app import app
 
         data = TestClient(app).get("/health").json()
@@ -83,7 +85,6 @@ class TestBuildInfo(unittest.TestCase):
 
     def test_home_footer_shows_version(self) -> None:
         from fastapi.testclient import TestClient
-
         from getsync.web.app import app
 
         r = TestClient(app).get("/")

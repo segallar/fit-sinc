@@ -2,12 +2,9 @@
 
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
-
-from helpers import isolated_env
-
-from datetime import date
 
 from getsync.activities.browse import (
     ActivityBrowseRow,
@@ -17,6 +14,7 @@ from getsync.activities.browse import (
     _sort_rows_by_date,
     resolve_activity_filters,
 )
+from helpers import isolated_env
 
 
 class TestActivitiesBrowse(unittest.TestCase):

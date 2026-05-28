@@ -223,10 +223,12 @@ flowchart LR
 
 | Шаг | Статус |
 | --- | ------ |
-| `tests/flows.py` + `test_user_cases.py` (guest/user/admin) | ✅ v0.7 |
-| redirects `/app/`, `/app/log`, `/app/session` | ✅ |
-| calendar `?view=calendar&year=&month=` | ✅ |
-| smoke login → activities → settings | ✅ |
+| Tier CI: `tests/unit` · `integration` · `e2e` | ✅ v0.7 |
+| Parallel jobs: lint ∥ unit ∥ integration | ✅ |
+| e2e: main / nightly / label / release (не PR) | ✅ |
+| `flows.py` + `test_user_cases.py` | ✅ |
+| Split pure unit из mixed modules | 📋 фаза 2 |
+| e2e: webhook flow + Playwright upload | 📋 |
 | регрессия после **2.10** (sidebar/layout) | 📋 после 2.10 |
 
 ### 2.14 — Sync log UX (admin)

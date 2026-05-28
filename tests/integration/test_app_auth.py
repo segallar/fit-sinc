@@ -7,7 +7,6 @@ import unittest
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-
 from getsync.state.store import Store
 from helpers import isolated_env
 

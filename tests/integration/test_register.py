@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-
 from getsync.state.store import Store
 from getsync.users.slug import allocate_unique_slug, slug_from_email
 from getsync.users.timezones import DEFAULT_TIMEZONE

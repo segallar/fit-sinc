@@ -1,4 +1,4 @@
-"""User locale in DB and settings UI."""
+"""Settings page and profile update (no network)."""
 
 from __future__ import annotations
 
@@ -7,30 +7,22 @@ import unittest
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-
 from getsync.state.store import Store
-from getsync.users.locale import DEFAULT_LOCALE
-from getsync.web.site_i18n import LANG_COOKIE
 from helpers import isolated_env
 
 
-class TestUserLocale(unittest.TestCase):
-    def test_create_user_default_locale(self) -> None:
+class TestSettings(unittest.TestCase):
+    def test_settings_requires_login(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
-                settings = __import__(
-                    "getsync.config", fromlist=["get_settings"]
-                ).get_settings()
-                store = Store(settings.db_path)
-                user = store.create_user(
-                    slug="athlete",
-                    display_name="Athlete",
-                    email="a@test.local",
-                    password="password1",
-                )
-                self.assertEqual(user.locale, DEFAULT_LOCALE)
+                from getsync.web.app import app
 
-    def test_settings_save_locale_russian_nav(self) -> None:
+                client = TestClient(app)
+                r = client.get("/app/settings", follow_redirects=False)
+                self.assertEqual(r.status_code, 303)
+                self.assertEqual(r.headers.get("location"), "/app/login")
+
+    def test_settings_profile_and_nav(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with isolated_env(Path(tmp)):
                 settings = __import__(
@@ -50,27 +42,36 @@ class TestUserLocale(unittest.TestCase):
                     data={"email": "owner@test.local", "password": "good-pass"},
                     follow_redirects=False,
                 )
+                page = client.get("/app/settings")
+                self.assertEqual(page.status_code, 200)
+                self.assertIn("Settings", page.text)
+                self.assertIn("/app/settings", page.text)
+
+                home = client.get("/app/", follow_redirects=True)
+                self.assertIn("Activities", home.text)
+
+                activities = client.get("/app/activities")
+                self.assertEqual(activities.status_code, 200)
+                self.assertIn("getsync-cal-", activities.text)
+
                 r = client.post(
                     "/app/settings/profile",
                     data={
                         "display_name": "Roman",
                         "email": "owner@test.local",
-                        "telegram": "",
-                        "timezone": "Europe/Moscow",
-                        "locale": "ru",
+                        "telegram": "@roman",
+                        "timezone": "Europe/Berlin",
                     },
                     follow_redirects=False,
                 )
                 self.assertEqual(r.status_code, 303)
-                self.assertEqual(r.cookies.get(LANG_COOKIE), "ru")
+                self.assertIn("msg=profile_saved", r.headers.get("location", ""))
 
                 user = store.get_user("default")
                 assert user is not None
-                self.assertEqual(user.locale, "ru")
+                self.assertEqual(user.display_name, "Roman")
+                self.assertEqual(user.timezone, "Europe/Berlin")
 
-                page = client.get("/app/settings")
-                self.assertIn("Настройки", page.text)
-                self.assertIn("Язык интерфейса", page.text)
 
-                dash = client.get("/app/activities")
-                self.assertIn("Активности", dash.text)
+if __name__ == "__main__":
+    unittest.main()

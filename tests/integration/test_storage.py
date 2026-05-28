@@ -40,10 +40,11 @@ class TestStorage(unittest.TestCase):
             root = Path(tmp) / "data"
             root.mkdir()
             backend = LocalFilesystemBackend(root)
-            backend.put("u1", "activities/hammerhead/a.fit", b"one")
-            backend.put("u2", "activities/hammerhead/a.fit", b"two")
-            self.assertEqual(backend.open_path("u1", "activities/hammerhead/a.fit").read_bytes(), b"one")
-            self.assertEqual(backend.open_path("u2", "activities/hammerhead/a.fit").read_bytes(), b"two")
+            key = "activities/hammerhead/a.fit"
+            backend.put("u1", key, b"one")
+            backend.put("u2", key, b"two")
+            self.assertEqual(backend.open_path("u1", key).read_bytes(), b"one")
+            self.assertEqual(backend.open_path("u2", key).read_bytes(), b"two")
 
 
 if __name__ == "__main__":

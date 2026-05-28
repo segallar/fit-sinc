@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import tempfile
 import unittest
-from unittest.mock import MagicMock, patch
-
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from getsync.mail import MailConfigurationError, MailSendError, get_mailer, send_email
 from getsync.mail.backends.base import EmailMessage

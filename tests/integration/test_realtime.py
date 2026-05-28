@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-import asyncio
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 from fastapi.testclient import TestClient
-
 from getsync.config import get_settings
-from getsync.state.store import Store
 from getsync.web.realtime import (
     RealtimeHub,
     notify_activity_updated,

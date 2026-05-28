@@ -9,7 +9,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
-
 from getsync.config import get_settings
 from getsync.state.store import Store
 from helpers import isolated_env, webhook_hmac

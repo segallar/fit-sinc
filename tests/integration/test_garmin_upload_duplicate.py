@@ -9,7 +9,6 @@ from unittest.mock import AsyncMock, patch
 
 import httpx
 from garth.exc import GarthHTTPError
-
 from getsync.garmin.upload_errors import (
     garmin_duplicate_log_message,
     is_garmin_duplicate_upload,

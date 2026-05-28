@@ -1,7 +1,7 @@
 # Стратегия тестирования GetSync
 
 
-> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-27 · **Версия:** 0.7.0  
+> **Создано:** 2026-05-26 · **Обновлено:** 2026-05-28 · **Версия:** 0.7.0  
 > **Связано:** [CI-CD.md](CI-CD.md) · [PLAN.md](PLAN.md) (**2.13**) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Документ описывает, **что** и **как** проверяем в репозитории: автотесты в `tests/`, прогон в CI и вспомогательные скрипты в `scripts/`.
@@ -13,9 +13,10 @@
 | Принцип | Реализация |
 | ------- | ---------- |
 | **Без сети в CI** | Автотесты не ходят в Hammerhead, Garmin и SMTP; внешние HTTP — через `unittest.mock` |
-| **Изоляция данных** | Временный `DATA_DIR`, чистый SQLite, сброс `get_settings.cache_clear()` — [`tests/helpers.py`](../tests/helpers.py) |
-| **Быстрый feedback** | ~139 тестов (`python -m unittest discover -s tests`), stdlib `unittest`, без Playwright в job `test` |
-| **Регрессия безопасности** | Отдельный модуль `test_security_auth.py`: сессии, admin, tenant isolation, webhook |
+| **Изоляция данных** | Временный `DATA_DIR`, чистый SQLite — [`tests/integration/helpers.py`](../tests/integration/helpers.py) |
+| **Быстрый feedback** | ~159 тестов в 3 tier; CI jobs **параллельно** (lint ∥ unit ∥ integration) |
+| **Tier-разделение** | `tests/unit/` · `tests/integration/` · `tests/e2e/` |
+| **Регрессия безопасности** | `tests/integration/test_security_auth.py`: сессии, admin, tenant isolation, webhook |
 | **Деплой ≠ тесты** | На VPS через rsync **не** попадают `tests/`, `docs/`, `scripts/` — [`.rsyncignore`](../.rsyncignore) |
 
 Интеграции с живым Garmin Connect и Hammerhead — **ручные** скрипты и smoke на prod/staging, не gate в GitHub Actions.
@@ -25,27 +26,26 @@
 ## Пирамида
 
 ```mermaid
-flowchart TB
-  subgraph auto ["Автоматически в CI"]
-    U["Unit: timeutil, storage, mail mocks"]
-    I["Integration in-process: TestClient + SQLite tmp"]
-    S["Smoke: imports, /health, HMAC"]
+flowchart LR
+  subgraph ci ["CI на каждый push/PR"]
+    Lint[lint]
+    Unit[unit]
+    Int[integration]
   end
-  subgraph manual ["Вручную / ops"]
-    D["scripts/debug_*.py — Garmin UI"]
-    P["curl /health, webhook на staging"]
-    E["Реальная поездка Karoo → webhook"]
+  subgraph e2eWhen ["e2e: main / nightly / label e2e / release"]
+    E2E[e2e]
   end
-  auto --> manual
+  Lint --- Unit
+  Lint --- Int
 ```
 
-| Уровень | Где | Примеры |
-| ------- | --- | ------- |
-| Unit | `tests/test_*.py` | `timeutil`, `storage`, slug email, HMAC verify |
-| Integration (in-process) | `FastAPI TestClient` + temp DB | login, activities browse, webhook POST, sync idempotency, **user-case flows** |
-| Smoke | `test_smoke.py`, `test_build_info.py` | импорт app, лендинг 200, footer version |
-| Ручная отладка Garmin | `scripts/debug_*.py`, `test_browser_fetch.py` | Playwright, consent, upload URLs |
-| E2E продукта | вне репозитория | поездка на Karoo, мониторинг sync log |
+| Tier | Каталог | Содержание | Запрещено | CI |
+|------|---------|------------|-----------|-----|
+| **A. unit** | `tests/unit/` | timeutil, timezones, pure filters | SQLite, TestClient, сеть, FS I/O | каждый push/PR |
+| **B. integration** | `tests/integration/` | SQLite, storage, providers (mock), auth, TestClient | Playwright, live network | каждый push/PR |
+| **C. e2e** | `tests/e2e/` | Playwright, staging webhook, browser upload | — | **не** на PR; main, nightly, label `e2e`, release |
+| Ручная отладка Garmin | `scripts/debug_*.py` | reverse-engineering UI | — | вне CI |
+| E2E продукта | вне репозитория | поездка Karoo → sync log | — | вручную |
 
 ---
 
@@ -53,15 +53,19 @@ flowchart TB
 
 Workflow: [`.github/workflows/test.yml`](../.github/workflows/test.yml).
 
-| Шаг | Команда | Зачем |
+Jobs **параллельно** (без `needs` между собой):
+
+| Job | Команда | Когда |
 | --- | ------- | ----- |
-| Install | `pip install -e .` | зависимости из `pyproject.toml` |
-| Compile | `python -m compileall -q getsync` | синтаксис всего пакета |
-| Tests | `python -m unittest discover -s tests -p "test_*.py" -v` | полный набор автотестов |
+| **lint** | `ruff check tests/…` + `compileall getsync` | push, PR |
+| **unit** | `unittest discover -s tests/unit` | push, PR |
+| **integration** | `unittest discover -s tests/integration` | push, PR |
+| **e2e** | `unittest discover -s tests/e2e` + Playwright | main push, nightly, label `e2e`, release |
+| **deploy** | `scripts/ci/deploy.sh` | push main/master/hotfix после **lint + unit + integration** |
 
-Job **`deploy`** (только push `main` / `master` / `hotfix/*` после зелёного `test`): [`scripts/ci/deploy.sh`](../scripts/ci/deploy.sh) — rsync, restart, poll `/health`.
+E2E **не блокирует** deploy. На PR без label `e2e` job e2e не запускается.
 
-Подробности деплоя и secrets: [CI-CD.md](CI-CD.md).
+Vars/secrets для e2e: `GETSYNC_STAGING_URL`, `E2E_WEBHOOK_SECRET` — см. [CI-CD.md](CI-CD.md).
 
 ---
 
@@ -72,17 +76,23 @@ Job **`deploy`** (только push `main` / `master` / `hotfix/*` после з
 ```bash
 cd /path/to/getsync
 python3 -m venv .venv && source .venv/bin/activate
-pip install -e .
+pip install -e ".[dev]"
+ruff check tests/unit tests/integration tests/e2e
 python -m compileall -q getsync
-python -m unittest discover -s tests -p "test_*.py" -v
+python -m unittest discover -s tests/unit -p "test_*.py" -v
+python -m unittest discover -s tests/integration -p "test_*.py" -v
 ```
+
+Unit и integration можно запускать параллельно в двух терминалах.
 
 ### Один файл или класс
 
 ```bash
-python -m unittest tests.test_webhook -v
-python -m unittest tests.test_security_auth.TestTenantIsolation -v
+python -m unittest discover -s tests/integration -p "test_webhook.py" -v
+python -m unittest integration.test_security_auth.TestTenantIsolation -v
 ```
+
+(из корня репо, с `tests/integration` на `sys.path` через `discover -s`)
 
 ### Pytest (опционально)
 
@@ -108,14 +118,14 @@ python -m unittest tests.test_security_auth.TestTenantIsolation -v
 
 ## Инфраструктура тестов
 
-### `tests/helpers.py`
+### `tests/integration/helpers.py`
 
 | Утилита | Назначение |
 | ------- | ---------- |
 | `isolated_env(tmp_root, **extra)` | Context manager: temp `data/`, переопределение env, сброс settings |
 | `webhook_hmac(body, secret)` | HMAC-SHA256 hex для подписи webhook в тестах |
 
-### `tests/flows.py`
+### `tests/integration/flows.py`
 
 | Утилита | Назначение |
 | ------- | ---------- |
@@ -124,7 +134,7 @@ python -m unittest tests.test_security_auth.TestTenantIsolation -v
 | `assert_redirect` / `assert_redirect_prefix` | Legacy URLs и redirects без follow |
 | `seed_default_user` / `seed_regular_user` | Пользователи в temp SQLite |
 
-Сценарии из [design/SCREENS.md](design/SCREENS.md) — [`tests/test_user_cases.py`](../tests/test_user_cases.py) (PLAN **2.13**).
+Сценарии из [design/SCREENS.md](design/SCREENS.md) — [`tests/integration/test_user_cases.py`](../tests/integration/test_user_cases.py) (PLAN **2.13**).
 
 Типичный паттерн:
 
@@ -147,35 +157,15 @@ with tempfile.TemporaryDirectory() as tmp:
 
 ---
 
-## Каталог автотестов (`tests/`)
+## Каталог автотестов
 
-| Файл | Область | Что проверяет |
-| ---- | ------- | ------------- |
-| `test_smoke.py` | Smoke | HMAC verify, импорт app, лендинг `/`, store CRUD |
-| `test_build_info.py` | Ops UI | version в footer, `GETSYNC_GIT_COMMIT`, `_build_meta.json` deploy |
-| `test_security_auth.py` | Security | публичные маршруты, 401/403 без сессии, admin, tenant isolation, webhook secret |
-| `test_app_auth.py` | Auth UI | login/logout, redirect после логина, admin access, i18n login |
-| `test_register.py` | Register **2.1** | slug, validation, rate limit, `REGISTRATION_OPEN`, auto-login |
-| `test_bootstrap.py` | Bootstrap **5b** | первый admin, политика регистрации |
-| `test_webhook.py` | Webhook | routing по user, `POST /webhooks/hammerhead`, подпись |
-| `test_sync.py` | Sync core | idempotency `sync_activity`, дубликаты, ошибки |
-| `test_storage.py` | Storage | пути FIT, `storage_key`, `ActivityStorage` |
-| `test_store_migration.py` | DB | миграция SQLite v1→v2 |
-| `test_activities_browse.py` | Activities | unified browse, фильтры, dedupe |
-| `test_activities_calendar.py` | Activities | календарь по месяцам |
-| `test_activities_catalog_db.py` | Activities | каталог в SQLite, multi-source |
-| `test_resync_ui.py` | Activities UI | re-sync кнопка, HTMX/form |
-| `test_settings.py` | Settings | профиль, connections section |
-| `test_connections_banner.py` | Settings | блок connections на settings (legacy id **1.8**) |
-| `test_user_locale.py` | i18n user | locale в БД и settings |
-| `test_site_i18n.py` | i18n site | лендинг EN/RU/DE |
-| `test_ui_v2.py` | Templates | Jinja: nav, ключевые страницы без 500 |
-| `test_timeutil.py` | Utils | даты, фильтры в TZ пользователя |
-| `test_timezones.py` | Utils | список TZ, валидация |
-| `test_mail.py` | Mail **2.1e** | NullMailer, Resend mock (без реального API) |
-| `test_user_cases.py` | User flows **2.13** | guest/user/admin journeys, legacy redirects, calendar params |
+| Каталог | Файлы (основные) |
+| ------- | ---------------- |
+| `tests/unit/` | `test_timeutil.py`, `test_timezones.py` |
+| `tests/integration/` | auth, webhook, sync, storage, settings, user_cases, security, … |
+| `tests/e2e/` | `test_staging_smoke.py` (skip без `GETSYNC_E2E_BASE_URL`) |
 
-**2.13 (частично ✅):** `test_user_cases.py` + `flows.py` — redirects `/app/` → activities, `/app/log` → admin sync-log, `/app/session` → settings; calendar query params; login → activities → settings; register auto-login.
+**2.13 (частично ✅):** tier CI + `flows.py` / `test_user_cases.py`; split pure unit — 📋 фаза 2.
 
 ---
 

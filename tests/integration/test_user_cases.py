@@ -7,9 +7,6 @@ import unittest
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-
-from getsync.state.store import Store
-from getsync.web import rate_limit
 from flows import (
     assert_redirect,
     assert_redirect_prefix,
@@ -18,6 +15,8 @@ from flows import (
     seed_default_user,
     seed_regular_user,
 )
+from getsync.state.store import Store
+from getsync.web import rate_limit
 from helpers import isolated_env
 
 

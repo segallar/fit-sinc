@@ -12,7 +12,6 @@ from getsync.ops.app_health import (
     build_admin_health_context,
     format_bytes,
     scan_fit_storage,
-    sqlite_file_sizes,
 )
 from getsync.state.store import Store
 from helpers import isolated_env

@@ -21,6 +21,17 @@ dependencies = [
 [project.scripts]
 getsync = "getsync.cli:app"
 
+[project.optional-dependencies]
+dev = ["ruff>=0.8.0"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["getsync", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
 [build-system]
 requires = ["setuptools>=75.0"]
 build-backend = "setuptools.build_meta"

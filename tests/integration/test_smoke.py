@@ -30,7 +30,6 @@ class TestImports(unittest.TestCase):
 
     def test_root_landing_not_500(self) -> None:
         from fastapi.testclient import TestClient
-
         from getsync.web.app import app
 
         client = TestClient(app, raise_server_exceptions=True)
@@ -46,7 +45,6 @@ class TestImports(unittest.TestCase):
         from pathlib import Path
 
         from fastapi.testclient import TestClient
-
         from getsync.state.store import Store
         from helpers import isolated_env
 

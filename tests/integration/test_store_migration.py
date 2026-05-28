@@ -1,10 +1,9 @@
 """SQLite v1 → v2 schema migration (no network)."""
 
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
-
-import sqlite3
 
 from getsync.state.store import Store
 

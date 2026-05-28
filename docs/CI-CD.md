@@ -184,7 +184,7 @@ sudo -u getsync /opt/getsync/.venv/bin/playwright install chromium
 
 **Репозиторий:** [github.com/segallar/getsync](https://github.com/segallar/getsync) · badge CI в [README](../README.md).
 
-Push или merge в `main` / `master` / `hotfix/*` → workflow [**CI**](../.github/workflows/test.yml) → job `test` → job `deploy` → **breeze** → [`deploy.sh`](../scripts/ci/deploy.sh).
+Push или merge в `main` / `master` / `hotfix/*` → workflow [**CI**](../.github/workflows/test.yml) → jobs **lint**, **unit**, **integration** (параллельно) → **deploy** → breeze.
 
 | Триггер | `test` | `deploy` |
 |---------|--------|----------|
@@ -354,20 +354,25 @@ systemctl restart getsync
 
 ## GitHub Actions
 
-Workflow: [`.github/workflows/test.yml`](../.github/workflows/test.yml) — один pipeline **CI** (`actions/checkout@v6`, `actions/setup-python@v6`, Node 24 runtime).
-
-**Настройка (один раз):** репозиторий → **Settings → Secrets and variables → Actions** — secret `SSH_PRIVATE_KEY` (ключ `root@breeze`); variables `GETSYNC_SSH_*` — через [`sync-github-vars.sh`](../scripts/ci/sync-github-vars.sh) или UI.
+Workflow: [`.github/workflows/test.yml`](../.github/workflows/test.yml) — pipeline **CI** (`actions/checkout@v6`, `actions/setup-python@v6`).
 
 | Job | Когда | Действие |
 |-----|--------|----------|
-| `test` | push, PR, `workflow_dispatch` | `pip install -e .`, `compileall getsync`, unittest |
-| `deploy` | **только push** `main` / `master` / `hotfix/*` после `test` | rsync → `/opt/getsync`, restart, `/health` |
+| `lint` | push, PR, schedule, release, `workflow_dispatch` | `ruff check tests/…`, `compileall getsync` |
+| `unit` | push, PR, … | `unittest discover -s tests/unit` |
+| `integration` | push, PR, … | `unittest discover -s tests/integration` |
+| `e2e` | **не** на PR; push `main`/`master`, nightly, label `e2e`, release | Playwright + `unittest discover -s tests/e2e` |
+| `deploy` | push `main` / `master` / `hotfix/*` после **lint + unit + integration** | rsync → `/opt/getsync`, restart, `/health` |
+
+Jobs **lint / unit / integration / e2e** без `needs` между собой — максимальный параллелизм. **e2e не блокирует deploy.**
+
+E2E variables (опционально): `GETSYNC_STAGING_URL`; secret `E2E_WEBHOOK_SECRET`.
 
 Поведение workflow:
 
 - **`concurrency`** — группа `ci-<workflow>-<ref>`, `cancel-in-progress: true` (новый push отменяет предыдущий run на той же ветке).
 - **`environment: production`** — job `deploy` привязан к GitHub Environment (опционально protection rules).
-- **PR** — только gate `test`; prod не трогаем.
+- **PR** — lint + unit + integration; prod не трогаем; e2e только с label `e2e`.
 - **`GETSYNC_DEPLOY_NUMBER`** — `github.run_number` в metadata деплоя.
 
 Скрипт деплоя: [`scripts/ci/deploy.sh`](../scripts/ci/deploy.sh).
@@ -377,7 +382,7 @@ Workflow: [`.github/workflows/test.yml`](../.github/workflows/test.yml) — од
 | Оптимизация | Эффект |
 |-------------|--------|
 | **Один workflow** (без `workflow_run`) | Нет второго запуска runner и паузы ~30–90 с между Test и Deploy |
-| **pip cache** в job `test` | Быстрее установка зависимостей в CI |
+| **pip cache** в jobs | Быстрее установка зависимостей в CI |
 | **rsync без tests/docs/.github** | Меньше файлов на wire (см. [`.rsyncignore`](../.rsyncignore)) |
 | **`rsync --chown=getsync:getsync`** | Без `chown -R /opt/getsync` (в т.ч. не трогаем `data/`) |
 | **skip `pip install -e .`** если `pyproject.toml` не менялся | Обычный код-фикс: rsync + restart (~10–30 с на сервере) |
@@ -393,6 +398,8 @@ Workflow: [`.github/workflows/test.yml`](../.github/workflows/test.yml) — од
 | `GETSYNC_SSH_HOST` | Variable | `breeze.romansegalla.online` |
 | `GETSYNC_SSH_USER` | Variable | `root` |
 | `GETSYNC_DEPLOY_PATH` | Variable | `/opt/getsync` |
+| `GETSYNC_STAGING_URL` | Variable | URL для e2e (напр. `https://breeze.romansegalla.online`) |
+| `E2E_WEBHOOK_SECRET` | Secret | HMAC secret для e2e webhook на staging |
 
 Переменные в GitHub (после `gh auth login`):
 
@@ -407,9 +414,11 @@ Workflow: [`.github/workflows/test.yml`](../.github/workflows/test.yml) — од
 ### Локально как CI
 
 ```bash
-pip install -e .
+pip install -e ".[dev]"
+ruff check tests/unit tests/integration tests/e2e
 python -m compileall -q getsync
-python -m unittest discover -s tests -p "test_*.py" -v
+python -m unittest discover -s tests/unit -p "test_*.py" -v
+python -m unittest discover -s tests/integration -p "test_*.py" -v
 ```
 
 Полная стратегия, каталог тестов и назначение скриптов: [TESTING.md](TESTING.md). Метаданные документов: [DOC-CONVENTION.md](DOC-CONVENTION.md).
