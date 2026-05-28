@@ -9,8 +9,9 @@ from typing import Any, Literal
 from getsync.config import get_settings
 from getsync.garmin.session import garmin_status
 from getsync.garmin.web_refresh import session_monitor
-from getsync.state.store import Store
 from getsync.hammerhead.client import HammerheadClient
+from getsync.providers.strava.client import StravaClient
+from getsync.state.store import Store
 from getsync.users.context import UserContext
 from getsync.users.models import UserRow
 
@@ -45,6 +46,18 @@ class ConnectionGroups:
     sinks: tuple[ConnectionItem, ...]
 
 
+def _strava_connection_status(ctx: UserContext) -> dict[str, Any]:
+    settings = get_settings()
+    st = StravaClient(ctx).status()
+    return {
+        "connected": bool(st.get("connected")),
+        "expired": bool(st.get("expired")),
+        "athlete_id": st.get("athlete_id"),
+        "expires_at": st.get("expires_at"),
+        "oauth_configured": bool(settings.strava_client_id and settings.strava_client_secret),
+    }
+
+
 def connection_status(ctx: UserContext, user: UserRow | None = None) -> dict[str, Any]:
     """Structured HH + Garmin state for Settings / helpers."""
     hh = HammerheadClient(ctx).status()
@@ -72,6 +85,7 @@ def connection_status(ctx: UserContext, user: UserRow | None = None) -> dict[str
             "user_id": (user.hammerhead_user_id if user else None) or hh.get("user_id"),
             "oauth_configured": bool(get_settings().hammerhead_client_id),
         },
+        "strava": _strava_connection_status(ctx),
         "garmin": {
             "upload_ready": upload_ready,
             "oauth_connected": bool(oauth.get("connected")),
@@ -155,6 +169,7 @@ def list_connections(ctx: UserContext, user: UserRow) -> ConnectionGroups:
     """All connection slots for Settings UI (implemented + planned)."""
     status = connection_status(ctx, user)
     hh = status["hammerhead"]
+    st = status["strava"]
     gm = status["garmin"]
     from getsync.web import html as H
 
@@ -166,6 +181,16 @@ def list_connections(ctx: UserContext, user: UserRow) -> ConnectionGroups:
 
     gm_status = "ready" if gm["upload_ready"] else "not ready"
     gm_variant = "success" if gm["upload_ready"] else "warning"
+
+    if st["connected"]:
+        st_status = "connected"
+        st_variant = "success"
+    elif st["expired"]:
+        st_status = "token expired"
+        st_variant = "warning"
+    else:
+        st_status = "not connected"
+        st_variant = "secondary"
 
     sources: list[ConnectionItem] = [
         ConnectionItem(
@@ -183,12 +208,15 @@ def list_connections(ctx: UserContext, user: UserRow) -> ConnectionGroups:
         ConnectionItem(
             id="strava",
             role="source",
-            role_label="Source",
+            role_label="Source + Destination",
             name="Strava",
-            status_text="planned",
-            status_variant="secondary",
-            details=(),
-            available=False,
+            status_text=st_status,
+            status_variant=st_variant,
+            details=(
+                ConnectionDetail("Athlete id", str(st.get("athlete_id") or "—"), mono=True),
+            ),
+            actions_template="components/connections/strava_actions.html",
+            available=True,
         ),
         ConnectionItem(
             id="wahoo",
@@ -235,6 +263,7 @@ def connection_settings_view(ctx: UserContext, user: UserRow) -> dict[str, objec
     """Flat dict for connection action partials (backward compatible)."""
     status = connection_status(ctx, user)
     hh = status["hammerhead"]
+    st = status["strava"]
     gm = status["garmin"]
     jwt_exp = gm.get("expires_at")
     from getsync.web import html as H
@@ -252,4 +281,8 @@ def connection_settings_view(ctx: UserContext, user: UserRow) -> dict[str, objec
         else "—",
         "garmin_web_reason": gm.get("web_reason") or "—",
         "hammerhead_oauth_configured": hh["oauth_configured"],
+        "strava_connected": st["connected"],
+        "strava_expired": st["expired"],
+        "strava_athlete_id": st.get("athlete_id") or "—",
+        "strava_oauth_configured": st["oauth_configured"],
     }

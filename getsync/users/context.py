@@ -24,6 +24,10 @@ class UserContext:
         return self.user_data_dir / "hammerhead_tokens.json"
 
     @property
+    def strava_tokens_path(self) -> Path:
+        return self.user_data_dir / "strava_tokens.json"
+
+    @property
     def garth_dir(self) -> Path:
         return self.user_data_dir / "garth"
 

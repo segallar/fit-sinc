@@ -9,27 +9,34 @@ import shutil
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from getsync.audit import log as audit_log, request_ip
+from getsync.audit import log as audit_log
+from getsync.audit import request_ip
 from getsync.config import get_settings
 from getsync.garmin.session import garmin_login
 from getsync.garmin.web_refresh import refresh_web_session
-from getsync.hammerhead.client import HammerheadClient
 from getsync.hammerhead.oauth import HammerheadOAuth
+from getsync.providers.strava.client import StravaClient
+from getsync.providers.strava.oauth import StravaOAuth
 from getsync.state.store import Store
 from getsync.storage import save_json
 from getsync.users.context import UserContext
+from getsync.users.locale import normalize_locale
 from getsync.web import html as H
+from getsync.web.app_i18n import cabinet_strings, flash_message
 from getsync.web.auth import user_context_from_session
+from getsync.web.cabinet import render_cabinet
 from getsync.web.connections import (
     connection_settings_view,
     garmin_session_context,
     list_connections,
 )
-from getsync.users.locale import normalize_locale
-from getsync.web.app_i18n import cabinet_strings, flash_message
-from getsync.web.cabinet import render_cabinet
+from getsync.web.oauth_state import (
+    sign_hammerhead_oauth_state,
+    sign_strava_oauth_state,
+    verify_hammerhead_oauth_state,
+    verify_strava_oauth_state,
+)
 from getsync.web.site_i18n import LANG_COOKIE
-from getsync.web.oauth_state import sign_hammerhead_oauth_state, verify_hammerhead_oauth_state
 
 router = APIRouter(prefix="/app/settings", tags=["settings"])
 P = "/app/settings"
@@ -124,6 +131,14 @@ def _flash_from_query(request: Request, lang: str) -> dict[str, str]:
         flash["error"] = "Hammerhead OAuth user mismatch."
     elif err.startswith("hh_"):
         flash["error"] = f"Hammerhead OAuth error: {err[3:]}"
+    elif err == "strava_not_configured":
+        flash["error"] = t["flash_strava_not_configured"]
+    elif err == "strava_state":
+        flash["error"] = t["flash_strava_state"]
+    elif err == "strava_user_mismatch":
+        flash["error"] = t["flash_strava_user_mismatch"]
+    elif err.startswith("strava_"):
+        flash["error"] = f"Strava OAuth error: {err[7:]}"
     elif err == "password_too_short":
         flash["error"] = "New password must be at least 8 characters."
     elif err == "password_mismatch":
@@ -248,6 +263,21 @@ async def settings_password(
     return _redirect("password_changed", section="password")
 
 
+def _strava_oauth(request: Request) -> StravaOAuth:
+    settings = get_settings()
+    redirect = settings.strava_web_redirect_uri.strip()
+    if not redirect:
+        base = str(request.base_url).rstrip("/")
+        redirect = f"{base}{P}/strava/callback"
+    scope = settings.strava_scope.strip() or "read,activity:read,activity:read_all,activity:write"
+    return StravaOAuth(
+        client_id=settings.strava_client_id,
+        client_secret=settings.strava_client_secret,
+        redirect_uri=redirect,
+        scope=scope,
+    )
+
+
 @router.get("/hammerhead/connect", include_in_schema=False)
 async def hammerhead_connect(request: Request) -> RedirectResponse:
     ctx = _ctx(request)
@@ -326,6 +356,89 @@ async def hammerhead_disconnect(request: Request) -> RedirectResponse:
         subject=user.slug if user else ctx.user_id,
     )
     return _redirect("hh_disconnected", section="hammerhead")
+
+
+@router.get("/strava/connect", include_in_schema=False)
+async def strava_connect(request: Request) -> RedirectResponse:
+    ctx = _ctx(request)
+    settings = get_settings()
+    if not settings.strava_client_id or not settings.strava_client_secret:
+        return _redirect(error="strava_not_configured", section="strava")
+    oauth = _strava_oauth(request)
+    state = sign_strava_oauth_state(ctx.user_id, settings.session_secret)
+    url, _ = oauth.build_authorize_url(state=state)
+    return RedirectResponse(url, status_code=303)
+
+
+@router.get("/strava/callback", include_in_schema=False)
+async def strava_callback(
+    request: Request,
+    code: str = "",
+    state: str = "",
+    error: str = "",
+) -> RedirectResponse:
+    if error:
+        return _redirect(error=f"strava_{error}", section="strava")
+    uid = verify_strava_oauth_state(state, get_settings().session_secret)
+    if not uid:
+        return _redirect(error="strava_state", section="strava")
+    session_ctx = user_context_from_session(request)
+    if session_ctx and session_ctx.user_id != uid:
+        return _redirect(error="strava_user_mismatch", section="strava")
+    if not session_ctx:
+        from getsync.web.auth import login_user
+
+        login_user(request, uid)
+        actor = _store().get_user(uid)
+        audit_log(
+            _store(),
+            "user_login",
+            f"via=strava_oauth ip={request_ip(request)}",
+            user_id=uid,
+            subject=actor.slug if actor else uid,
+        )
+    if not code:
+        return _redirect(error="strava_missing_code", section="strava")
+    oauth = _strava_oauth(request)
+    try:
+        tokens = await oauth.exchange_code(code)
+    except Exception as exc:
+        logger.warning("Strava OAuth exchange failed for %s: %s", uid, exc)
+        return _redirect(error="strava_exchange_failed", section="strava")
+    ctx = UserContext(uid, get_settings())
+    StravaClient(ctx).save_tokens(tokens)
+    target = _store().get_user(uid)
+    audit_log(
+        _store(),
+        "settings_strava_connected",
+        f"athlete_id={tokens.athlete_id or '—'} ip={request_ip(request)}",
+        user_id=uid,
+        subject=target.slug if target else uid,
+    )
+    return _redirect("strava_connected", section="strava")
+
+
+@router.post("/strava/disconnect", include_in_schema=False)
+async def strava_disconnect(request: Request) -> RedirectResponse:
+    ctx = _ctx(request)
+    client = StravaClient(ctx)
+    tokens = client.load_tokens()
+    if tokens:
+        oauth = _strava_oauth(request)
+        try:
+            await oauth.deauthorize(tokens.access_token)
+        except Exception as exc:
+            logger.warning("Strava deauthorize failed for %s: %s", ctx.user_id, exc)
+    client.clear_tokens()
+    user = _store().get_user(ctx.user_id)
+    audit_log(
+        _store(),
+        "settings_strava_disconnected",
+        f"ip={request_ip(request)}",
+        user_id=ctx.user_id,
+        subject=user.slug if user else ctx.user_id,
+    )
+    return _redirect("strava_disconnected", section="strava")
 
 
 @router.post("/garmin/login", include_in_schema=False)

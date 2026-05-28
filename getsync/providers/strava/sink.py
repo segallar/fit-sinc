@@ -12,17 +12,21 @@ class StravaNotConfiguredError(RuntimeError):
 
 
 class StravaSink:
-    """ActivitySink placeholder until Strava OAuth + uploads API."""
+    """Activity sink — upload in **3.9.3c** Phase 4."""
 
     sink_id = "strava"
 
     def connection_status(self, ctx: UserContext) -> ConnectionStatus:
+        from getsync.providers.strava.source import StravaSource
+
+        status = StravaSource().connection_status(ctx)
         return ConnectionStatus(
-            connected=False,
+            connected=status.connected,
             label="Strava",
-            status_text="planned",
-            status_variant="secondary",
+            status_text=status.status_text,
+            status_variant=status.status_variant,
             upload_ready=False,
+            details=status.details,
         )
 
     async def upload_fit(

@@ -288,13 +288,14 @@ getsync/web/connections.py       # status + available=True, dual role label
 
 ### Phase 1 — OAuth core (1 дн)
 
-- [ ] `getsync/providers/strava/oauth.py` — `TokenSet`, `StravaOAuth`
-- [ ] `Settings` + `.env.example`
-- [ ] `UserContext.strava_tokens_path`
-- [ ] `oauth_state.py` — signed state (salt `getsync-strava-oauth`)
-- [ ] Settings routes: connect / callback / disconnect + audit events
-- [ ] `strava_actions.html` partial
-- [ ] Flash messages в `app_i18n.py` (`strava_connected`, `strava_not_configured`, …)
+- [x] `getsync/providers/strava/oauth.py` — `TokenSet`, `StravaOAuth`
+- [x] `Settings` + `.env.example`
+- [x] `UserContext.strava_tokens_path`
+- [x] `oauth_state.py` — signed state (salt `getsync-strava-oauth`)
+- [x] Settings routes: connect / callback / disconnect + audit events
+- [x] `strava_actions.html` partial
+- [x] Flash messages в `app_i18n.py` (`strava_connected`, `strava_not_configured`, …)
+- [x] `StravaClient` (load/save/clear tokens) — foundation for Phase 2
 
 ### Phase 2 — Client + connection status (0.5 дн)
 
