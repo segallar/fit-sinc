@@ -90,73 +90,75 @@ log "rsync → ${SSH_USER}@${HOST}:${DEPLOY_PATH}"
 rsync "${RSYNC_OPTS[@]}" ./ "${SSH_USER}@${HOST}:${DEPLOY_PATH}/"
 
 log "remote restart + health"
-ssh "${SSH_OPTS[@]}" "${SSH_USER}@${HOST}" bash -s <<EOF
+ssh "${SSH_OPTS[@]}" "${SSH_USER}@${HOST}" \
+  env \
+  "DEPLOY_PATH=${DEPLOY_PATH}" \
+  "SERVICE_USER=${SERVICE_USER}" \
+  "SERVICE_UNIT=${SERVICE_UNIT}" \
+  "DEPS_MARKER=${DEPS_MARKER}" \
+  "PLAYWRIGHT_MARKER=${PLAYWRIGHT_MARKER}" \
+  bash -s <<'REMOTE'
 set -euo pipefail
-DEPLOY_PATH="${DEPLOY_PATH}"
-SERVICE_USER="${SERVICE_USER}"
-SERVICE_UNIT="${SERVICE_UNIT}"
-DEPS_MARKER="${DEPS_MARKER}"
-PLAYWRIGHT_MARKER="${PLAYWRIGHT_MARKER}"
 
-mkdir -p "\${DEPLOY_PATH}/data/logs" "\${DEPLOY_PATH}/.cache"
-chown "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/data/logs" 2>/dev/null || true
+mkdir -p "${DEPLOY_PATH}/data/logs" "${DEPLOY_PATH}/.cache"
+chown "${SERVICE_USER}:${SERVICE_USER}" "${DEPLOY_PATH}/data/logs" 2>/dev/null || true
 
 # macOS openrsync: no --chown; top-level dir often stays Mac UID (501) — getsync cannot create egg-info
-chown "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}"
-find "\${DEPLOY_PATH}" -maxdepth 1 -name '.*' ! -name '.' ! -name '..' -exec chown "\${SERVICE_USER}:\${SERVICE_USER}" {} + 2>/dev/null || true
+chown "${SERVICE_USER}:${SERVICE_USER}" "${DEPLOY_PATH}"
+find "${DEPLOY_PATH}" -maxdepth 1 -name '.*' ! -name '.' ! -name '..' -exec chown "${SERVICE_USER}:${SERVICE_USER}" {} + 2>/dev/null || true
 while IFS= read -r -d '' item; do
-  chown -R "\${SERVICE_USER}:\${SERVICE_USER}" "\$item"
-done < <(find "\${DEPLOY_PATH}" -mindepth 1 -maxdepth 1 \
+  chown -R "${SERVICE_USER}:${SERVICE_USER}" "$item"
+done < <(find "${DEPLOY_PATH}" -mindepth 1 -maxdepth 1 \
   ! -name data ! -name .venv ! -name .env ! -name '.*' -print0 2>/dev/null)
-chown -R "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/.cache" 2>/dev/null || true
-rm -rf "\${DEPLOY_PATH}/get_sync.egg-info"
+chown -R "${SERVICE_USER}:${SERVICE_USER}" "${DEPLOY_PATH}/.cache" 2>/dev/null || true
+rm -rf "${DEPLOY_PATH}/get_sync.egg-info"
 
-if ! sudo -u \${SERVICE_USER} test -w "\${DEPLOY_PATH}"; then
-  echo "ERROR: \${DEPLOY_PATH} not writable by \${SERVICE_USER} (fix chown after rsync)" >&2
+if ! sudo -u "${SERVICE_USER}" test -w "${DEPLOY_PATH}"; then
+  echo "ERROR: ${DEPLOY_PATH} not writable by ${SERVICE_USER} (fix chown after rsync)" >&2
   exit 1
 fi
 
 # Python >= 3.11 (pyproject requires-python); Ubuntu 22.04 default is 3.10
 PY_FOR_VENV=""
 for candidate in python3.12 python3.11 python3; do
-  if command -v "\$candidate" >/dev/null 2>&1 \
-     && "\$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then
-    PY_FOR_VENV="\$candidate"
+  if command -v "$candidate" >/dev/null 2>&1 \
+     && "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)'; then
+    PY_FOR_VENV="$candidate"
     break
   fi
 done
-if [[ -z "\$PY_FOR_VENV" ]]; then
+if [[ -z "$PY_FOR_VENV" ]]; then
   echo "ERROR: Python >= 3.11 required. On Ubuntu 22.04: apt install -y python3.11 python3.11-venv" >&2
   exit 1
 fi
 recreate_venv=0
 venv_py="none"
-_venv_bin="\${DEPLOY_PATH}/.venv/bin/python"
-if [[ -x "\$_venv_bin" ]] \
-   && "\$_venv_bin" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; then
-  venv_py="\$(\"\$_venv_bin\" -c 'import sys; print(\".\".join(map(str, sys.version_info[:3])))')"
+_venv_bin="${DEPLOY_PATH}/.venv/bin/python"
+if [[ -x "$_venv_bin" ]] \
+   && "$_venv_bin" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; then
+  venv_py="$("$_venv_bin" -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')"
 else
   recreate_venv=1
 fi
-if [[ "\$recreate_venv" == "1" ]]; then
-  echo "Recreating .venv with \${PY_FOR_VENV} (was: \${venv_py})"
-  rm -rf "\${DEPLOY_PATH}/.venv"
-  sudo -u \${SERVICE_USER} "\$PY_FOR_VENV" -m venv "\${DEPLOY_PATH}/.venv"
-  chown -R "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/.venv"
+if [[ "$recreate_venv" == "1" ]]; then
+  echo "Recreating .venv with ${PY_FOR_VENV} (was: ${venv_py})"
+  rm -rf "${DEPLOY_PATH}/.venv"
+  sudo -u "${SERVICE_USER}" "$PY_FOR_VENV" -m venv "${DEPLOY_PATH}/.venv"
+  chown -R "${SERVICE_USER}:${SERVICE_USER}" "${DEPLOY_PATH}/.venv"
 fi
 
-new_hash=\$(sha256sum "\${DEPLOY_PATH}/pyproject.toml" | awk '{print \$1}')
-old_hash=\$(cat "\${DEPLOY_PATH}/\${DEPS_MARKER}" 2>/dev/null || true)
+new_hash=$(sha256sum "${DEPLOY_PATH}/pyproject.toml" | awk '{print $1}')
+old_hash=$(cat "${DEPLOY_PATH}/${DEPS_MARKER}" 2>/dev/null || true)
 pip_changed=0
-if [[ "\$new_hash" != "\$old_hash" ]] || [[ "\$recreate_venv" == "1" ]]; then
-  echo "pip install -e . (pyproject_changed=\$([[ "\$new_hash" != "\$old_hash" ]] && echo 1 || echo 0) venv_recreated=\${recreate_venv})"
-  sudo -u \${SERVICE_USER} bash -c "cd \${DEPLOY_PATH} && .venv/bin/pip install -e ."
-  echo "\$new_hash" > "\${DEPLOY_PATH}/\${DEPS_MARKER}"
+if [[ "$new_hash" != "$old_hash" ]] || [[ "$recreate_venv" == "1" ]]; then
+  echo "pip install -e . (venv_recreated=${recreate_venv})"
+  sudo -u "${SERVICE_USER}" bash -c "cd ${DEPLOY_PATH} && .venv/bin/pip install -e ."
+  echo "$new_hash" > "${DEPLOY_PATH}/${DEPS_MARKER}"
   pip_changed=1
 else
   echo "pyproject.toml unchanged — skip pip (editable install)"
 fi
-sudo -u \${SERVICE_USER} bash -c "cd \${DEPLOY_PATH} && .venv/bin/python -c \"
+sudo -u "${SERVICE_USER}" bash -c "cd ${DEPLOY_PATH} && .venv/bin/python -c \"
 import cryptography
 from getsync.credentials.store import CredentialStore
 from getsync.web.app import app
@@ -164,53 +166,53 @@ print('import_ok', app.version)
 \""
 
 playwright_ok=0
-if [[ -f "\${DEPLOY_PATH}/\${PLAYWRIGHT_MARKER}" ]]; then
+if [[ -f "${DEPLOY_PATH}/${PLAYWRIGHT_MARKER}" ]]; then
   playwright_ok=1
 fi
-if [[ "\$pip_changed" == "1" ]] || [[ "\$playwright_ok" != "1" ]]; then
-  echo "Playwright — install Chromium to \${DEPLOY_PATH}/.cache/ms-playwright"
-  mkdir -p "\${DEPLOY_PATH}/.cache"
-  chown "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/.cache"
-  if ! sudo -u \${SERVICE_USER} env \
-      HOME="\${DEPLOY_PATH}" \
-      PLAYWRIGHT_BROWSERS_PATH="\${DEPLOY_PATH}/.cache/ms-playwright" \
-      bash -c "cd '\${DEPLOY_PATH}' && .venv/bin/playwright install chromium"; then
+if [[ "$pip_changed" == "1" ]] || [[ "$playwright_ok" != "1" ]]; then
+  echo "Playwright — install Chromium to ${DEPLOY_PATH}/.cache/ms-playwright"
+  mkdir -p "${DEPLOY_PATH}/.cache"
+  chown "${SERVICE_USER}:${SERVICE_USER}" "${DEPLOY_PATH}/.cache"
+  if ! sudo -u "${SERVICE_USER}" env \
+      HOME="${DEPLOY_PATH}" \
+      PLAYWRIGHT_BROWSERS_PATH="${DEPLOY_PATH}/.cache/ms-playwright" \
+      bash -c "cd '${DEPLOY_PATH}' && .venv/bin/playwright install chromium"; then
     echo "playwright install chromium failed — trying install-deps (needs apt libraries)" >&2
-    "\${DEPLOY_PATH}/.venv/bin/playwright" install-deps chromium || true
-    sudo -u \${SERVICE_USER} env \
-      HOME="\${DEPLOY_PATH}" \
-      PLAYWRIGHT_BROWSERS_PATH="\${DEPLOY_PATH}/.cache/ms-playwright" \
-      bash -c "cd '\${DEPLOY_PATH}' && .venv/bin/playwright install chromium"
+    "${DEPLOY_PATH}/.venv/bin/playwright" install-deps chromium || true
+    sudo -u "${SERVICE_USER}" env \
+      HOME="${DEPLOY_PATH}" \
+      PLAYWRIGHT_BROWSERS_PATH="${DEPLOY_PATH}/.cache/ms-playwright" \
+      bash -c "cd '${DEPLOY_PATH}' && .venv/bin/playwright install chromium"
   fi
-  chown -R "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/.cache"
-  pw_ver=\$(sudo -u \${SERVICE_USER} "\${DEPLOY_PATH}/.venv/bin/python" -c "import playwright; print(playwright.__version__)" 2>/dev/null || echo "unknown")
-  echo "playwright=\${pw_ver} chromium_ok" > "\${DEPLOY_PATH}/\${PLAYWRIGHT_MARKER}"
-  chown "\${SERVICE_USER}:\${SERVICE_USER}" "\${DEPLOY_PATH}/\${PLAYWRIGHT_MARKER}"
+  chown -R "${SERVICE_USER}:${SERVICE_USER}" "${DEPLOY_PATH}/.cache"
+  pw_ver=$(sudo -u "${SERVICE_USER}" "${DEPLOY_PATH}/.venv/bin/python" -c "import playwright; print(playwright.__version__)" 2>/dev/null || echo "unknown")
+  echo "playwright=${pw_ver} chromium_ok" > "${DEPLOY_PATH}/${PLAYWRIGHT_MARKER}"
+  chown "${SERVICE_USER}:${SERVICE_USER}" "${DEPLOY_PATH}/${PLAYWRIGHT_MARKER}"
 else
   echo "Playwright Chromium already installed — skip"
 fi
 
-systemctl restart \${SERVICE_UNIT}
+systemctl restart "${SERVICE_UNIT}"
 ok=0
 for attempt in 1 2 3 4 5 6 7 8 9 10; do
-  if [[ \$attempt -gt 1 ]]; then
+  if [[ $attempt -gt 1 ]]; then
     sleep 2
   fi
-  if systemctl is-active --quiet \${SERVICE_UNIT} \
+  if systemctl is-active --quiet "${SERVICE_UNIT}" \
      && curl -sf http://127.0.0.1:8080/health >/dev/null; then
     ok=1
     break
   fi
-  echo "waiting for \${SERVICE_UNIT} (attempt \${attempt}/10)..." >&2
+  echo "waiting for ${SERVICE_UNIT} (attempt ${attempt}/10)..." >&2
 done
-if [[ "\$ok" != 1 ]]; then
+if [[ "$ok" != 1 ]]; then
   echo "Deploy health check failed" >&2
-  systemctl status \${SERVICE_UNIT} --no-pager >&2 || true
-  journalctl -u \${SERVICE_UNIT} -n 40 --no-pager >&2 || true
+  systemctl status "${SERVICE_UNIT}" --no-pager >&2 || true
+  journalctl -u "${SERVICE_UNIT}" -n 40 --no-pager >&2 || true
   exit 1
 fi
 curl -sf http://127.0.0.1:8080/health
 echo ""
-EOF
+REMOTE
 
 log "done — ${SSH_USER}@${HOST}:${DEPLOY_PATH}"
