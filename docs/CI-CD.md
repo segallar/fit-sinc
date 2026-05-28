@@ -417,8 +417,8 @@ E2E variables (опционально): `GETSYNC_STAGING_URL`; secret `E2E_WEBHO
 pip install -e ".[dev]"
 ruff check tests/unit tests/integration tests/e2e
 python -m compileall -q getsync
-python -m unittest discover -s tests/unit -p "test_*.py" -v
-python -m unittest discover -s tests/integration -p "test_*.py" -v
+pytest tests/unit -q
+pytest tests/integration -q
 ```
 
 Полная стратегия, каталог тестов и назначение скриптов: [TESTING.md](TESTING.md). Метаданные документов: [DOC-CONVENTION.md](DOC-CONVENTION.md).

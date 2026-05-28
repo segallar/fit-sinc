@@ -91,8 +91,8 @@ Bootstrap Hammerhead user id: [`getsync/users/migrate.py`](../getsync/users/migr
 ```bash
 pip install -e ".[dev]"
 python -m compileall -q getsync
-python -m unittest discover -s tests/unit -p "test_*.py" -v
-python -m unittest discover -s tests/integration -p "test_*.py" -v
+pip install -e ".[dev]"
+pytest tests/unit tests/integration -q
 getsync serve   # http://127.0.0.1:8080
 ```
 

@@ -58,9 +58,9 @@ Jobs **параллельно** (без `needs` между собой):
 | Job | Команда | Когда |
 | --- | ------- | ----- |
 | **lint** | `ruff check tests/…` + `compileall getsync` | push, PR |
-| **unit** | `unittest discover -s tests/unit` | push, PR |
-| **integration** | `unittest discover -s tests/integration` | push, PR |
-| **e2e** | `unittest discover -s tests/e2e` + Playwright | main push, nightly, label `e2e`, release |
+| **unit** | `pytest tests/unit` | push, PR |
+| **integration** | `pytest tests/integration` | push, PR |
+| **e2e** | `pytest tests/e2e` + Playwright | main push, nightly, label `e2e`, release |
 | **deploy** | `scripts/ci/deploy.sh` | push main/master/hotfix после **lint + unit + integration** |
 
 E2E **не блокирует** deploy. На PR без label `e2e` job e2e не запускается.
@@ -73,14 +73,16 @@ Vars/secrets для e2e: `GETSYNC_STAGING_URL`, `E2E_WEBHOOK_SECRET` — см. [
 
 ### Как в CI (рекомендуется)
 
+Runner: **pytest** (совместим с существующими `unittest.TestCase`; конфиг в `pyproject.toml` → `[tool.pytest.ini_options]`).
+
 ```bash
 cd /path/to/getsync
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 ruff check tests/unit tests/integration tests/e2e
 python -m compileall -q getsync
-python -m unittest discover -s tests/unit -p "test_*.py" -v
-python -m unittest discover -s tests/integration -p "test_*.py" -v
+pytest tests/unit -q
+pytest tests/integration -q
 ```
 
 Unit и integration можно запускать параллельно в двух терминалах.
@@ -88,21 +90,20 @@ Unit и integration можно запускать параллельно в дв
 ### Один файл или класс
 
 ```bash
-python -m unittest discover -s tests/integration -p "test_webhook.py" -v
-python -m unittest integration.test_security_auth.TestTenantIsolation -v
+pytest tests/integration/test_webhook.py -v
+pytest tests/integration/test_security_auth.py::TestTenantIsolation -v
 ```
 
-(из корня репо, с `tests/integration` на `sys.path` через `discover -s`)
+### Unittest (legacy)
 
-### Pytest (опционально)
-
-В `pyproject.toml` pytest **не** зафиксирован. Если установлен в `.venv`:
+Старый способ всё ещё работает:
 
 ```bash
-.venv/bin/pytest tests/ -q
+python -m unittest discover -s tests/unit -p "test_*.py" -v
+python -m unittest discover -s tests/integration -p "test_*.py" -v
 ```
 
-Запускать **только каталог `tests/`**. Не делать `pytest` из корня без `-s tests`: в `scripts/` лежат standalone-скрипты (например `test_browser_fetch.py`), которые требуют локальные `data/` и Playwright.
+Запускать **только каталог `tests/`**. Не делать `pytest` без пути `tests/`: в `scripts/` лежат standalone-скрипты (например `test_browser_fetch.py`), которые требуют локальные `data/` и Playwright.
 
 ### Переменные окружения в тестах
 
