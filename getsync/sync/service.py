@@ -17,6 +17,7 @@ from getsync.garmin.upload_errors import (
     garmin_duplicate_result,
     is_garmin_duplicate_upload,
 )
+from getsync.providers.bootstrap import register_default_providers
 from getsync.providers.registry import get_sink, get_source
 from getsync.state.store import Store
 from getsync.storage.activity import ActivityStorage
@@ -58,7 +59,12 @@ def _events(ctx: UserContext) -> StoreSyncEventLog:
     return StoreSyncEventLog(_store(ctx))
 
 
+def _ensure_providers() -> None:
+    register_default_providers()
+
+
 def _hammerhead_source(ctx: UserContext) -> ActivitySourceWithArtifacts:
+    _ensure_providers()
     source = get_source(BOOTSTRAP_SOURCE)
     if not isinstance(source, ActivitySourceWithArtifacts):
         raise RuntimeError(f"{BOOTSTRAP_SOURCE!r} source does not support FIT artifacts")
@@ -66,6 +72,7 @@ def _hammerhead_source(ctx: UserContext) -> ActivitySourceWithArtifacts:
 
 
 def _garmin_sink(ctx: UserContext) -> ActivitySink:
+    _ensure_providers()
     return get_sink(BOOTSTRAP_SINK)
 
 
