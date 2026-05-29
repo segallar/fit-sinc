@@ -15,9 +15,9 @@ from getsync.activities.browse import (
     catalog_row_to_browse_row,
     resolve_activity_filters,
 )
-from getsync.workspace.domain.filters import activity_type_matches
 from getsync.contracts.activities import NormalizedActivity
 from getsync.state.store import Store
+from getsync.workspace.domain.filters import activity_type_matches
 from helpers import isolated_env
 
 
