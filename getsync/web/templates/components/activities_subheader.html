@@ -4,7 +4,6 @@
       method="get"
       action="{{ prefix }}/activities">
   <input type="hidden" name="view" value="{{ activities_view }}">
-  <input type="hidden" name="refresh" value="1">
   {% if activities_view == 'calendar' and calendar %}
   <input type="hidden" name="year" value="{{ calendar.year }}">
   <input type="hidden" name="month" value="{{ calendar.month }}">

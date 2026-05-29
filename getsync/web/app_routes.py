@@ -222,7 +222,6 @@ def _activities_subheader_context(
                     view=view,
                     year=cal_year if view == "calendar" else None,
                     month=cal_month if view == "calendar" else None,
-                    extra={"refresh": "1"},
                 ),
                 "label": label,
                 "active": active,
@@ -514,6 +513,7 @@ async def app_home() -> RedirectResponse:
 @router.get("/activities", response_class=HTMLResponse, include_in_schema=False)
 async def activities_browser(
     request: Request,
+    background_tasks: BackgroundTasks,
     view: str = Query("calendar", pattern="^(list|calendar)$"),
     source: str = Query("", pattern="^(|hammerhead|garmin|strava)$"),
     queued: str = Query(""),
@@ -599,10 +599,15 @@ async def activities_browser(
         src = filters.source or None
 
         if refresh.strip() in ("1", "true", "yes"):
-            from getsync.catalog.api import refresh_from_providers
+            from getsync.web.catalog_refresh import refresh_activities_catalog_background
 
-            await refresh_from_providers(ctx)
             clear_browse_cache(ctx.user_id)
+            background_tasks.add_task(
+                refresh_activities_catalog_background,
+                ctx.user_id,
+                date_from=effective_filters.date_from,
+                date_to=effective_filters.date_to,
+            )
 
         def day_list_href(day_iso: str) -> str:
             day_filters = ActivityFilters(
@@ -686,13 +691,23 @@ async def activities_browser(
         )
 
     bust_cache = refresh.strip() in ("1", "true", "yes")
+    if bust_cache:
+        from getsync.web.catalog_refresh import refresh_activities_catalog_background
+
+        clear_browse_cache(ctx.user_id)
+        background_tasks.add_task(
+            refresh_activities_catalog_background,
+            ctx.user_id,
+            date_from=effective_filters.date_from,
+            date_to=effective_filters.date_to,
+        )
     result = await fetch_activities_page(
         page=page,
         per_page=per_page,
         filters=effective_filters,
         ctx=ctx,
         display_tz=display_tz,
-        refresh=bust_cache,
+        refresh=False,
     )
     query_params = _activities_query_params(
         page=result.page,
@@ -797,14 +812,13 @@ async def activities_live_fragment(
         month=month if month is not None else today.month,
         today=today,
     )
-    bust_cache = refresh.strip() in ("1", "true", "yes")
     result = await fetch_activities_page(
         page=page,
         per_page=per_page,
         filters=effective_filters,
         ctx=ctx,
         display_tz=display_tz,
-        refresh=bust_cache or True,
+        refresh=False,
     )
     list_return = _activities_return_url(
         page=result.page,

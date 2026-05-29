@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from getsync.contracts.activities import ActivitySource, NormalizedActivity
 from getsync.contracts.persistence import ActivityCatalog, SyncIndexEntry
 from getsync.providers.registry import get_source
@@ -71,6 +73,8 @@ async def scan_source(
     *,
     max_pages: int = MAX_SCAN_PAGES,
     per_page: int = SCAN_BATCH,
+    date_from: date | None = None,
+    date_to: date | None = None,
 ) -> list[NormalizedActivity]:
     """Fetch all pages from a registered ActivitySource and enrich sync status."""
     source: ActivitySource = get_source(source_id)
@@ -88,7 +92,13 @@ async def scan_source(
     page = 1
     total_pages = 1
     while page <= total_pages and page <= max_pages:
-        result = await source.fetch_page(ctx, page=page, per_page=per_page)
+        result = await source.fetch_page(
+            ctx,
+            page=page,
+            per_page=per_page,
+            date_from=date_from,
+            date_to=date_to,
+        )
         rows.extend(result.items)
         total_pages = max(1, result.total_pages)
         if not result.items:

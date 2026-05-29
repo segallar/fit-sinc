@@ -11,7 +11,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 logger = logging.getLogger("getsync.web.realtime")
 
-_hub: "RealtimeHub | None" = None
+_hub: RealtimeHub | None = None
 
 
 class RealtimeHub:
@@ -140,6 +140,10 @@ async def notify_activity_updated(
             "sync_status": sync_status,
         },
     )
+
+
+async def notify_activities_refresh(user_id: str) -> None:
+    await get_hub().broadcast(user_id, {"type": "activities_refresh"})
 
 
 async def notify_admin_log_refresh() -> None:

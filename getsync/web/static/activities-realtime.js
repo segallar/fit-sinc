@@ -20,7 +20,6 @@
     current.forEach(function (value, key) {
       url.searchParams.set(key, value);
     });
-    url.searchParams.set("refresh", "1");
     return url.toString();
   }
 
