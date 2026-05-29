@@ -8,9 +8,18 @@ from typing import Literal
 from getsync.catalog.application.ingest import persist_normalized_rows
 from getsync.catalog.application.scan import scan_source
 from getsync.contracts.persistence import ActivityCatalog
+from getsync.providers.strava.client import StravaClient
 from getsync.users.context import UserContext
 
 Source = Literal["hammerhead", "garmin", "strava"]
+
+
+def default_refresh_sources(ctx: UserContext) -> tuple[Source, ...]:
+    """Sources to pull on UI refresh — include Strava when user is connected."""
+    sources: list[Source] = ["hammerhead", "garmin"]
+    if StravaClient(ctx).load_tokens() is not None:
+        sources.append("strava")
+    return tuple(sources)
 
 
 @dataclass(frozen=True)
@@ -29,7 +38,7 @@ async def refresh_from_providers(
     force: bool = False,  # noqa: ARG001 — reserved for incremental refresh
 ) -> RefreshResult:
     """Ingest metadata from registered sources into the catalog."""
-    selected: tuple[Source, ...] = sources or ("hammerhead", "garmin")
+    selected: tuple[Source, ...] = sources or default_refresh_sources(ctx)
     errors: list[str] = []
     counts: dict[str, int] = {"hammerhead": 0, "garmin": 0, "strava": 0}
 

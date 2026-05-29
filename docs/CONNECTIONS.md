@@ -31,7 +31,7 @@ GetSync — **activity hub**: у пользователя **много connectio
 Connections
   Sources
     [Hammerhead]   Source   connected   Connect / Disconnect
-    [Strava]       Source   planned     (soon)
+    [Strava]       Source + Destination   connected / not connected   Connect / Disconnect
     [Wahoo]        Source   planned
   Destinations
     [Garmin]       Destination   not ready   Refresh / Disconnect

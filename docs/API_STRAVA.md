@@ -299,30 +299,30 @@ getsync/web/connections.py       # status + available=True, dual role label
 
 ### Phase 2 — Client + connection status (0.5 дн)
 
-- [ ] `StravaClient`: load/save, refresh при `expires_at - 120s`, deauthorize on disconnect
-- [ ] `StravaSource.connection_status` / `StravaSink.connection_status` — реальный connected/expired
-- [ ] `connections.py`: Strava card **Source + Destination**, `available=True` when server OAuth configured
+- [x] `StravaClient`: load/save, refresh при `expires_at - 120s`, deauthorize on disconnect (Settings)
+- [x] `StravaSource.connection_status` / `StravaSink.connection_status` — реальный connected/expired
+- [x] `connections.py`: Strava card **Source + Destination**, `available=True` when server OAuth configured
 
 ### Phase 3 — Source ingest (1 дн)
 
-- [ ] `fetch_page` → `GET /athlete/activities`, pagination, date filters
-- [ ] `normalize.py` mapping
-- [ ] `catalog.refresh_from_providers(sources=("strava",))` — уже wired; проверить end-to-end
-- [ ] Опционально: include `strava` в default refresh sources when connected
+- [x] `fetch_page` → `GET /athlete/activities`, pagination, date filters
+- [x] `normalize.py` mapping
+- [x] `catalog.refresh_from_providers` — Strava в default sources when tokens exist
+- [x] Contract tests (mocked httpx)
 
 ### Phase 4 — Sink upload (1 дн)
 
-- [ ] `upload_fit`: multipart POST + poll loop
-- [ ] `external_id` из catalog key
-- [ ] `UploadResult` + обработка duplicate/error messages
-- [ ] Unit test с mocked httpx (как Garmin upload tests)
+- [x] `upload_fit`: multipart POST + poll loop
+- [x] `external_id` = `getsync:{user_id}:{activity_id}`
+- [x] `UploadResult` + обработка errors
+- [x] Unit test с mocked client
 
 ### Phase 5 — Tests & docs (0.5 дн)
 
-- [ ] `tests/contract/test_strava_oauth.py` — token refresh, normalize
-- [ ] `tests/contract/test_provider_adapters.py` — connected mock, non-empty page
-- [ ] Integration: settings callback with signed state (TestClient)
-- [ ] Обновить [CONNECTIONS.md](CONNECTIONS.md), [CREDENTIALS.md](CREDENTIALS.md) env table
+- [x] `tests/contract/test_strava_oauth.py` — token refresh, normalize
+- [x] `tests/contract/test_strava_api.py` — source/sink/client
+- [x] Integration: settings callback (`test_strava_settings.py`)
+- [ ] **Manual:** prod Connect → refresh activities → optional upload test FIT
 
 **Оценка:** ~4 рабочих дня (solo), без FIT export и без rule-driven delivery.
 

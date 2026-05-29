@@ -10,7 +10,7 @@ from getsync.contracts.persistence import ActivityCatalog
 from getsync.state.store import Store
 from getsync.users.context import UserContext, as_context
 
-Source = Literal["hammerhead", "garmin"]
+Source = Literal["hammerhead", "garmin", "strava"]
 
 __all__ = ["RefreshResult", "Source", "get_catalog", "refresh_from_providers"]
 

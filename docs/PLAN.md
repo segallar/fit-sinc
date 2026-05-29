@@ -325,7 +325,7 @@ flowchart LR
 | **3.9.2** | `getsync/contracts/`, registry; closes **2.8** | ✅ |
 | **3.9.3** | catalog + workspace; sync/web via ports; activities shim | ✅ |
 | **3.9.3b** | provider adapters (HH, Garmin, Strava stub) + registry bootstrap | ✅ |
-| **3.9.3c** | Strava OAuth + source/sink — [API_STRAVA.md](API_STRAVA.md) | 📋 |
+| **3.9.3c** | Strava OAuth + source/sink — [API_STRAVA.md](API_STRAVA.md) | ✅ |
 | **3.9.4** | `getsync/events/` EventBus; decouple web | 📋 |
 | **3.9.5** | `getsync/rules/` infra (≠ product **3.1**) | 📋 |
 | **3.9.6** | import-linter + `tests/contract/` | 📋 |

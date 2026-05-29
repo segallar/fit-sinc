@@ -80,7 +80,9 @@ async def scan_source(
         if HammerheadClient(ctx).load_tokens() is None:
             return []
     elif source_id == "strava":
-        if not source.connection_status(ctx).connected:
+        from getsync.providers.strava.client import StravaClient
+
+        if StravaClient(ctx).load_tokens() is None:
             return []
     rows: list[NormalizedActivity] = []
     page = 1
