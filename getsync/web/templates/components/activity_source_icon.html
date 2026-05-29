@@ -1,4 +1,4 @@
-{# source: hammerhead | garmin
+{# source: hammerhead | garmin | strava
    Assets: static/brands/ — Garmin Connect app tile (developer.garmin.com),
    Hammerhead mark (support.hammerhead.io press/theming). #}
 {% if source == 'hammerhead' %}
@@ -8,6 +8,10 @@
 {% elif source == 'garmin' %}
 <span class="getsync-source-icon getsync-source-icon--garmin" role="img" aria-label="Garmin Connect" title="Garmin Connect">
   <img src="/static/brands/garmin-connect.png" alt="" width="22" height="22" decoding="async" loading="lazy">
+</span>
+{% elif source == 'strava' %}
+<span class="getsync-source-icon getsync-source-icon--strava" role="img" aria-label="Strava" title="Strava">
+  <span class="getsync-source-icon__strava-mark" aria-hidden="true">S</span>
 </span>
 {% else %}
 <span class="text-muted" title="{{ source or 'unknown' }}">—</span>

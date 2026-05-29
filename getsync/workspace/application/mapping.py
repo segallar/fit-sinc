@@ -62,19 +62,53 @@ def normalized_to_browse_row(
             fit_available=fit_available,
         )
 
-    try:
-        garmin_id = int(row.activity_id)
-    except (TypeError, ValueError):
-        garmin_id = None
-    entry = by_garmin.get(garmin_id) if garmin_id is not None else None
-    status, detail, hh_id = _garmin_sync_labels(entry)
-    if entry is None:
+    if row.source == "strava":
         status = row.sync_status or "not synced"
-        detail = None
-        hh_id = None
-    fit_available = bool(entry and entry.storage_key)
+        return ActivityBrowseRow(
+            source="strava",
+            external_id=row.activity_id,
+            name=row.name or "—",
+            activity_date=row.activity_date,
+            distance=row.distance,
+            duration=row.duration,
+            activity_type=row.activity_type,
+            sync_status=status,
+            sync_detail=None,
+            hammerhead_id=None,
+            garmin_id=None,
+            fit_available=bool(row.storage_key),
+        )
+
+    if row.source == "garmin":
+        try:
+            garmin_id = int(row.activity_id)
+        except (TypeError, ValueError):
+            garmin_id = None
+        entry = by_garmin.get(garmin_id) if garmin_id is not None else None
+        status, detail, hh_id = _garmin_sync_labels(entry)
+        if entry is None:
+            status = row.sync_status or "not synced"
+            detail = None
+            hh_id = None
+        fit_available = bool(entry and entry.storage_key)
+        return ActivityBrowseRow(
+            source="garmin",
+            external_id=row.activity_id,
+            name=row.name or "—",
+            activity_date=row.activity_date,
+            distance=row.distance,
+            duration=row.duration,
+            activity_type=row.activity_type,
+            sync_status=status,
+            sync_detail=detail,
+            hammerhead_id=hh_id,
+            garmin_id=garmin_id,
+            fit_available=fit_available,
+        )
+
+    status = row.sync_status or "not synced"
     return ActivityBrowseRow(
-        source="garmin",
+        source=row.source,  # type: ignore[arg-type]
         external_id=row.activity_id,
         name=row.name or "—",
         activity_date=row.activity_date,
@@ -82,10 +116,10 @@ def normalized_to_browse_row(
         duration=row.duration,
         activity_type=row.activity_type,
         sync_status=status,
-        sync_detail=detail,
-        hammerhead_id=hh_id,
-        garmin_id=garmin_id,
-        fit_available=fit_available,
+        sync_detail=None,
+        hammerhead_id=None,
+        garmin_id=None,
+        fit_available=bool(row.storage_key),
     )
 
 

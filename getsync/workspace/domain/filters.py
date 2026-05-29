@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Literal
 
-Source = Literal["hammerhead", "garmin"]
-SourceFilter = Literal["", "hammerhead", "garmin"]
-BrowseMode = Literal["all", "hammerhead", "garmin"]
+Source = Literal["hammerhead", "garmin", "strava"]
+SourceFilter = Literal["", "hammerhead", "garmin", "strava"]
+BrowseMode = Literal["all", "hammerhead", "garmin", "strava"]
 
 ACTIVITY_TYPE_FILTER_CHOICES: tuple[tuple[str, str], ...] = (
     ("", "All types"),
@@ -21,6 +21,27 @@ ACTIVITY_TYPE_FILTER_CHOICES: tuple[tuple[str, str], ...] = (
     ("mountain_biking", "Mountain biking"),
     ("triathlon", "Triathlon"),
 )
+
+# Substrings matched against lowercased provider activity_type (e.g. Strava sport_type).
+_ACTIVITY_TYPE_ALIASES: dict[str, tuple[str, ...]] = {
+    "cycling": ("ride", "bike", "bik", "cycl", "velo"),
+    "running": ("run", "jog", "trail"),
+    "swimming": ("swim",),
+    "walking": ("walk",),
+    "hiking": ("hike",),
+    "mountain_biking": ("mountain", "mtb", "gravel"),
+    "triathlon": ("tri",),
+}
+
+
+def activity_type_matches(filter_value: str, row_type: str | None) -> bool:
+    needle = filter_value.strip().lower()
+    if not needle:
+        return True
+    hay = (row_type or "").lower()
+    if needle in hay:
+        return True
+    return any(alias in hay for alias in _ACTIVITY_TYPE_ALIASES.get(needle, ()))
 
 
 @dataclass(frozen=True)
@@ -46,7 +67,7 @@ class ActivityFilters:
 
     def source_filter(self) -> SourceFilter:
         s = self.source.strip().lower()
-        if s in ("hammerhead", "garmin"):
+        if s in ("hammerhead", "garmin", "strava"):
             return s  # type: ignore[return-value]
         return ""
 

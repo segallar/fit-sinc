@@ -264,7 +264,7 @@ class _ResyncAction:
     label: str = "Re-sync"
 
 
-_SOURCE_LABELS = {"hammerhead": "Hammerhead", "garmin": "Garmin"}
+_SOURCE_LABELS = {"hammerhead": "Hammerhead", "garmin": "Garmin", "strava": "Strava"}
 
 
 def _activity_row_view(
@@ -515,7 +515,7 @@ async def app_home() -> RedirectResponse:
 async def activities_browser(
     request: Request,
     view: str = Query("calendar", pattern="^(list|calendar)$"),
-    source: str = Query("", pattern="^(|hammerhead|garmin)$"),
+    source: str = Query("", pattern="^(|hammerhead|garmin|strava)$"),
     queued: str = Query(""),
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=10, le=100),
@@ -747,7 +747,7 @@ async def activities_browser(
         next_page=result.page + 1,
         has_more_rows=has_more,
         data_source_hint=(
-            "Hammerhead & Garmin APIs · metadata in SQLite · "
+            "Hammerhead, Garmin & Strava APIs · metadata in SQLite · "
             f"list cached {BROWSE_CACHE_TTL_SEC // 60} min"
         ),
         activities_tab_query=_activities_tab_query_factory(tab_base),
@@ -760,7 +760,7 @@ async def activities_browser(
 async def activities_live_fragment(
     request: Request,
     view: str = Query("list", pattern="^(list|calendar)$"),
-    source: str = Query("", pattern="^(|hammerhead|garmin)$"),
+    source: str = Query("", pattern="^(|hammerhead|garmin|strava)$"),
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=10, le=100),
     year: int | None = Query(None, ge=2000, le=2100),
@@ -826,7 +826,7 @@ async def activities_live_fragment(
         total_label=total_label,
         filters_active=filters.is_active(),
         data_source_hint=(
-            "Hammerhead & Garmin APIs · metadata in SQLite · "
+            "Hammerhead, Garmin & Strava APIs · metadata in SQLite · "
             f"list cached {BROWSE_CACHE_TTL_SEC // 60} min"
         ),
         rows_load_url=_activities_rows_load_url(
@@ -843,7 +843,7 @@ async def activities_live_fragment(
 @router.get("/activities/rows", include_in_schema=False)
 async def activities_rows_fragment(
     request: Request,
-    source: str = Query("", pattern="^(|hammerhead|garmin)$"),
+    source: str = Query("", pattern="^(|hammerhead|garmin|strava)$"),
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=10, le=100),
     q: str = Query(""),

@@ -12,8 +12,11 @@ from getsync.activities.browse import (
     _dedupe_linked_rows,
     _matches_filters,
     _sort_rows_by_date,
+    catalog_row_to_browse_row,
     resolve_activity_filters,
 )
+from getsync.workspace.domain.filters import activity_type_matches
+from getsync.contracts.activities import NormalizedActivity
 from getsync.state.store import Store
 from helpers import isolated_env
 
@@ -90,6 +93,65 @@ class TestActivitiesBrowse(unittest.TestCase):
         self.assertEqual(len(out), 2)
         self.assertEqual(out[0].source, "hammerhead")
         self.assertEqual(out[1].garmin_id, 100)
+
+    def test_dedupe_linked_rows_keeps_strava(self) -> None:
+        strava = ActivityBrowseRow(
+            source="strava",
+            external_id="sv1",
+            name="Morning Run",
+            activity_date="2026-05-28T09:41:52Z",
+            distance=5.0,
+            duration=1800.0,
+            activity_type="run",
+            sync_status="not synced",
+            sync_detail=None,
+            hammerhead_id=None,
+            garmin_id=None,
+            fit_available=False,
+        )
+        hh = ActivityBrowseRow(
+            source="hammerhead",
+            external_id="hh1",
+            name="Ride",
+            activity_date="2025-06-01T10:00:00Z",
+            distance=10.0,
+            duration=3600.0,
+            activity_type="ride",
+            sync_status="synced",
+            sync_detail=None,
+            hammerhead_id="hh1",
+            garmin_id=None,
+            fit_available=True,
+        )
+        out = _dedupe_linked_rows([hh, strava])
+        self.assertEqual(len(out), 2)
+        sources = {row.source for row in out}
+        self.assertEqual(sources, {"hammerhead", "strava"})
+
+    def test_normalized_to_browse_row_keeps_strava_source(self) -> None:
+        row = NormalizedActivity(
+            user_id="u1",
+            source="strava",
+            activity_id="18685363629",
+            name="Morning Run",
+            activity_date="2026-05-28T09:41:52Z",
+            distance=5000.0,
+            duration=1800.0,
+            activity_type="Run",
+            sync_status="not synced",
+            storage_key=None,
+        )
+        browse = catalog_row_to_browse_row(row, {}, {})
+        self.assertEqual(browse.source, "strava")
+        self.assertEqual(browse.external_id, "18685363629")
+        self.assertIsNone(browse.garmin_id)
+
+    def test_activity_type_matches_strava_sport_types(self) -> None:
+        self.assertTrue(activity_type_matches("running", "Run"))
+        self.assertTrue(activity_type_matches("cycling", "Ride"))
+        self.assertTrue(activity_type_matches("cycling", "VirtualRide"))
+        self.assertTrue(activity_type_matches("swimming", "Swim"))
+        self.assertFalse(activity_type_matches("cycling", "Run"))
 
     def test_source_filter_on_row(self) -> None:
         row = ActivityBrowseRow(

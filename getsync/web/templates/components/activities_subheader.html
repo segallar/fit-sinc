@@ -9,7 +9,6 @@
   <input type="hidden" name="year" value="{{ calendar.year }}">
   <input type="hidden" name="month" value="{{ calendar.month }}">
   {% endif %}
-  {% if filters.source %}<input type="hidden" name="source" value="{{ filters.source }}">{% endif %}
   {% if filters.q %}<input type="hidden" name="q" value="{{ filters.q }}">{% endif %}
   {% if filters.status %}<input type="hidden" name="status" value="{{ filters.status }}">{% endif %}
   {% if filters.activity_type %}<input type="hidden" name="activity_type" value="{{ filters.activity_type }}">{% endif %}
@@ -97,6 +96,7 @@
             <option value=""{% if not filters.source %} selected{% endif %}>All sources</option>
             <option value="hammerhead"{% if filters.source == 'hammerhead' %} selected{% endif %}>Hammerhead</option>
             <option value="garmin"{% if filters.source == 'garmin' %} selected{% endif %}>Garmin</option>
+            <option value="strava"{% if filters.source == 'strava' %} selected{% endif %}>Strava</option>
           </select>
           {% if activities_view == 'list' %}
           <label class="form-label small mb-1" for="activities-status-filter">GetSync</label>

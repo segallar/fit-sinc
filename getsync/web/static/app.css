@@ -395,6 +395,20 @@ button.getsync-filter-link:focus-visible {
   border-radius: 0.2rem;
 }
 
+.getsync-source-icon__strava-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.2rem;
+  background: #fc4c02;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .getsync-activity-row {
   cursor: pointer;
 }

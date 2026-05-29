@@ -12,7 +12,7 @@ from getsync.timeutil import _parse_iso, parse_date_only
 from getsync.users.context import UserContext, as_context
 from getsync.users.timezones import DEFAULT_TIMEZONE, normalize_timezone
 from getsync.workspace.application.mapping import normalized_to_browse_row
-from getsync.workspace.domain.filters import ActivityFilters, BrowseMode
+from getsync.workspace.domain.filters import ActivityFilters, BrowseMode, activity_type_matches
 from getsync.workspace.domain.rows import ActivityBrowsePage, ActivityBrowseRow
 
 BROWSE_CACHE_TTL_SEC = 300
@@ -75,9 +75,7 @@ def _matches_filters(
         if row.sync_status != filters.status.strip():
             return False
     if filters.activity_type.strip():
-        needle = filters.activity_type.strip().lower()
-        hay = (row.activity_type or "").lower()
-        if needle not in hay:
+        if not activity_type_matches(filters.activity_type, row.activity_type):
             return False
     dt = _parse_iso(row.activity_date, tz=display_tz) if row.activity_date else None
     if filters.date_from.strip():
@@ -128,21 +126,29 @@ def _sort_rows_by_date(
 
 
 def _dedupe_linked_rows(rows: list[ActivityBrowseRow]) -> list[ActivityBrowseRow]:
-    """When listing all sources, skip Garmin rows already shown via Hammerhead link."""
+    """When listing all sources, skip Garmin rows already shown via Hammerhead link.
+
+    Other sources (e.g. Strava) are kept; only HH↔Garmin pairing is deduplicated.
+    """
     seen_garmin: set[int] = set()
-    out: list[ActivityBrowseRow] = []
+    hammerhead_rows: list[ActivityBrowseRow] = []
+    garmin_rows: list[ActivityBrowseRow] = []
+    other_rows: list[ActivityBrowseRow] = []
     for row in rows:
-        if row.source != "hammerhead":
-            continue
-        out.append(row)
-        if row.garmin_id is not None:
-            seen_garmin.add(row.garmin_id)
-    for row in rows:
-        if row.source != "garmin":
-            continue
+        if row.source == "hammerhead":
+            hammerhead_rows.append(row)
+            if row.garmin_id is not None:
+                seen_garmin.add(row.garmin_id)
+        elif row.source == "garmin":
+            garmin_rows.append(row)
+        else:
+            other_rows.append(row)
+    out = list(hammerhead_rows)
+    for row in garmin_rows:
         if row.garmin_id is not None and row.garmin_id in seen_garmin:
             continue
         out.append(row)
+    out.extend(other_rows)
     return out
 
 
